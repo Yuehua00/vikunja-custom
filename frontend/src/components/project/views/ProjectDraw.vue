@@ -85,8 +85,13 @@
 					{{ $t('project.draw.nothingToDraw') }}
 				</p>
 
+				<Transition
+					name="draw-card"
+					mode="out-in"
+				>
 				<article
-					v-else-if="card"
+					v-if="card"
+					:key="card.id"
 					class="draw-card"
 				>
 					<div class="draw-card-top">
@@ -187,6 +192,7 @@
 						</XButton>
 					</div>
 				</article>
+				</Transition>
 
 				<div
 					v-if="tasks.length > 0"
@@ -218,6 +224,7 @@ import {allTasksQuery} from '@/client/queries/tasks'
 import {useUpdateTaskMutation} from '@/client/queries/taskMutations'
 import {useUpdateFrontendSettingsMutation} from '@/client/queries/account'
 import {useAuthStore} from '@/stores/auth'
+import {success} from '@/message'
 import {
 	DEFAULT_CARD_DRAW_STATE,
 	SKIP_DAYS,
@@ -284,19 +291,31 @@ async function saveDrawState(patch: Partial<CardDrawState>) {
 
 const card = computed(() => tasks.value.find(task => task.id === drawState.value.task_id && !task.done))
 
+// One draw at a time: the database accepts a single write at once, so overlapping saves can fail.
+let drawing = false
+
 async function drawNew(excludeId?: number) {
-	const next = pickCard(pool.value, new Date(), excludeId)
-	await saveDrawState({
-		task_id: next?.id,
-		drawn_at: next ? new Date().toISOString() : undefined,
-	})
+	if (drawing) {
+		return
+	}
+	drawing = true
+	try {
+		const next = pickCard(pool.value, new Date(), excludeId)
+		await saveDrawState({
+			task_id: next?.id,
+			drawn_at: next ? new Date().toISOString() : undefined,
+		})
+	} finally {
+		drawing = false
+	}
 }
 
-// Runs once per visit, when the tasks are first available: keep the current card until its period is
-// over, otherwise draw. An every-open interval always draws.
+// Runs once per visit, when up to date tasks are available: keep the current card until its period is
+// over, otherwise draw. An every-open interval always draws. Waiting for the fetch matters: the cache
+// can still hold the tasks from before cards were added in another view.
 const initialized = ref(false)
-watch(() => query.data.value, data => {
-	if (!data || initialized.value) {
+watch([() => query.data.value, isFetching], ([data, fetching]) => {
+	if (!data || fetching || initialized.value) {
 		return
 	}
 	initialized.value = true
@@ -307,6 +326,16 @@ watch(() => query.data.value, data => {
 		void drawNew(current?.id)
 	}
 }, {immediate: true})
+
+// Safety net: whenever there are cards to draw but none is shown, draw one. Not while a task is being
+// saved: finishing a card hides it right away, and drawing then would write at the same time as the
+// save, which the database rejects.
+const saving = computed(() => updateTask.isPending.value || updateFrontendSettings.isPending.value)
+watch([initialized, () => pool.value.length, card, saving], ([ready, poolSize, current, busy]) => {
+	if (ready && poolSize > 0 && !current && !busy) {
+		void drawNew()
+	}
+})
 
 const showSettings = ref(false)
 const settingsRoot = ref<HTMLElement | null>(null)
@@ -372,31 +401,52 @@ function setImportance(importance: number) {
 	return updateTask.mutateAsync({id: card.value.id, importance})
 }
 
+// The current time, not the end of the day: a start date in the future would count as skipped.
+function nowIso() {
+	return new Date().toISOString()
+}
+
+// Starting sets the start date to today, which also puts the card on the calendar and the gantt chart.
 function start() {
 	if (!card.value) {
 		return
 	}
-	return updateTask.mutateAsync({id: card.value.id, percent_done: Math.max(card.value.percent_done, 0.1)})
+	return updateTask.mutateAsync({
+		id: card.value.id,
+		percent_done: Math.max(card.value.percent_done, 0.1),
+		start_date: nowIso(),
+	})
 }
 
 async function setPercent(percent: number) {
 	if (!card.value) {
 		return
 	}
-	const id = card.value.id
-	await updateTask.mutateAsync({id, percent_done: percent, done: percent >= 1})
 	if (percent >= 1) {
-		await drawNew(id)
+		return finish()
 	}
+	await updateTask.mutateAsync({id: card.value.id, percent_done: percent, done: false})
 }
 
+// Finishing sets the end date to the day it was finished, and offers to take it back.
 async function finish() {
 	if (!card.value) {
 		return
 	}
-	const id = card.value.id
-	await updateTask.mutateAsync({id, done: true, percent_done: 1})
+	const {id, percent_done: percent, end_date: endDate} = card.value
+	await updateTask.mutateAsync({id, done: true, percent_done: 1, end_date: nowIso()})
 	await drawNew(id)
+
+	success({message: t('task.doneSuccess')}, [{
+		title: t('task.undo'),
+		callback: () => undoFinish(id, percent, endDate),
+	}])
+}
+
+// Reopens the card as it was before and shows it again.
+async function undoFinish(id: number, percent: number, endDate: string | undefined) {
+	await updateTask.mutateAsync({id, done: false, percent_done: percent, end_date: endDate ?? ''})
+	await saveDrawState({task_id: id, drawn_at: new Date().toISOString()})
 }
 
 // The start date keeps a skipped card out of the draw until it has passed.
@@ -498,6 +548,29 @@ async function skip() {
 	border-radius: 20px;
 	box-shadow: 0 8px 28px rgba(0, 0, 0, .08);
 	text-align: start;
+}
+
+// Changing the card: the old one slides out to the start side, the new one rises in.
+.draw-card-enter-active,
+.draw-card-leave-active {
+	transition: opacity .25s ease, transform .25s ease;
+}
+
+.draw-card-leave-to {
+	opacity: 0;
+	transform: translateX(-3rem) rotate(-2deg);
+}
+
+.draw-card-enter-from {
+	opacity: 0;
+	transform: translateY(1.5rem) scale(.96) rotate(1deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.draw-card-enter-active,
+	.draw-card-leave-active {
+		transition: none;
+	}
 }
 
 .draw-card-top {
