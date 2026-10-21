@@ -399,6 +399,36 @@
 		"calendar": {
 			"title": "月曆"
 		},
+		"draw": {
+			"title": "抽卡",
+			"empty": "還沒有任何卡片，先在這個專案加入幾張。",
+			"nothingToDraw": "目前沒有可抽的卡片：都已讀完，或暫時被跳過。",
+			"addedToday": "今天加入",
+			"addedDaysAgo": "放進來 {count} 天",
+			"summary": "摘要",
+			"noSummary": "還沒有摘要，開啟詳細資料補上。",
+			"importanceNotSet": "尚未設定重要度",
+			"notStarted": "還沒開始讀",
+			"progress": "已完成 {percent}%",
+			"start": "開始讀",
+			"finish": "已讀完",
+			"skip": "跳過一週",
+			"redraw": "再抽一張",
+			"nextChange": "下次換卡：{date}",
+			"nextOnOpen": "每次打開這個視圖都會換一張",
+			"stats": "待抽 {pool} 張，讀中 {reading} 張，已讀完 {done} 張",
+			"rule": "重要度越高、放越久，越容易被抽到。",
+			"interval": {
+				"title": "多久換一張卡",
+				"open": "每次打開都重新抽",
+				"day": "每天一張",
+				"days3": "每 3 天一張",
+				"week": "每週一張",
+				"customBefore": "自訂：每",
+				"customAfter": "天",
+				"hint": "時間到之前會一直顯示同一張，重新整理也不會變。"
+			}
+		},
 		"kanban": {
 			"title": "看板",
 			"limit": "限制: {limit}",
@@ -784,6 +814,15 @@
 		"undo": "還原",
 		"checklistTotal": "{checked} 項任務，共 {total} 項。",
 		"checklistAllDone": "共 {total} 項任務",
+		"importance": {
+			"setTo": "重要度 {count}"
+		},
+		"subtasks": {
+			"title": "子項目",
+			"summary": "已完成 {done} / {total}",
+			"empty": "還沒有子項目，在下方新增一個，把這件事拆成步驟。",
+			"addPlaceholder": "輸入子項目，按 Enter 新增"
+		},
 		"show": {
 			"titleCurrent": "目前任務",
 			"noDates": "顯示未設定日期的任務",
@@ -828,6 +867,7 @@
 				"reminders": "設定提醒",
 				"repeatAfter": "設定重複間隔",
 				"percentDone": "設定進度",
+				"importance": "設定重要度",
 				"attachments": "新增附件",
 				"relatedTasks": "新增關聯",
 				"moveProject": "移動",
@@ -848,6 +888,7 @@
 			"endDate": "結束日期",
 			"labels": "標籤",
 			"percentDone": "進度",
+			"importance": "重要度",
 			"priority": "優先級",
 			"relatedTasks": "相關任務",
 			"reminders": "提醒",

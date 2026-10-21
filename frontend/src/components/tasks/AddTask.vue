@@ -24,10 +24,9 @@
 					:id="textareaId"
 					ref="newTaskInput"
 					v-model="newTaskTitle"
-					v-focus
 					class="add-task-textarea input"
 					:class="{'textarea-empty': newTaskTitle === ''}"
-					:placeholder="$t('project.list.addPlaceholder')"
+					:placeholder="placeholder ?? $t('project.list.addPlaceholder')"
 					rows="1"
 					@keydown="resetEmptyTitleError"
 					@keydown.enter="handleEnter"
@@ -65,8 +64,9 @@
 
 <script setup lang="ts">
 import {assertClientRequestContext, captureClientRequestContext} from '@/client/requestContext'
-import {useCreateTaskRelationMutation} from '@/client/queries/taskMutations'
-import {computed, ref} from 'vue'
+import {refreshTaskProgress, useCreateTaskRelationMutation} from '@/client/queries/taskMutations'
+import {useQueryClient} from '@tanstack/vue-query'
+import {computed, onMounted, ref} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {useElementHover} from '@vueuse/core'
 import {useRouter} from 'vue-router'
@@ -89,6 +89,20 @@ import {reportSkippedLabels, useQuickAddTask} from '@/composables/useQuickAddTas
 import {useAutoHeightTextarea} from '@/composables/useAutoHeightTextarea'
 import {useDelayedLoading} from '@/composables/useDelayedLoading'
 
+const props = withDefaults(defineProps<{
+	// Overrides the project taken from the route, for places that are not inside a project page.
+	projectId?: number,
+	// Makes every task typed at the top level a subtask of this task.
+	parentTaskId?: number,
+	placeholder?: string,
+	autofocus?: boolean,
+}>(), {
+	projectId: undefined,
+	parentTaskId: undefined,
+	placeholder: undefined,
+	autofocus: true,
+})
+
 const emit = defineEmits<{
 	tasksAdded: [tasks: ITask[]],
 }>()
@@ -104,7 +118,15 @@ const configStore = useConfigStore()
 const {createNewTasksBulk, findProjectId, ensureLabelsExist, isLoading: loading} = useQuickAddTask()
 const showLoading = useDelayedLoading(loading)
 const createRelationMutation = useCreateTaskRelationMutation()
+const queryClient = useQueryClient()
 const router = useRouter()
+
+onMounted(() => {
+	// Same rule as the v-focus directive: auto focusing on a small screen only pops up the keyboard.
+	if (props.autofocus && window.innerWidth > 769) {
+		newTaskInput.value?.focus()
+	}
+})
 
 // enable only if we don't have a modal
 // onStartTyping(() => {
@@ -190,6 +212,9 @@ async function addTask() {
 	if (typeof router.currentRoute.value.params.projectId !== 'undefined') {
 		currentProjectId = Number(router.currentRoute.value.params.projectId)
 	}
+	if (props.projectId !== undefined) {
+		currentProjectId = props.projectId
+	}
 
 	try {
 		newTaskTitle.value = ''
@@ -258,6 +283,27 @@ async function addTask() {
 			// The tasks themselves exist by now — reporting and moving on beats
 			// restoring the input and letting the user duplicate all of them.
 			error(e)
+		}
+
+		if (props.parentTaskId !== undefined) {
+			try {
+				await runWrites(tasksToCreate.filter(t => t.parent === null), async (t: TaskWithParent) => {
+					const createdTask = createdTasks.get(t.title)
+					if (typeof createdTask === 'undefined') {
+						return
+					}
+					assertClientRequestContext(context)
+					await createRelationMutation.mutateAsync({
+						taskId: props.parentTaskId!,
+						other_task_id: createdTask.id!,
+						relation_kind: RELATION_KIND.SUBTASK,
+					})
+				}, configStore.concurrent_writes)
+				// New, unfinished subtasks lower the percentage and reopen a closed task.
+				await refreshTaskProgress(queryClient, props.parentTaskId)
+			} catch (e) {
+				error(e)
+			}
 		}
 
 		assertClientRequestContext(context)

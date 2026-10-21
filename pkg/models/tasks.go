@@ -111,6 +111,8 @@ type Task struct {
 	HexColor string `xorm:"varchar(6) null" json:"hex_color" valid:"runelength(0|7)" maxLength:"7" doc:"The task color as a hex string without the leading '#'."`
 	// Determines how far a task is left from being done
 	PercentDone float64 `xorm:"DOUBLE null" json:"percent_done" doc:"How far the task is from done, between 0 and 1."`
+	// How much the user wants to get to this task, independent of its priority. 0 means not set.
+	Importance int64 `xorm:"bigint null" json:"importance" valid:"range(0|5)" doc:"How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority."`
 
 	// The task identifier, based on the project identifier and the task's index
 	Identifier string `xorm:"-" json:"identifier" readOnly:"true" doc:"The textual task identifier, derived from the project identifier and the task index (e.g. \"PROJ-12\")."`
@@ -1327,6 +1329,7 @@ func (t *Task) updateSingleTask(s *xorm.Session, a web.Auth, fields []string) (e
 		"end_date",
 		"hex_color",
 		"percent_done",
+		"importance",
 		"project_id",
 		"bucket_id",
 		"repeat_mode",
@@ -1380,6 +1383,9 @@ func (t *Task) updateSingleTask(s *xorm.Session, a web.Auth, fields []string) (e
 		}
 		if !fieldSet["percent_done"] {
 			t.PercentDone = ot.PercentDone
+		}
+		if !fieldSet["importance"] {
+			t.Importance = ot.Importance
 		}
 		if !fieldSet["project_id"] {
 			t.ProjectID = ot.ProjectID
@@ -1635,6 +1641,10 @@ func (t *Task) updateSingleTask(s *xorm.Session, a web.Auth, fields []string) (e
 	// Percent Done
 	if t.PercentDone == 0 {
 		ot.PercentDone = 0
+	}
+	// Importance
+	if t.Importance == 0 {
+		ot.Importance = 0
 	}
 	// Repeat from current date
 	if t.RepeatMode == TaskRepeatModeDefault {

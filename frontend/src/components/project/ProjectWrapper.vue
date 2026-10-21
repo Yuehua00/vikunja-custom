@@ -164,6 +164,8 @@ function getViewTitle(view: ProjectView) {
 			return t('project.kanban.title')
 		case 'Calendar':
 			return t('project.calendar.title')
+		case 'Draw':
+			return t('project.draw.title')
 	}
 
 	return view.title ?? ''

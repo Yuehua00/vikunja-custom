@@ -175,6 +175,27 @@
 							appear
 						>
 							<div
+								v-if="activeFields.importance"
+								class="column"
+							>
+								<!-- Importance -->
+								<div class="detail-title">
+									<Icon icon="star" />
+									{{ $t('task.attributes.importance') }}
+								</div>
+								<ImportanceStars
+									:ref="e => setFieldRef('importance', e)"
+									v-model="task.importance"
+									:disabled="!canWrite"
+									@update:modelValue="setImportance"
+								/>
+							</div>
+						</CustomTransition>
+						<CustomTransition
+							name="flash-background"
+							appear
+						>
+							<div
 								v-if="activeFields.startDate"
 								class="column"
 							>
@@ -317,6 +338,16 @@
 							</div>
 						</CustomTransition>
 					</div>
+
+					<!-- Subtasks -->
+					<SubtaskList
+						v-if="canWrite || (task.related_tasks?.subtask?.length ?? 0) > 0"
+						class="details"
+						:task-id="taskId"
+						:project-id="task.project_id"
+						:can-write="canWrite"
+						:backdrop-view="backdropView"
+					/>
 
 					<!-- Labels -->
 					<div
@@ -491,6 +522,13 @@
 							@click="setFieldActive('percentDone')"
 						>
 							{{ $t('task.detail.actions.percentDone') }}
+						</XButton>
+						<XButton
+							variant="secondary"
+							icon="star"
+							@click="setFieldActive('importance')"
+						>
+							{{ $t('task.detail.actions.importance') }}
 						</XButton>
 						<XButton
 							v-shortcut="SHORTCUTS.taskDetail.color"
@@ -685,6 +723,8 @@ import ProjectSearch from '@/components/tasks/partials/ProjectSearch.vue'
 import PercentDoneSelect from '@/components/tasks/partials/PercentDoneSelect.vue'
 import PrioritySelect from '@/components/tasks/partials/PrioritySelect.vue'
 import RelatedTasks from '@/components/tasks/partials/RelatedTasks.vue'
+import SubtaskList from '@/components/tasks/partials/SubtaskList.vue'
+import ImportanceStars from '@/components/tasks/partials/ImportanceStars.vue'
 import Reminders from '@/components/tasks/partials/Reminders.vue'
 import RepeatAfter from '@/components/tasks/partials/RepeatAfter.vue'
 import TaskSubscription from '@/components/misc/Subscription.vue'
@@ -767,11 +807,12 @@ const task = ref(createTaskDraft())
 
 // Only fields edited here stay local; the rest follows the cache.
 function followServerFields(loaded: ITask) {
-	const {priority, percent_done, due_date, start_date, end_date, reminders, repeat_after, repeat_mode} = task.value
+	const {priority, percent_done, importance, due_date, start_date, end_date, reminders, repeat_after, repeat_mode} = task.value
 	task.value = {
 		...createTaskDraft(klona(loaded)),
 		priority,
 		percent_done,
+		importance,
 		due_date,
 		start_date,
 		end_date,
@@ -981,6 +1022,7 @@ type FieldType =
 	| 'color'
 	| 'dueDate'
 	| 'endDate'
+	| 'importance'
 	| 'labels'
 	| 'moveProject'
 	| 'percentDone'
@@ -997,6 +1039,7 @@ const activeFields: { [type in FieldType]: boolean } = reactive({
 	color: false,
 	dueDate: false,
 	endDate: false,
+	importance: false,
 	labels: false,
 	moveProject: false,
 	percentDone: false,
@@ -1015,7 +1058,8 @@ function setActiveFields() {
 	activeFields.timeTracking = (task.value.time_entries_count ?? 0) > 0
 	activeFields.dueDate = Boolean(parseDateOrNull(task.value.due_date))
 	activeFields.endDate = Boolean(parseDateOrNull(task.value.end_date))
-	activeFields.labels = (task.value.labels?.length ?? 0) > 0
+	activeFields.importance = (task.value.importance ?? 0) > 0
+	activeFields.labels =(task.value.labels?.length ?? 0) > 0
 	activeFields.percentDone = (task.value.percent_done ?? 0) > 0
 	activeFields.priority = task.value.priority !== PRIORITIES.UNSET
 	activeFields.relatedTasks = Object.keys(task.value.related_tasks ?? {}).length > 0
@@ -1060,6 +1104,7 @@ const activeFieldElements: { [id in FieldType]: HTMLElement | null } = reactive(
 	color: null,
 	dueDate: null,
 	endDate: null,
+	importance: null,
 	labels: null,
 	moveProject: null,
 	percentDone: null,
@@ -1223,6 +1268,15 @@ async function setPriority(priority: number) {
 	const newTask: ITask = {
 		...task.value,
 		priority,
+	}
+
+	return saveTask(newTask)
+}
+
+async function setImportance(importance: number) {
+	const newTask: ITask = {
+		...task.value,
+		importance,
 	}
 
 	return saveTask(newTask)

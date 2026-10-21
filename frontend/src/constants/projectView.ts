@@ -8,6 +8,7 @@ export const PROJECT_VIEW_KINDS = {
 	TABLE: 'table',
 	KANBAN: 'kanban',
 	CALENDAR: 'calendar',
+	DRAW: 'draw',
 } as const satisfies Record<string, ProjectViewKind>
 
 export const DEFAULT_PROJECT_VIEW_SETTINGS = {

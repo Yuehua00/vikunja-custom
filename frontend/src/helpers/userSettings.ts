@@ -5,6 +5,7 @@ import type {Priority} from '@/constants/priorities'
 import type {DateDisplay} from '@/constants/dateDisplay'
 import type {TimeFormat} from '@/constants/timeFormat'
 import type {IRelationKind} from '@/types/IRelationKind'
+import type {CardDrawState} from '@/helpers/cardDraw'
 import type {TaskReminder, UserGeneralSettings} from '@/client/generated'
 import {PrefixMode} from '@/modules/quickAddMagic'
 import {DEFAULT_PROJECT_VIEW_SETTINGS} from '@/constants/projectView'
@@ -33,6 +34,8 @@ export interface FrontendSettings {
 	quick_add_default_reminders: {relative_period?: number}[]
 	time_tracking_default_start?: string
 	default_due_time?: string
+	// Draw view settings and current card, keyed by project view id.
+	card_draw?: Record<string, CardDrawState>
 }
 
 export function taskRemindersFromSettings(

@@ -239,6 +239,9 @@ function handleBubbleSave(event: FocusEvent) {
 						<option value="calendar">
 							{{ $t('project.calendar.title') }}
 						</option>
+						<option value="draw">
+							{{ $t('project.draw.title') }}
+						</option>
 					</select>
 				</div>
 			</template>

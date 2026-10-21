@@ -600,6 +600,36 @@
     "calendar": {
       "title": "Calendar"
     },
+    "draw": {
+      "title": "Draw",
+      "empty": "There are no cards yet. Add a few to this project first.",
+      "nothingToDraw": "Nothing to draw right now: every card is finished or skipped for a while.",
+      "addedToday": "Added today",
+      "addedDaysAgo": "Added {count} days ago",
+      "summary": "Summary",
+      "noSummary": "No summary yet. Open the details to add one.",
+      "importanceNotSet": "Importance not set",
+      "notStarted": "Not started",
+      "progress": "{percent}% done",
+      "start": "Start",
+      "finish": "Finished",
+      "skip": "Skip for a week",
+      "redraw": "Draw another",
+      "nextChange": "Next card: {date}",
+      "nextOnOpen": "A new card every time you open this view",
+      "stats": "{pool} to draw, {reading} in progress, {done} finished",
+      "rule": "Higher importance and longer waiting make a card more likely to be drawn.",
+      "interval": {
+        "title": "How often to change the card",
+        "open": "Every time I open this view",
+        "day": "Once a day",
+        "days3": "Every 3 days",
+        "week": "Once a week",
+        "customBefore": "Custom: every",
+        "customAfter": "days",
+        "hint": "The same card stays until the time is up, also after a reload."
+      }
+    },
     "kanban": {
       "title": "Kanban",
       "limit": "Limit: {limit}",
@@ -1113,6 +1143,15 @@
     "undo": "Undo",
     "checklistTotal": "{checked} of {total} tasks",
     "checklistAllDone": "{total} tasks",
+    "importance": {
+      "setTo": "Importance {count}"
+    },
+    "subtasks": {
+      "title": "Subtasks",
+      "summary": "{done} of {total} done",
+      "empty": "No subtasks yet. Add one below to break this task into steps.",
+      "addPlaceholder": "Add a subtask and press Enter"
+    },
     "show": {
       "titleCurrent": "Current Tasks",
       "noDates": "Show tasks without date",
@@ -1171,6 +1210,7 @@
         "reminders": "Set Reminders",
         "repeatAfter": "Set Repeating Interval",
         "percentDone": "Set Progress",
+        "importance": "Set Importance",
         "attachments": "Add Attachments",
         "timeTracking": "Track time",
         "relatedTasks": "Add Relation",
@@ -1193,6 +1233,7 @@
       "endDate": "End Date",
       "labels": "Labels",
       "percentDone": "Progress",
+      "importance": "Importance",
       "priority": "Priority",
       "project": "Project",
       "relatedTasks": "Related Tasks",

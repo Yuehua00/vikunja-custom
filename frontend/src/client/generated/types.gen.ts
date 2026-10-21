@@ -1724,9 +1724,9 @@ export type ProjectView = {
      */
     readonly updated?: string;
     /**
-     * The kind of this view. One of list, gantt, table, kanban or calendar.
+     * The kind of this view. One of list, gantt, table, kanban, calendar or draw.
      */
-    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar';
+    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar' | 'draw';
 };
 
 export type ProjectViewBucketConfiguration = {
@@ -1794,9 +1794,9 @@ export type ProjectViewReadBody = {
      */
     readonly updated?: string;
     /**
-     * The kind of this view. One of list, gantt, table, kanban or calendar.
+     * The kind of this view. One of list, gantt, table, kanban, calendar or draw.
      */
-    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar';
+    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar' | 'draw';
 };
 
 export type Provider = {
@@ -2177,6 +2177,10 @@ export type Task = {
      */
     percent_done?: number;
     /**
+     * How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority.
+     */
+    importance?: number;
+    /**
      * The task's position, saved per view. Only non-zero when the task is fetched through a view endpoint; use the task-position endpoint to change it.
      */
     readonly position?: number;
@@ -2513,6 +2517,10 @@ export type TaskReadOneBody = {
      * How far the task is from done, between 0 and 1.
      */
     percent_done?: number;
+    /**
+     * How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority.
+     */
+    importance?: number;
     /**
      * The task's position, saved per view. Only non-zero when the task is fetched through a view endpoint; use the task-position endpoint to change it.
      */
@@ -4327,9 +4335,9 @@ export type ProjectViewWritable = {
      */
     title?: string;
     /**
-     * The kind of this view. One of list, gantt, table, kanban or calendar.
+     * The kind of this view. One of list, gantt, table, kanban, calendar or draw.
      */
-    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar';
+    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar' | 'draw';
 };
 
 export type ProjectViewReadBodyWritable = {
@@ -4362,9 +4370,9 @@ export type ProjectViewReadBodyWritable = {
      */
     title?: string;
     /**
-     * The kind of this view. One of list, gantt, table, kanban or calendar.
+     * The kind of this view. One of list, gantt, table, kanban, calendar or draw.
      */
-    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar';
+    view_kind?: 'list' | 'gantt' | 'table' | 'kanban' | 'calendar' | 'draw';
 };
 
 export type PublicInviteLinkWritable = {
@@ -4466,6 +4474,10 @@ export type TaskWritable = {
      * How far the task is from done, between 0 and 1.
      */
     percent_done?: number;
+    /**
+     * How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority.
+     */
+    importance?: number;
     priority?: number;
     /**
      * The id of the project this task belongs to. On create it is taken from the URL; on update, setting it to a different project moves the task (requires write access to the target project).
@@ -4567,6 +4579,10 @@ export type TaskReadOneBodyWritable = {
      * How far the task is from done, between 0 and 1.
      */
     percent_done?: number;
+    /**
+     * How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority.
+     */
+    importance?: number;
     priority?: number;
     /**
      * The id of the project this task belongs to. On create it is taken from the URL; on update, setting it to a different project moves the task (requires write access to the target project).

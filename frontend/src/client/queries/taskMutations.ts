@@ -26,7 +26,7 @@ import {
 } from '@/client/generated'
 import {assertClientRequestContext, captureClientRequestContext} from '@/client/requestContext'
 import {contextMutationOptions} from './contextMutation'
-import {normalizeTask, taskKeys, type PaginatedTaskResponse, type TaskResponse} from './tasks'
+import {normalizeTask, taskKeys, taskQuery, type PaginatedTaskResponse, type TaskResponse} from './tasks'
 import {bucketKeys, kanbanKeys, normalizeBucket, type BoardData} from './kanban'
 import {
 	invalidateTaskMembership,
@@ -38,6 +38,8 @@ import {
 import {getCachedProject, projectKeys} from './projects'
 import {colorFromHex} from '@/helpers/color/colorFromHex'
 import {getDefaultBucketId, moveTaskToBucket} from '@/helpers/task'
+import {computeParentProgress} from '@/helpers/subtaskProgress'
+import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
 import {translatedError} from '@/message'
 
 const API_ZERO_DATE = '0001-01-01T00:00:00Z'
@@ -52,6 +54,7 @@ const writableFields = [
 	'priority',
 	'hex_color',
 	'percent_done',
+	'importance',
 	'repeat_after',
 	'repeat_mode',
 	'is_favorite',
@@ -178,6 +181,43 @@ export function createTaskMutationOptions() {
 	})
 }
 
+const MAX_PARENT_DEPTH = 10
+
+function isRepeatingTask(task: Task) {
+	return (task.repeat_after ?? 0) > 0 || task.repeat_mode === TASK_REPEAT_MODES.REPEAT_MODE_MONTH
+}
+
+// Recomputes a task's percentage and done state from its subtasks, then walks up to its own parents.
+export async function refreshTaskProgress(client: QueryClient, id: number, depth = 0) {
+	if (depth > MAX_PARENT_DEPTH) return
+	const task = await client.fetchQuery({...taskQuery(id), staleTime: 0})
+	const progress = computeParentProgress(task.related_tasks.subtask ?? [])
+	if (!progress) return
+
+	const changes: Task = {}
+	if (Math.abs(task.percent_done - progress.percent) > 0.001) {
+		changes.percent_done = progress.percent
+	}
+	// A repeating task reschedules itself when done, which does not fit being closed by its subtasks.
+	if (!isRepeatingTask(task) && task.done !== progress.allDone) {
+		changes.done = progress.allDone
+	}
+	if (Object.keys(changes).length === 0) return
+
+	const updated = (await patchTasksRead({path: {task: id}, body: taskPatchBody(changes)})).data
+	replaceTaskEverywhere(client, updated)
+	reconcileDoneBuckets(client, normalizeTask({...updated, id}))
+	await syncParentProgress(client, id, depth)
+}
+
+// To be called after a task changed: its parents follow the new state of their subtasks.
+export async function syncParentProgress(client: QueryClient, id: number, depth = 0) {
+	const task = await client.fetchQuery({...taskQuery(id), staleTime: 0})
+	for (const parent of task.related_tasks.parenttask ?? []) {
+		await refreshTaskProgress(client, parent.id, depth + 1)
+	}
+}
+
 export function updateTaskMutationOptions(optimistic = false) {
 	return contextMutationOptions({
 		mutationFn: async (task: Task & Required<Pick<Task, 'id'>>) => (await patchTasksRead({
@@ -191,6 +231,8 @@ export function updateTaskMutationOptions(optimistic = false) {
 		onSuccess: (task, input, client) => {
 			replaceTaskEverywhere(client, task)
 			reconcileDoneBuckets(client, normalizeTask({...task, id: input.id}))
+			// Background sync; a failure only leaves the parent's progress for the next update.
+			void syncParentProgress(client, input.id).catch(() => undefined)
 		},
 		onSettled: ({id}, client) => invalidateTaskMembership(client, id),
 	})
