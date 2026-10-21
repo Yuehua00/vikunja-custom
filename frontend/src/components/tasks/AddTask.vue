@@ -14,6 +14,12 @@
 				<span class="icon is-small task-icon">
 					<Icon icon="tasks" />
 				</span>
+				<div
+					class="add-task-highlights input"
+					aria-hidden="true"
+				>
+					<template v-for="(segment, index) in highlightSegments" :key="index"><mark v-if="segment.kind" :class="'is-' + segment.kind">{{ segment.text }}</mark><template v-else>{{ segment.text }}</template></template>
+				</div>
 				<textarea
 					:id="textareaId"
 					ref="newTaskInput"
@@ -72,6 +78,7 @@ import Expandable from '@/components/base/Expandable.vue'
 import QuickAddMagic from '@/components/tasks/partials/QuickAddMagic.vue'
 import {parseSubtasksViaIndention, type TaskWithParent} from '@/helpers/parseSubtasksViaIndention'
 import {getLabelsFromPrefix} from '@/modules/quickAddMagic'
+import {getHighlightRanges, type HighlightKind} from '@/modules/quickAddMagic/quickAddMagic'
 import {runWrites} from '@/helpers/runWrites'
 import {error} from '@/message'
 
@@ -106,6 +113,38 @@ const router = useRouter()
 // 	}
 // 	newTaskInput.value.focus()
 // })
+
+interface HighlightSegment {
+	text: string,
+	kind?: HighlightKind,
+}
+
+// Splits the typed text into plain and recognized (date, label, project, priority) parts, line by line,
+// so the recognized parts can be drawn with a background behind the transparent textarea.
+const highlightSegments = computed<HighlightSegment[]>(() => {
+	const segments: HighlightSegment[] = []
+	const mode = authStore.settings.frontend_settings.quick_add_magic_mode
+
+	newTaskTitle.value.split('\n').forEach((line, lineIndex) => {
+		if (lineIndex > 0) {
+			segments.push({text: '\n'})
+		}
+
+		// Same list bullets and indention that parseSubtasksViaIndention ignores.
+		const skipped = /^[ \t]*((\* |\+ |- )(\[ \] )?)?/.exec(line)?.[0].length ?? 0
+		const body = line.slice(skipped)
+
+		let position = 0
+		for (const range of getHighlightRanges(body, mode)) {
+			segments.push({text: line.slice(position, skipped + range.start)})
+			segments.push({text: body.slice(range.start, range.end), kind: range.kind})
+			position = skipped + range.end
+		}
+		segments.push({text: line.slice(position)})
+	})
+
+	return segments.filter(segment => segment.text !== '')
+})
 
 const taskAdd = ref<HTMLElement | null>(null)
 const taskAddHovered = useElementHover(taskAdd)
@@ -291,7 +330,8 @@ defineExpose({
 	flex-shrink: 1;
 	flex-grow: 1;
 
-	textarea {
+	textarea,
+	.add-task-highlights {
 		padding-inline: 2.5rem;
 	}
 
@@ -329,8 +369,54 @@ defineExpose({
 }
 
 .add-task-textarea {
+	position: relative;
+	background: transparent;
 	transition: border-color $transition;
 	resize: none;
+}
+
+// A copy of the typed text drawn behind the transparent textarea. It has to use the same box,
+// font and wrapping as the textarea so the highlighted parts line up with the real text.
+.add-task-highlights {
+	position: absolute;
+	inset: 0;
+	display: block;
+	block-size: auto;
+	overflow: hidden;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+	text-align: start;
+	color: transparent;
+	border-color: transparent;
+	pointer-events: none;
+
+	mark {
+		color: transparent;
+		border-radius: 3px;
+		background: color-mix(in srgb, var(--primary) 25%, transparent);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+
+		&.is-label {
+			background: color-mix(in srgb, var(--success) 25%, transparent);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--success) 25%, transparent);
+		}
+
+		&.is-project {
+			background: color-mix(in srgb, var(--info) 25%, transparent);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--info) 25%, transparent);
+		}
+
+		&.is-priority {
+			background: color-mix(in srgb, var(--warning) 25%, transparent);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--warning) 25%, transparent);
+		}
+	}
+}
+
+.add-task-textarea,
+.add-task-highlights {
+	font-family: inherit;
+	letter-spacing: normal;
 }
 
 // Adding this class when the textarea has no text prevents the textarea from wrapping the placeholder.

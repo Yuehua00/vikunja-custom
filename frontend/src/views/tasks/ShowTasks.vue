@@ -94,6 +94,7 @@
 						:show-project="true"
 						:the-task="task"
 						:can-mark-as-done="(projectList.projects[task.project_id]?.max_permission ?? 0) > PERMISSIONS.READ"
+						:can-delete="(projectList.projects[task.project_id]?.max_permission ?? 0) > PERMISSIONS.READ"
 						@taskUpdated="updateTasks"
 					/>
 				</li>

@@ -96,7 +96,7 @@ const props = withDefaults(defineProps<{
 	enabled?: boolean,
 	overflow?: boolean,
 	wide?: boolean,
-	variant?: 'default' | 'hint-modal' | 'scrolling' | 'top' | 'fullscreen' | 'sheet',
+	variant?: 'default' | 'hint-modal' | 'scrolling' | 'top' | 'fullscreen' | 'sheet' | 'drawer',
 	title?: string,
 }>(), {
 	enabled: true,
@@ -429,6 +429,51 @@ $modal-width: 1024px;
 	}
 }
 
+// side panel anchored to the end edge, used for <TaskDetailView>
+.drawer {
+	background: rgba(0, 0, 0, .4);
+
+	.modal-container {
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	.modal-content {
+		position: relative;
+		flex: 0 0 auto;
+		inline-size: min(100%, 640px);
+		min-block-size: 100%;
+		background: var(--site-background);
+		color: var(--text);
+		box-shadow: -8px 0 30px rgba(0, 0, 0, .25);
+		transform: translateX(2rem);
+		transition: transform 150ms ease;
+
+		[dir="rtl"] & {
+			transform: translateX(-2rem);
+		}
+	}
+
+	&[open]:not([data-closing]) .modal-content {
+		transform: none;
+
+		@starting-style {
+			transform: translateX(2rem);
+		}
+	}
+
+	// the close button sits on the panel, not on the scrim
+	.close {
+		position: absolute;
+		inset-block-start: .5rem;
+		inset-inline-end: .75rem;
+		transform: none;
+		color: var(--text);
+		font-size: 1.5rem;
+		z-index: 2;
+	}
+}
+
 .is-wide {
 	max-inline-size: $desktop;
 	inline-size: calc(100% - 2rem);
@@ -641,6 +686,10 @@ $modal-width: 1024px;
 // Close icon SVG uses currentColor, change the color to keep it visible
 .dark .modal-dialog .close {
 	color: var(--grey-900);
+}
+
+.dark .modal-dialog.drawer .close {
+	color: var(--text);
 }
 
 @media print, screen and (max-width: $tablet) {

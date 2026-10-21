@@ -8,6 +8,8 @@ export interface repeatParsedResult {
 export interface ParsedTaskText {
 	text: string,
 	date: Date | null,
+	// Parts of the original text recognized as date or time. Only set when something was found.
+	dateMatches?: string[],
 	labels: string[],
 	project: string | null,
 	priority: number | null,

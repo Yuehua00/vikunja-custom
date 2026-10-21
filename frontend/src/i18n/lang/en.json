@@ -1,4 +1,16 @@
 {
+  "calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "previous": "Previous",
+    "next": "Next",
+    "month": "Month",
+    "week": "Week",
+    "more": "+{count} more",
+    "unscheduled": "Unscheduled",
+    "unscheduledHint": "Drag a task onto a day to set its due date.",
+    "unscheduledEmpty": "All open tasks have a date."
+  },
   "home": {
     "welcomeNight": "Good Night {username}!",
     "welcomeNightOwl": "Hello, night owl {username}",
@@ -585,6 +597,9 @@
       "columns": "Columns",
       "sortBy": "Sort by {column}"
     },
+    "calendar": {
+      "title": "Calendar"
+    },
     "kanban": {
       "title": "Kanban",
       "limit": "Limit: {limit}",
@@ -971,6 +986,7 @@
       "altText": "Alt text",
       "altTextPlaceholder": "Describe this image",
       "toolbarLabel": "Text formatting",
+      "more": "More",
       "horizontalRule": "Horizontal Rule",
       "horizontalRuleTooltip": "Divide a section.",
       "text": "Text",

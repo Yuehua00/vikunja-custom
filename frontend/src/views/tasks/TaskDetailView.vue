@@ -64,7 +64,7 @@
 			<ChecklistSummary :task="task" />
 
 			<!-- Content and buttons -->
-			<div class="columns mbs-2">
+			<div class="columns task-layout mbs-2">
 				<!-- Content -->
 				<div
 					:class="{'is-two-thirds': canWrite}"
@@ -1281,14 +1281,20 @@ function setRelatedTasksActive() {
 	}
 }
 
+// The modal is a side drawer: the card fills its full height and the columns stack.
 .is-modal .task-view {
-	border-radius: $radius;
+	border-radius: 0;
 	padding: 1rem;
+	min-block-size: 100dvh;
 	color: var(--text);
 	background-color: var(--site-background) !important;
+}
 
-	@media screen and (width <= calc(#{$desktop} + 1px)) {
-		border-radius: 0;
+.is-modal .task-layout {
+	display: block;
+
+	> .column {
+		inline-size: 100%;
 	}
 }
 
@@ -1471,20 +1477,116 @@ h2 .button {
 
 // keep the title clear of the modal's fixed close button
 .is-modal .heading {
-	@media screen and (min-width: $tablet) and (max-width: $desktop) {
+	@media screen and (min-width: $tablet) {
 		padding-inline-end: 3.5rem;
 	}
 }
 
-.is-modal .action-buttons {
-	// we need same top margin for the modal close button 
-	@media screen and (min-width: $tablet) {
-		inset-block-start: 6.5rem;
+// Drawer look: id above the title, a grouped property card, uniform section titles,
+// rounded cards and a compact wrapping action bar below the content.
+.is-modal {
+	.task-view {
+		padding: 1.25rem 1.5rem 2rem;
 	}
-	// this is the moment when the fixed close button is outside the modal
-	// => we can fill up the space again
-	@media screen and (width >= calc(#{$desktop} + 84px)) {
-		inset-block-start: 0;
+
+	:deep(.heading) {
+		flex-direction: column;
+		align-items: flex-start;
+
+		.title.input {
+			font-weight: 700;
+		}
+
+		.title.task-id {
+			font-size: .8rem;
+			font-weight: 500;
+		}
+	}
+
+	.subtitle {
+		font-size: .85rem;
+		margin-block-end: .75rem;
+	}
+
+	.task-section-title,
+	.detail-title {
+		font-size: .8rem;
+		font-weight: 700;
+		letter-spacing: .04em;
+		color: var(--grey-500);
+	}
+
+	// Property fields as rows: name on the start side, editable value next to it.
+	.detail-content > .columns.details {
+		display: block;
+		margin: 0 0 1.25rem;
+		padding: .25rem 1rem;
+		background: var(--white);
+		border: 1px solid var(--grey-200);
+		border-radius: 14px;
+
+		&:not(:has(> .column)) {
+			display: none;
+		}
+
+		> .column {
+			display: grid;
+			grid-template-columns: 7rem minmax(0, 1fr);
+			align-items: center;
+			gap: .25rem 1rem;
+			inline-size: 100%;
+			padding: .5rem 0;
+			border-block-end: 1px solid var(--grey-100);
+
+			&:last-child {
+				border-block-end: 0;
+			}
+
+			> :nth-child(n + 3) {
+				grid-column: 2;
+			}
+		}
+
+		.detail-title {
+			margin: 0;
+			font-weight: 500;
+			letter-spacing: 0;
+		}
+	}
+
+	// Other sections as rounded cards. The description keeps its own editor frame, reactions stay bare.
+	.detail-content > .details:not(.columns, .description, .d-print-none),
+	.detail-content > .attachments,
+	.detail-content > .time-tracking {
+		margin-block-end: 1.25rem;
+		padding: 1rem 1.1rem;
+		background: var(--white);
+		border: 1px solid var(--grey-200);
+		border-radius: 14px;
+	}
+
+	.action-buttons {
+		position: static;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: .5rem;
+		margin-block-start: 1rem;
+		padding: 1rem 0 0;
+		border-block-start: 1px solid var(--grey-200);
+
+		.button {
+			inline-size: auto;
+			margin: 0;
+			padding-inline: .75rem;
+			font-size: .85rem;
+		}
+
+		// each group of actions starts on its own row
+		.action-heading {
+			flex-basis: 100%;
+			margin: .5rem 0 0;
+		}
 	}
 }
 

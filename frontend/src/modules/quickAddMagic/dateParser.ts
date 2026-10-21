@@ -5,6 +5,8 @@ import {replaceAll} from '@/helpers/replaceAll'
 export interface dateParseResult {
 	newText: string,
 	date: Date | null,
+	// The parts of the text that were recognized as date or time, used to highlight them in the input.
+	matched?: string[],
 }
 
 interface dateFoundResult {
@@ -44,7 +46,141 @@ function matchesDateExpr(text: string, dateExpr: string): boolean {
 	return text.match(new RegExp('(^| )' + dateExpr, 'gi')) !== null
 }
 
+const CHINESE_NUMBERS: Record<string, number> = {
+	'一': 1, '二': 2, '兩': 2, '两': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
+}
+const CHINESE_WEEKDAYS: Record<string, number> = {
+	'日': 0, '天': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6,
+}
+const chineseNumberGroup = '([0-9]+|[一二兩两三四五六七八九十])'
+const chineseWeekWords = '(?:週|周|星期|禮拜|礼拜)'
+
+function parseChineseNumber(value: string): number {
+	return CHINESE_NUMBERS[value] ?? parseInt(value)
+}
+
+/**
+ * Finds Chinese date expressions like 今天, 明天, 後天, 下週三, 10月21日, 3天後.
+ * Chinese text has no spaces between words, so unlike the English expressions these are matched anywhere in the text.
+ */
+const getDateFromChineseText = (text: string, now: Date = new Date()): dateFoundResult => {
+	const startOfToday = new Date(now)
+	startOfToday.setHours(0, 0, 0, 0)
+
+	const inDays = (days: number): Date => {
+		const date = new Date(now)
+		date.setDate(date.getDate() + days)
+		return getDateWithTime(date)
+	}
+	const found = (match: RegExpExecArray, date: Date): dateFoundResult => ({foundText: match[0], date})
+
+	let match: RegExpExecArray | null
+
+	match = /(\d{4})年(\d{1,2})月(\d{1,2})[日號号]?/.exec(text)
+	if (match !== null) {
+		const date = getDateWithTime(new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3])))
+		if (!isNaN(date.getTime())) {
+			return found(match, date)
+		}
+	}
+
+	match = /(\d{1,2})月(\d{1,2})[日號号]?/.exec(text)
+	if (match !== null) {
+		const date = getDateWithTime(new Date(now.getFullYear(), parseInt(match[1]) - 1, parseInt(match[2])))
+		if (!isNaN(date.getTime())) {
+			if (date < startOfToday) {
+				date.setFullYear(date.getFullYear() + 1)
+			}
+			return found(match, date)
+		}
+	}
+
+	match = new RegExp(chineseNumberGroup + '個?天[後后]').exec(text)
+	if (match !== null) {
+		return found(match, inDays(parseChineseNumber(match[1])))
+	}
+
+	match = new RegExp(chineseNumberGroup + '個?' + chineseWeekWords + '[後后]').exec(text)
+	if (match !== null) {
+		return found(match, inDays(parseChineseNumber(match[1]) * 7))
+	}
+
+	match = new RegExp(chineseNumberGroup + '個月[後后]').exec(text)
+	if (match !== null) {
+		const date = new Date(now)
+		date.setMonth(date.getMonth() + parseChineseNumber(match[1]))
+		return found(match, getDateWithTime(date))
+	}
+
+	// Weeks start on Monday here. 下週三 is Wednesday of next week, 本週三 / 這週三 is Wednesday of this week
+	// and a bare 週三 is the next upcoming Wednesday (today included).
+	match = new RegExp('(下|本|這|这)?' + chineseWeekWords + '([日天一二三四五六])').exec(text)
+	if (match !== null) {
+		const currentIndex = (now.getDay() + 6) % 7
+		const targetIndex = (CHINESE_WEEKDAYS[match[2]] + 6) % 7
+		let days = (targetIndex - currentIndex + 7) % 7
+		if (match[1] === '下') {
+			days = 7 - currentIndex + targetIndex
+		} else if (match[1] !== undefined) {
+			days = targetIndex - currentIndex
+		}
+		return found(match, inDays(days))
+	}
+
+	match = /大[後后]天/.exec(text)
+	if (match !== null) {
+		return found(match, inDays(3))
+	}
+
+	match = /[後后]天/.exec(text)
+	if (match !== null) {
+		return found(match, inDays(2))
+	}
+
+	match = /明[天日]/.exec(text)
+	if (match !== null) {
+		return found(match, inDays(1))
+	}
+
+	match = /今晚/.exec(text)
+	if (match !== null) {
+		const date = inDays(0)
+		date.setHours(21)
+		return found(match, date)
+	}
+
+	match = /今[天日]/.exec(text)
+	if (match !== null) {
+		return found(match, inDays(0))
+	}
+
+	match = new RegExp('下(?:個|个)?' + chineseWeekWords).exec(text)
+	if (match !== null) {
+		return found(match, inDays(7))
+	}
+
+	match = /下(?:個|个)月/.exec(text)
+	if (match !== null) {
+		const date = new Date(now)
+		date.setDate(1)
+		date.setMonth(date.getMonth() + 1)
+		return found(match, getDateWithTime(date))
+	}
+
+	match = /月底/.exec(text)
+	if (match !== null) {
+		return found(match, getDateWithTime(new Date(now.getFullYear(), now.getMonth() + 1, 0)))
+	}
+
+	return {foundText: null, date: null}
+}
+
 export const parseDate = (text: string, now: Date = new Date()): dateParseResult => {
+	const chinese = getDateFromChineseText(text, now)
+	if (chinese.date !== null) {
+		return addTimeToDate(text, chinese.date, chinese.foundText)
+	}
+
 	if (matchesDateExpr(text, 'today')) {
 		return addTimeToDate(text, getDateFromInterval(calculateDayInterval('today')), 'today')
 	}
@@ -93,7 +229,8 @@ export const parseDate = (text: string, now: Date = new Date()): dateParseResult
 	parsed = getDayFromText(text, now)
 	if (parsed.date !== null) {
 		const month = getMonthFromText(text, parsed.date)
-		return addTimeToDate(month.newText, month.date, parsed.foundText)
+		const withTime = addTimeToDate(month.newText, month.date, parsed.foundText)
+		return {...withTime, matched: [...(withTime.matched ?? []), ...(month.foundText ? [month.foundText] : [])]}
 	}
 
 	parsed = getDateFromTextIn(text, now)
@@ -121,6 +258,7 @@ export const parseDate = (text: string, now: Date = new Date()): dateParseResult
 
 const addTimeToDate = (text: string, date: Date, previousMatch: string | null): dateParseResult => {
 	previousMatch = previousMatch?.trim() || ''
+	const matched = previousMatch !== '' ? [previousMatch] : []
 	text = replaceAll(text, previousMatch, '')
 	if (previousMatch === null) {
 		return {
@@ -153,12 +291,14 @@ const addTimeToDate = (text: string, date: Date, previousMatch: string | null): 
 		date.setMinutes(minutes)
 		date.setSeconds(0)
 		date.setMilliseconds(0)
+		matched.push(results[0].trim())
 	}
 
 	const replace = results !== null ? results[0] : previousMatch
 	return {
 		newText: replaceAll(text, replace, '').trim(),
 		date,
+		matched,
 	}
 }
 
@@ -222,7 +362,11 @@ export const getDateFromText = (text: string, now: Date = new Date()) => {
 		}
 	}
 
-	if (!containsYear && date < now) {
+	// Compare against the start of today, otherwise a date without a year that is today (parsed as 00:00)
+	// would count as "already passed" and be moved to next year.
+	const startOfToday = new Date(now)
+	startOfToday.setHours(0, 0, 0, 0)
+	if (!containsYear && date < startOfToday) {
 		date.setFullYear(date.getFullYear() + 1)
 	}
 
@@ -377,6 +521,7 @@ const getMonthFromText = (text: string, date: Date) => {
 		return {
 			newText: text,
 			date,
+			foundText: '',
 		}
 	}
 
@@ -385,6 +530,7 @@ const getMonthFromText = (text: string, date: Date) => {
 	return {
 		newText: replaceAll(text, results[0], ''),
 		date,
+		foundText: results[0],
 	}
 }
 

@@ -52,7 +52,7 @@
 
 				<Modal
 					:enabled="typeof currentModal !== 'undefined'"
-					variant="scrolling"
+					variant="drawer"
 					class="task-detail-view-modal"
 					:aria-label="$t('task.detail.title')"
 					@close="closeModal()"

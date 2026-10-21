@@ -115,6 +115,8 @@ import GanttRelationArrows from '@/components/gantt/GanttRelationArrows.vue'
 import Loading from '@/components/misc/Loading.vue'
 
 import {MILLISECONDS_A_DAY} from '@/constants/date'
+import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {useAuthStore} from '@/stores/auth'
 import {roundToNaturalDayBoundary} from '@/helpers/time/roundToNaturalDayBoundary'
 
 const props = defineProps<{
@@ -139,6 +141,7 @@ const dayjsLanguageLoading = useDayjsLanguageSync(dayjs)
 const ganttContainer = ref<HTMLElement | null>(null)
 const ganttChartBodyRef = ref<InstanceType<typeof GanttChartBody> | null>(null)
 const router = useRouter()
+const authStore = useAuthStore()
 
 const isDragging = ref(false)
 const isResizing = ref(false)
@@ -300,6 +303,11 @@ function transformTaskToGanttBar(node: GanttTaskTreeNode): GanttBarModel {
 			),
 			dateType,
 			isDone: t.done,
+			priorityLevel: getPriorityLevel(
+				t.priority,
+				t.done,
+				authStore.settings.frontend_settings.minimum_priority || PRIORITIES.MEDIUM,
+			),
 			isParent: node.isParent,
 			hasDerivedDates: node.hasDerivedDates,
 			indentLevel: node.indentLevel,

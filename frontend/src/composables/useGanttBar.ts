@@ -1,5 +1,7 @@
 import { ref } from 'vue'
 
+import type {PriorityLevel} from '@/constants/priorities'
+
 export type GanttBarDateType = 'both' | 'startOnly' | 'endOnly'
 
 export interface GanttBarModel {
@@ -12,6 +14,7 @@ export interface GanttBarModel {
 		hasActualDates?: boolean
 		dateType?: GanttBarDateType
 		isDone?: boolean
+		priorityLevel?: PriorityLevel
 		task?: unknown
 		isParent?: boolean
 		hasDerivedDates?: boolean

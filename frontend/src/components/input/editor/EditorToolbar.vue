@@ -201,6 +201,28 @@
 				</span>
 				<span class="is-sr-only">{{ $t('input.editor.link') }}</span>
 			</BaseButton>
+		</div>
+
+		<div class="editor-toolbar__segment">
+			<BaseButton
+				v-tooltip="$t('input.editor.more')"
+				class="editor-toolbar__button"
+				:class="{ 'is-active': moreOpen }"
+				:aria-expanded="moreOpen"
+				@click="moreOpen = !moreOpen"
+			>
+				<span class="icon">
+					<Icon icon="ellipsis-h" />
+				</span>
+				<span class="is-sr-only">{{ $t('input.editor.more') }}</span>
+			</BaseButton>
+		</div>
+
+		<div
+			v-if="moreOpen"
+			class="editor-toolbar__more"
+		>
+		<div class="editor-toolbar__segment">
 			<BaseButton
 				v-tooltip="$t('input.editor.text')"
 				class="editor-toolbar__button"
@@ -378,6 +400,7 @@
 				</BaseButton>
 			</div>
 		</div>
+		</div>
 	</div>
 </template>
 
@@ -395,6 +418,8 @@ const props = defineProps<{
 const emit = defineEmits(['imageUploadClicked'])
 
 const tableMode = ref(false)
+// The less common tools live in a second row so the default toolbar fits one line.
+const moreOpen = ref(false)
 
 function toggleTableMode() {
 	tableMode.value = !tableMode.value
@@ -495,34 +520,53 @@ function setLink(event: MouseEvent) {
 
 <style lang="scss" scoped>
 .editor-toolbar {
-	background: var(--white);
-	border: 1px solid var(--grey-200);
+	background: var(--grey-100);
 	user-select: none;
-	padding: .5rem;
-	border-radius: $radius;
+	padding: .25rem;
+	border-radius: 10px;
 	display: flex;
 	flex-wrap: wrap;
+	align-items: center;
+	// groups are told apart by space instead of divider lines
+	gap: .25rem .75rem;
+}
 
-	> * + * {
-		border-inline-start: 1px solid var(--grey-200);
-		margin-inline-start: 6px;
-		padding-inline-start: 6px;
-	}
+.editor-toolbar__segment {
+	display: flex;
+	align-items: center;
+	gap: 1px;
+}
+
+// the less common tools: a second row, only while expanded
+.editor-toolbar__more {
+	flex-basis: 100%;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .25rem .75rem;
+	padding-block-start: .25rem;
+	border-block-start: 1px solid var(--grey-200);
 }
 
 .editor-toolbar__button {
-	min-inline-size: 2rem;
-	block-size: 2rem;
-	border-radius: $radius;
+	min-inline-size: 1.75rem;
+	block-size: 1.75rem;
+	border-radius: 7px;
 	border: 1px solid transparent;
-	color: var(--grey-700);
+	color: var(--grey-600);
 	transition: all $transition;
 	background: transparent;
-	margin-inline-end: .25rem;
+	font-size: .9rem;
 
 	&:hover {
-		background: var(--grey-100);
-		border-color: var(--grey-200);
+		background: var(--white);
+		color: var(--grey-800);
+	}
+
+	&.is-active {
+		background: var(--white);
+		color: var(--primary);
+		box-shadow: var(--shadow-xs);
 	}
 
 	.icon {

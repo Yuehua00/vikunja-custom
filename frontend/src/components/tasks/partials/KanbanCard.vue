@@ -8,6 +8,7 @@
 			'has-custom-background-color': color ?? undefined,
 		}"
 		:style="{'background-color': color ?? undefined}"
+		:data-priority-level="priorityLevel"
 		:data-task-id="task.id"
 		:data-project-id="task.project_id"
 		:data-is-overdue="isOverdue || undefined"
@@ -78,11 +79,6 @@
 			/>
 			<div class="footer">
 				<Labels :labels="task.labels" />
-				<PriorityLabel
-					:priority="task.priority"
-					:done="task.done"
-					class="is-inline-flex is-align-items-center"
-				/>
 				<span
 					v-if="task.attachments.length > 0"
 					class="icon"
@@ -127,7 +123,6 @@ import {useRouter} from 'vue-router'
 
 import {useGlobalNow} from '@/composables/useGlobalNow'
 
-import PriorityLabel from '@/components/tasks/partials/PriorityLabel.vue'
 import ProgressBar from '@/components/misc/ProgressBar.vue'
 import Done from '@/components/misc/Done.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
@@ -149,6 +144,8 @@ import {isEditorContentEmpty} from '@/helpers/editorContentEmpty'
 import {useProjects} from '@/composables/useProjects'
 import {useDelayedLoading} from '@/composables/useDelayedLoading'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
+import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {useAuthStore} from '@/stores/auth'
 
 const props = defineProps<{
 	task: TaskResponse,
@@ -166,6 +163,13 @@ const loadingInternal = ref(false)
 const showLoading = useDelayedLoading(loadingInternal)
 
 const color = computed(() => getHexColor(props.task.hex_color))
+
+const authStore = useAuthStore()
+const priorityLevel = computed(() => getPriorityLevel(
+	props.task.priority,
+	props.task.done,
+	authStore.settings.frontend_settings.minimum_priority || PRIORITIES.MEDIUM,
+))
 
 const projectList = useProjects()
 
@@ -360,6 +364,32 @@ $task-background: var(--white);
 
 	&.is-moving {
 		opacity: .5;
+	}
+
+	// The priority is shown as a tinted background instead of a label.
+	// A custom task color is set inline and takes precedence.
+	&[data-priority-level] {
+		background: color-mix(in srgb, var(--priority-color) var(--priority-tint), $task-background);
+	}
+
+	&[data-priority-level='low'] {
+		--priority-color: var(--info);
+		--priority-tint: 15%;
+	}
+
+	&[data-priority-level='medium'] {
+		--priority-color: var(--warning);
+		--priority-tint: 20%;
+	}
+
+	&[data-priority-level='high'] {
+		--priority-color: var(--danger);
+		--priority-tint: 20%;
+	}
+
+	&[data-priority-level='urgent'] {
+		--priority-color: var(--danger);
+		--priority-tint: 42%;
 	}
 
 	span {

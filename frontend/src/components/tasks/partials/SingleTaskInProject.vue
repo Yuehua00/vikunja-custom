@@ -9,6 +9,7 @@
 			class="task loader-container single-task"
 			tabindex="-1"
 			:data-is-overdue="isOverdue || undefined"
+			:data-priority-level="priorityLevel"
 			@click="openTaskDetail"
 			@keyup.enter="openTaskDetail"
 		>
@@ -53,12 +54,6 @@
 						class="mie-1"
 					/>
 	
-					<PriorityLabel
-						:priority="task.priority ?? 0"
-						:done="task.done"
-						class="pis-2 mie-1"
-					/>
-
 					<TaskGlanceTooltip :task="task">
 						<RouterLink
 							ref="taskLinkRef"
@@ -184,6 +179,14 @@
 					:icon="['far', 'star']"
 				/>
 			</BaseButton>
+			<BaseButton
+				v-if="canDelete && !disabled"
+				class="delete-task"
+				@click.stop="showDeleteModal = true"
+			>
+				<span class="is-sr-only">{{ $t('task.detail.actions.delete') }}</span>
+				<Icon icon="trash-alt" />
+			</BaseButton>
 			<slot />
 		</div>
 		<template v-if="typeof task.related_tasks?.subtask !== 'undefined'">
@@ -200,6 +203,28 @@
 				</template>
 			</template>
 		</template>
+
+		<Modal
+			v-if="showDeleteModal"
+			@close="showDeleteModal = false"
+			@submit="deleteTask()"
+		>
+			<template #header>
+				<span>{{ $t('task.detail.delete.header') }}</span>
+			</template>
+
+			<template #text>
+				<p class="tw:text-balance">
+					{{ task.title }}
+				</p>
+				<p class="tw:text-balance">
+					{{ $t('task.detail.delete.text1') }}
+				</p>
+				<p class="tw:text-balance">
+					{{ $t('task.detail.delete.text2') }}
+				</p>
+			</template>
+		</Modal>
 	</div>
 </template>
 
@@ -210,7 +235,6 @@ import {useI18n} from 'vue-i18n'
 import {getHexColor} from '@/helpers/task'
 import type {Task as ITask} from '@/client/generated'
 
-import PriorityLabel from '@/components/tasks/partials/PriorityLabel.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
 import TaskGlanceTooltip from '@/components/tasks/partials/TaskGlanceTooltip.vue'
 import DeferTask from '@/components/tasks/partials/DeferTask.vue'
@@ -222,6 +246,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import FancyCheckbox from '@/components/input/FancyCheckbox.vue'
 import ColorBubble from '@/components/misc/ColorBubble.vue'
 import Popup from '@/components/misc/Popup.vue'
+import Modal from '@/components/misc/Modal.vue'
 
 
 import {formatDisplayDate, formatISO, formatDateLong} from '@/helpers/time/formatDate'
@@ -229,7 +254,9 @@ import {success} from '@/message'
 
 import {useProjects} from '@/composables/useProjects'
 import {useCurrentProject} from '@/composables/useCurrentProject'
-import {useUpdateTaskMutation, useFavoriteTaskMutation} from '@/client/queries/taskMutations'
+import {useUpdateTaskMutation, useFavoriteTaskMutation, useDeleteTaskMutation} from '@/client/queries/taskMutations'
+import {taskKeys} from '@/client/queries/tasks'
+import {useQueryClient} from '@tanstack/vue-query'
 import AssigneeList from '@/components/tasks/partials/AssigneeList.vue'
 import {useIntervalFn} from '@vueuse/core'
 import {playPopSound} from '@/helpers/playPop'
@@ -237,6 +264,9 @@ import {isEditorContentEmpty} from '@/helpers/editorContentEmpty'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
 import {useGlobalNow} from '@/composables/useGlobalNow'
 import {useDelayedLoading} from '@/composables/useDelayedLoading'
+import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {useAuthStore} from '@/stores/auth'
+import {useRouter} from 'vue-router'
 
 const props = withDefaults(defineProps<{
 	theTask: ITask,
@@ -244,12 +274,14 @@ const props = withDefaults(defineProps<{
 	showProject?: boolean,
 	disabled?: boolean,
 	canMarkAsDone?: boolean,
+	canDelete?: boolean,
 	allTasks?: ITask[],
 }>(), {
 	isArchived: false,
 	showProject: false,
 	disabled: false,
 	canMarkAsDone: true,
+	canDelete: false,
 	allTasks: () => [],
 })
 
@@ -269,6 +301,15 @@ const {t} = useI18n({useScope: 'global'})
 
 const task = computed(() => props.theTask)
 
+const router = useRouter()
+const queryClient = useQueryClient()
+const authStore = useAuthStore()
+const priorityLevel = computed(() => getPriorityLevel(
+	task.value.priority,
+	task.value.done,
+	authStore.settings.frontend_settings.minimum_priority || PRIORITIES.MEDIUM,
+))
+
 const isRepeating = computed(() => (task.value.repeat_after ?? 0) > 0
 	|| ((task.value.repeat_after ?? 0) === 0
 		&& task.value.repeat_mode === TASK_REPEAT_MODES.REPEAT_MODE_MONTH))
@@ -276,7 +317,8 @@ const isRepeating = computed(() => (task.value.repeat_after ?? 0) > 0
 const projectList = useProjects()
 const updateTask = useUpdateTaskMutation(true)
 const favoriteTask = useFavoriteTaskMutation()
-const isLoading = useDelayedLoading(() => updateTask.isPending.value || favoriteTask.isPending.value)
+const deleteTaskMutation = useDeleteTaskMutation()
+const isLoading = useDelayedLoading(() => updateTask.isPending.value || favoriteTask.isPending.value || deleteTaskMutation.isPending.value)
 
 const project = computed(() => projectList.projects[task.value.project_id ?? 0])
 const projectColor = computed(() => project.value?.hex_color ?? '')
@@ -290,8 +332,7 @@ const {currentProject} = useCurrentProject()
 const taskDetailRoute = computed(() => ({
 	name: 'task.detail',
 	params: {id: task.value.id},
-	// TODO: re-enable opening task detail in modal
-	// state: { backdropView: router.currentRoute.value.fullPath },
+	state: { backdropView: router.currentRoute.value.fullPath },
 }))
 
 function updateDueDate() {
@@ -338,6 +379,13 @@ async function markAsDone(checked: boolean, wasReverted: boolean = false) {
 
 		updateDueDate()
 
+		// Workaround: after reopening, the list kept showing stale data (no priority tint) until a
+		// reload. Refetch the lists so the task returns with the server's data. Not done when
+		// completing, as the refetch would remove the task and leave nothing to undo.
+		if (!checked) {
+			await queryClient.invalidateQueries({queryKey: taskKeys.lists})
+		}
+
 		if (wasReverted) {
 			return
 		}
@@ -372,6 +420,15 @@ function undoDone(checked: boolean) {
 async function toggleFavorite() {
 	const updated = await favoriteTask.mutateAsync({...task.value, id: task.value.id!})
 	emit('taskUpdated', updated)
+}
+
+const showDeleteModal = ref(false)
+
+async function deleteTask() {
+	showDeleteModal.value = false
+	await deleteTaskMutation.mutateAsync(task.value.id!)
+	success({message: t('task.detail.deleteSuccess')})
+	emit('taskUpdated', task.value)
 }
 
 const taskRoot = ref<HTMLElement | null>(null)
@@ -414,6 +471,35 @@ defineExpose({
 
 	&:hover {
 		background-color: var(--grey-100);
+	}
+
+	// The priority is shown as a tinted background instead of a label.
+	&[data-priority-level] {
+		background-color: color-mix(in srgb, var(--priority-color) var(--priority-tint), transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--priority-color) calc(var(--priority-tint) + 8%), transparent);
+		}
+	}
+
+	&[data-priority-level='low'] {
+		--priority-color: var(--info);
+		--priority-tint: 15%;
+	}
+
+	&[data-priority-level='medium'] {
+		--priority-color: var(--warning);
+		--priority-tint: 20%;
+	}
+
+	&[data-priority-level='high'] {
+		--priority-color: var(--danger);
+		--priority-tint: 20%;
+	}
+
+	&[data-priority-level='urgent'] {
+		--priority-color: var(--danger);
+		--priority-tint: 42%;
 	}
 
 	&:has(*:focus-visible), &:focus {
@@ -524,17 +610,32 @@ defineExpose({
 		}
 	}
 
+	.delete-task {
+		opacity: 1;
+		text-align: center;
+		inline-size: 27px;
+		transition: opacity $transition, color $transition;
+		border-radius: $radius;
+
+		&:hover {
+			color: var(--danger);
+		}
+	}
+
 	@media(hover: hover) and (pointer: fine) {
-		& .favorite {
+		& .favorite,
+		& .delete-task {
 			opacity: 0;
 		}
 
-		&:hover .favorite {
+		&:hover .favorite,
+		&:hover .delete-task {
 			opacity: 1;
 		}
 	}
 
-	.favorite:focus {
+	.favorite:focus,
+	.delete-task:focus {
 		opacity: 1;
 	}
 

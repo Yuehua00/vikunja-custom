@@ -243,6 +243,7 @@
 								<tr
 									v-for="t in tasks"
 									:key="t.id"
+									:data-priority-level="priorityLevel(t)"
 								>
 									<td v-if="activeColumns.index">
 										<RouterLink :to="taskDetailRoutes[t.id]">
@@ -271,10 +272,7 @@
 										</TaskGlanceTooltip>
 									</td>
 									<td v-if="activeColumns.priority">
-										<PriorityLabel
-											:priority="t.priority"
-											:show-all="true"
-										/>
+										{{ priorityName(t.priority) }}
 									</td>
 									<td v-if="activeColumns.labels">
 										<Labels :labels="t.labels" />
@@ -344,11 +342,11 @@
 import {computed, ref, type ComponentPublicInstance, type Ref, watch} from 'vue'
 
 import {useStorage} from '@vueuse/core'
+import {useRouter} from 'vue-router'
 
 import ProjectWrapper from '@/components/project/ProjectWrapper.vue'
 import Done from '@/components/misc/Done.vue'
 import User from '@/components/misc/User.vue'
-import PriorityLabel from '@/components/tasks/partials/PriorityLabel.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
 import TaskGlanceTooltip from '@/components/tasks/partials/TaskGlanceTooltip.vue'
 import DateTableCell from '@/components/tasks/partials/DateTableCell.vue'
@@ -369,6 +367,9 @@ import {getTaskIdentifier} from '@/helpers/task'
 import { camelCase } from 'change-case'
 import {isSavedFilterProject} from '@/client/queries/projects'
 import {useProjects} from '@/composables/useProjects'
+import {useI18n} from 'vue-i18n'
+import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {useAuthStore} from '@/stores/auth'
 
 const props = defineProps<{
 	isLoadingProject: boolean,
@@ -377,6 +378,30 @@ const props = defineProps<{
 }>()
 
 const projectList = useProjects()
+
+const {t: translate} = useI18n({useScope: 'global'})
+const authStore = useAuthStore()
+
+function priorityLevel(task: TaskResponse) {
+	return getPriorityLevel(
+		task.priority,
+		task.done,
+		authStore.settings.frontend_settings.minimum_priority || PRIORITIES.MEDIUM,
+	)
+}
+
+const PRIORITY_KEYS: Record<number, string> = {
+	[PRIORITIES.UNSET]: 'unset',
+	[PRIORITIES.LOW]: 'low',
+	[PRIORITIES.MEDIUM]: 'medium',
+	[PRIORITIES.HIGH]: 'high',
+	[PRIORITIES.URGENT]: 'urgent',
+	[PRIORITIES.DO_NOW]: 'doNow',
+}
+
+function priorityName(priority: number) {
+	return translate(`task.priority.${PRIORITY_KEYS[priority] ?? 'unset'}`)
+}
 
 const columnsTrigger = ref<ComponentPublicInstance | null>(null)
 const columnsTriggerEl = computed<HTMLElement | null>(() => (columnsTrigger.value?.$el as HTMLElement) ?? null)
@@ -440,15 +465,14 @@ function setActiveColumnsSortParam() {
 		}, {})
 }
 
-// TODO: re-enable opening task detail in modal
-// const router = useRouter()
+const router = useRouter()
 const taskDetailRoutes = computed(() => Object.fromEntries(
 	tasks.value.map(({id}) => ([
 		id,
 		{
 			name: 'task.detail',
 			params: {id},
-			// state: { backdropView: router.currentRoute.value.fullPath },
+			state: { backdropView: router.currentRoute.value.fullPath },
 		},
 	])),
 ))
@@ -466,6 +490,35 @@ const taskDetailRoutes = computed(() => Object.fromEntries(
 
 	.user {
 		margin: 0;
+	}
+
+	// The priority is shown as a tinted background instead of a label.
+	tbody tr[data-priority-level] {
+		background-color: color-mix(in srgb, var(--priority-color) var(--priority-tint), transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--priority-color) calc(var(--priority-tint) + 8%), transparent);
+		}
+	}
+
+	tbody tr[data-priority-level='low'] {
+		--priority-color: var(--info);
+		--priority-tint: 15%;
+	}
+
+	tbody tr[data-priority-level='medium'] {
+		--priority-color: var(--warning);
+		--priority-tint: 20%;
+	}
+
+	tbody tr[data-priority-level='high'] {
+		--priority-color: var(--danger);
+		--priority-tint: 20%;
+	}
+
+	tbody tr[data-priority-level='urgent'] {
+		--priority-color: var(--danger);
+		--priority-tint: 42%;
 	}
 }
 

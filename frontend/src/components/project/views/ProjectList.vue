@@ -74,6 +74,7 @@
 								:ref="(el) => setTaskRef(el as InstanceType<typeof SingleTaskInProject> | null, index)"
 								:show-list-color="false"
 								:can-mark-as-done="canWrite || isPseudoProject"
+								:can-delete="canWrite || isPseudoProject"
 								:the-task="t"
 								:all-tasks="allTasks"
 								@taskUpdated="updateTasks"

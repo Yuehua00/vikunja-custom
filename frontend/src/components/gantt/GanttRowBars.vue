@@ -379,20 +379,38 @@ function isDateless(bar: GanttBarModel) {
 	return !bar.meta?.hasActualDates && !isPartialDate(bar)
 }
 
+// Priority tint per level: [base color, share of the base color mixed into the page background].
+// Urgent is a solid fill, so it is the only level that needs light text.
+const PRIORITY_FILL = {
+	low: ['var(--info)', 35],
+	medium: ['var(--warning)', 40],
+	high: ['var(--danger)', 45],
+	urgent: ['var(--danger)', 100],
+} as const
+
+function getPriorityFill(bar: GanttBarModel) {
+	const level = bar.meta?.priorityLevel
+	if (!level || bar.meta?.color) {
+		return undefined
+	}
+	const [color, share] = PRIORITY_FILL[level]
+	return share === 100 ? color : `color-mix(in srgb, ${color} ${share}%, var(--white))`
+}
+
 function getBarFill(bar: GanttBarModel) {
 	// Partial dates still have "actual" dates on one side — use the task color
 	if (isPartialDate(bar)) {
 		if (bar.meta?.color) {
 			return bar.meta.color
 		}
-		return 'var(--primary)'
+		return getPriorityFill(bar) ?? 'var(--primary)'
 	}
 
 	if (bar.meta?.hasActualDates) {
 		if (bar.meta?.color) {
 			return bar.meta.color
 		}
-		return 'var(--primary)'
+		return getPriorityFill(bar) ?? 'var(--primary)'
 	}
 
 	return 'var(--grey-100)'
@@ -426,6 +444,10 @@ function getBarTextColor(bar: GanttBarModel) {
 
 	if (bar.meta?.color) {
 		return getTextColor(bar.meta.color)
+	}
+
+	if (getPriorityFill(bar) && bar.meta?.priorityLevel !== 'urgent') {
+		return 'var(--grey-800)'
 	}
 
 	return LIGHT

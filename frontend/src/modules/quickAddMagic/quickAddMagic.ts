@@ -52,9 +52,78 @@ export const parseTaskText = (text: string, prefixesMode: PrefixMode = PrefixMod
 	result.text = textWithoutMatched
 	result.repeats = repeats
 
-	const {newText, date} = parseDate(result.text, now)
+	const {newText, date, matched} = parseDate(result.text, now)
 	result.text = newText
 	result.date = date
+	if (matched !== undefined && matched.length > 0) {
+		result.dateMatches = matched
+	}
 
 	return cleanupResult(result, prefixes)
+}
+
+export type HighlightKind = 'date' | 'label' | 'project' | 'priority'
+
+export interface HighlightRange {
+	start: number,
+	end: number,
+	kind: HighlightKind,
+}
+
+const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Finds the parts of a single line of task text that quick add magic recognizes
+ * (date and time, labels, project and priority) so they can be highlighted while typing.
+ */
+export const getHighlightRanges = (text: string, prefixesMode: PrefixMode = PrefixMode.Default, now: Date = new Date()): HighlightRange[] => {
+	const prefixes = PREFIXES[prefixesMode]
+	if (prefixes === undefined || text === '') {
+		return []
+	}
+
+	const parsed = parseTaskText(text, prefixesMode, now)
+	const ranges: HighlightRange[] = []
+
+	// A prefix only counts at the start of the text or after a space, like in getItemsFromPrefix.
+	const addPrefixed = (prefix: string, items: string[], kind: HighlightKind) => {
+		for (const item of items) {
+			if (item === '') {
+				continue
+			}
+			const escaped = escapeRegExp(item)
+			const regex = new RegExp(`(?<![^ ])${escapeRegExp(prefix)}('${escaped}'|"${escaped}"|${escaped}(?![^ ]))`, 'ig')
+			let match: RegExpExecArray | null
+			while ((match = regex.exec(text)) !== null) {
+				ranges.push({start: match.index, end: match.index + match[0].length, kind})
+			}
+		}
+	}
+
+	addPrefixed(prefixes.label, parsed.labels, 'label')
+	addPrefixed(prefixes.project, parsed.project !== null ? [parsed.project] : [], 'project')
+	addPrefixed(prefixes.priority, parsed.priority !== null ? [String(parsed.priority)] : [], 'priority')
+
+	const lowerText = text.toLowerCase()
+	for (const dateMatch of parsed.dateMatches ?? []) {
+		const start = lowerText.indexOf(dateMatch.toLowerCase())
+		if (start !== -1) {
+			ranges.push({start, end: start + dateMatch.length, kind: 'date'})
+		}
+	}
+
+	ranges.sort((a, b) => a.start - b.start)
+
+	// Join overlapping ranges, and ranges of the same kind that are only separated by whitespace.
+	const merged: HighlightRange[] = []
+	for (const range of ranges) {
+		const last = merged[merged.length - 1]
+		if (last !== undefined && (range.start < last.end || (range.kind === last.kind && text.slice(last.end, range.start).trim() === ''))) {
+			last.end = Math.max(last.end, range.end)
+		} else {
+			merged.push({...range})
+		}
+	}
+
+	return merged
 }
