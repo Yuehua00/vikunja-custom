@@ -17,52 +17,16 @@
 
 		<MenuButton class="menu-button" />
 
+		<!-- The title of a project is shown at the top of the project page itself, see ProjectWrapper. -->
 		<div
-			v-if="currentProject?.id"
-			class="project-title-wrapper"
-		>
-			<span class="project-title">
-				{{ currentProject.title === '' ? $t('misc.loading') : getProjectTitle(currentProject) }}
-			</span>
-
-			<BaseButton
-				v-if="!isEditorContentEmpty(currentProject.description)"
-				:to="{ name: 'project.info', params: { projectId: currentProject.id } }"
-				class="project-title-button"
-			>
-				<span class="is-sr-only">{{ $t('project.description') }}</span>
-				<Icon icon="circle-info" />
-			</BaseButton>
-
-			<ProjectSettingsDropdown
-				v-if="canWriteCurrentProject && currentProject.id !== -1"
-				class="project-title-dropdown"
-				:project="currentProject"
-			>
-				<template #trigger="{ toggleOpen, open }">
-					<BaseButton
-						class="project-title-button"
-						:aria-expanded="open"
-						@click="toggleOpen"
-					>
-						<span class="is-sr-only">{{ $t('project.openSettingsMenu') }}</span>
-						<Icon
-							icon="ellipsis-h"
-							class="icon"
-						/>
-					</BaseButton>
-				</template>
-			</ProjectSettingsDropdown>
-		</div>
-
-		<div
-			v-else-if="pageTitle"
+			v-if="pageTitle"
 			class="project-title-wrapper"
 		>
 			<span class="project-title">{{ pageTitle }}</span>
 		</div>
 
 		<div class="navbar-end">
+			<FocusBadge />
 			<TimerBadge />
 			<OpenQuickActions />
 			<Notifications />
@@ -132,36 +96,25 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { PERMISSIONS as Permissions } from '@/constants/permissions'
 import { PRO_FEATURE } from '@/constants/proFeatures'
 
-import ProjectSettingsDropdown from '@/components/project/ProjectSettingsDropdown.vue'
 import Dropdown from '@/components/misc/Dropdown.vue'
 import DropdownItem from '@/components/misc/DropdownItem.vue'
 import Notifications from '@/components/notifications/Notifications.vue'
 import TimerBadge from '@/components/time-tracking/TimerBadge.vue'
+import FocusBadge from '@/components/focus/FocusBadge.vue'
 import Logo from '@/components/home/Logo.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import MenuButton from '@/components/home/MenuButton.vue'
 import OpenQuickActions from '@/components/misc/OpenQuickActions.vue'
 import UserAvatar from '@/components/misc/UserAvatar.vue'
 
-import { getProjectTitle } from '@/helpers/getProjectTitle'
-import { isEditorContentEmpty } from '@/helpers/editorContentEmpty'
-
 import { useBaseStore } from '@/stores/base'
 import { useConfigStore } from '@/stores/config'
 import { useAuthStore } from '@/stores/auth'
-import {useCurrentProject} from '@/composables/useCurrentProject'
 
 const baseStore = useBaseStore()
-const {currentProject} = useCurrentProject()
 const background = computed(() => baseStore.background)
-const canWriteCurrentProject = computed(() =>
-	currentProject.value?.max_permission !== null &&
-	currentProject.value?.max_permission !== undefined &&
-	currentProject.value.max_permission > Permissions.READ,
-)
 const menuActive = computed(() => baseStore.menuActive)
 
 // Standalone pages (no project) surface their route's title in the header.
@@ -266,24 +219,6 @@ $user-dropdown-width-mobile: 5rem;
 	@media screen and (min-width: $tablet) {
 		font-size: 1.75rem;
 	}
-}
-
-.project-title-dropdown {
-	align-self: stretch;
-
-	.project-title-button {
-		flex-grow: 1;
-	}
-}
-
-.project-title-button {
-	align-self: stretch;
-	min-inline-size: var(--navbar-button-min-width);
-	display: flex;
-	place-items: center;
-	justify-content: center;
-	font-size: var(--navbar-icon-size);
-	color: var(--grey-400);
 }
 
 .navbar-end {

@@ -12,7 +12,9 @@
 		</XButton>
 
 		<div class="content">
-			<h1>{{ $t('label.manage') }}</h1>
+			<h1 class="page-title">
+				{{ $t('label.manage') }}
+			</h1>
 			<p v-if="labels.length > 0">
 				{{ $t('label.description') }}
 			</p>

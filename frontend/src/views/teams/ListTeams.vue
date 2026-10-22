@@ -11,7 +11,9 @@
 			{{ $t('team.create.title') }}
 		</XButton>
 
-		<h1>{{ $t('team.title') }}</h1>
+		<h1 class="page-title">
+			{{ $t('team.title') }}
+		</h1>
 		<Card
 			v-if="teams.length > 0"
 			:padding="false"

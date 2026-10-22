@@ -32,6 +32,7 @@ export type TaskResponse = Omit<TaskReadOneBody,
 	'priority' |
 	'percent_done' |
 	'importance' |
+	'paused' |
 	'hex_color' |
 	'is_favorite' |
 	'identifier' |
@@ -56,6 +57,7 @@ export type TaskResponse = Omit<TaskReadOneBody,
 	priority: number
 	percent_done: number
 	importance: number
+	paused: boolean
 	hex_color: string
 	is_favorite: boolean
 	identifier: string
@@ -102,6 +104,7 @@ export function normalizeTask(task: Task): TaskResponse {
 		priority: task.priority ?? 0,
 		percent_done: task.percent_done ?? 0,
 		importance: task.importance ?? 0,
+		paused: task.paused ?? false,
 		hex_color: task.hex_color ?? '',
 		is_favorite: task.is_favorite ?? false,
 		identifier: task.identifier ?? '',

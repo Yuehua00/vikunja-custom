@@ -453,6 +453,11 @@ const router = createRouter({
 			},
 		},
 		{
+			path: '/focus',
+			name: 'focus',
+			component: () => import('@/views/focus/FocusView.vue'),
+		},
+		{
 			path: '/admin',
 			component: () => import('@/views/admin/AdminShell.vue'),
 			meta: {

@@ -23,11 +23,12 @@ import {
 	type TaskPositionWritable,
 	type JsonPatchOp,
 	type Bucket,
+	type ProjectView,
 } from '@/client/generated'
 import {assertClientRequestContext, captureClientRequestContext} from '@/client/requestContext'
 import {contextMutationOptions} from './contextMutation'
 import {normalizeTask, taskKeys, taskQuery, type PaginatedTaskResponse, type TaskResponse} from './tasks'
-import {bucketKeys, kanbanKeys, normalizeBucket, type BoardData} from './kanban'
+import {bucketKeys, bucketsQuery, kanbanKeys, normalizeBucket, type BoardData, type BucketResponse} from './kanban'
 import {
 	invalidateTaskMembership,
 	mapTaskEverywhere,
@@ -39,6 +40,7 @@ import {getCachedProject, projectKeys} from './projects'
 import {colorFromHex} from '@/helpers/color/colorFromHex'
 import {getDefaultBucketId, moveTaskToBucket} from '@/helpers/task'
 import {computeParentProgress} from '@/helpers/subtaskProgress'
+import {isInProgress, isPaused} from '@/helpers/taskStatus'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
 import {translatedError} from '@/message'
 
@@ -55,6 +57,7 @@ const writableFields = [
 	'hex_color',
 	'percent_done',
 	'importance',
+	'paused',
 	'repeat_after',
 	'repeat_mode',
 	'is_favorite',
@@ -181,6 +184,98 @@ export function createTaskMutationOptions() {
 	})
 }
 
+// A task in progress belongs in the "Doing" bucket of the kanban boards of its project, a paused one back in
+// the default bucket. Only a task that sits in the opposite one of the two is moved, so a bucket the user
+// picked is left alone.
+async function syncKanbanBucket(client: QueryClient, task: TaskResponse) {
+	const inProgress = isInProgress(task)
+	if (!inProgress && !isPaused(task)) return
+	const views = (getCachedProject(task.project_id, client)?.views ?? [])
+		.filter(view => view.view_kind === 'kanban' && view.bucket_configuration_mode === 'manual')
+	if (views.length === 0) return
+
+	const detail = await client.fetchQuery({...taskQuery(task.id, ['buckets']), staleTime: 0})
+	for (const view of views) {
+		const buckets = await client.fetchQuery(bucketsQuery(task.project_id, view.id))
+		const doing = buckets.find(bucket => bucket.title?.trim().toLowerCase() === 'doing')
+		const defaultBucket = getDefaultBucketId(view, buckets)
+		const current = detail.buckets?.find(bucket => bucket.project_view_id === view.id)?.id
+		if (!doing?.id) continue
+
+		const target = inProgress
+			? (current === defaultBucket ? doing.id : undefined)
+			: (current === doing.id ? defaultBucket : undefined)
+		if (!target || target === current) continue
+
+		await taskBucketUpdate({
+			path: {project: task.project_id, view: view.id, bucket: target},
+			body: {task_id: task.id},
+		})
+		await client.invalidateQueries({queryKey: kanbanKeys.view(task.project_id, view.id)})
+		await client.invalidateQueries({queryKey: [...taskKeys.details, task.id]})
+	}
+}
+
+// Brings a board in line with its tasks: the ones in progress that still sit in the default bucket go to
+// "Doing", the paused ones in "Doing" go back to the default bucket. Covers tasks that were started or paused
+// before they were moved automatically.
+export async function reconcileDoingBucket(
+	client: QueryClient,
+	project: number,
+	view: ProjectView,
+	buckets: readonly BucketResponse[],
+) {
+	if (view.id === undefined || view.bucket_configuration_mode !== 'manual') return
+	const doing = buckets.find(bucket => bucket.title.trim().toLowerCase() === 'doing')
+	const defaultId = getDefaultBucketId(view, buckets)
+	if (!doing || defaultId === undefined) return
+
+	const moves = [
+		...(buckets.find(bucket => bucket.id === defaultId)?.tasks.filter(isInProgress) ?? [])
+			.map(task => ({task, bucket: doing.id})),
+		...doing.tasks.filter(isPaused).map(task => ({task, bucket: defaultId})),
+	]
+	if (moves.length === 0) return
+
+	// One at a time, because the database takes a single write at a time.
+	for (const {task, bucket} of moves) {
+		await taskBucketUpdate({path: {project, view: view.id, bucket}, body: {task_id: task.id}})
+	}
+	await client.invalidateQueries({queryKey: kanbanKeys.view(project, view.id)})
+}
+
+// The progress a task gets when it is dragged into "Doing", so it counts as being worked on.
+const DOING_START_PERCENT = 0.1
+
+// The bucket and the status of a task go together: "Doing" means in progress, the default bucket means not
+// started, or paused when there is progress. Returns what has to change on a task after a move into that
+// bucket, undefined when it can stay as is. The progress itself is never taken away.
+function statusForBucket(
+	client: QueryClient,
+	project: number,
+	viewId: number,
+	bucketId: number,
+	task: Pick<Task, 'done' | 'percent_done' | 'paused'>,
+): Partial<Task> | undefined {
+	if (task.done) return undefined
+	const buckets = cachedViewBuckets(client, project, viewId)
+	const target = buckets?.find(item => item.id === bucketId)
+	if (!buckets || !target) return undefined
+
+	const percent = task.percent_done ?? 0
+	if (target.title?.trim().toLowerCase() === 'doing') {
+		// A paused task carries on with its progress, one that never started gets a first bit.
+		return task.paused || percent === 0
+			? {paused: false, ...(percent === 0 ? {percent_done: DOING_START_PERCENT} : {})}
+			: undefined
+	}
+	const view = getCachedProject(project, client)?.views?.find(item => item.id === viewId)
+	if (view && target.id === getDefaultBucketId(view, buckets)) {
+		return percent > 0 && !task.paused ? {paused: true} : undefined
+	}
+	return undefined
+}
+
 const MAX_PARENT_DEPTH = 10
 
 function isRepeatingTask(task: Task) {
@@ -207,6 +302,7 @@ export async function refreshTaskProgress(client: QueryClient, id: number, depth
 	const updated = (await patchTasksRead({path: {task: id}, body: taskPatchBody(changes)})).data
 	replaceTaskEverywhere(client, updated)
 	reconcileDoneBuckets(client, normalizeTask({...updated, id}))
+	await syncKanbanBucket(client, normalizeTask({...updated, id}))
 	await syncParentProgress(client, id, depth)
 }
 
@@ -231,8 +327,12 @@ export function updateTaskMutationOptions(optimistic = false) {
 		onSuccess: (task, input, client) => {
 			replaceTaskEverywhere(client, task)
 			reconcileDoneBuckets(client, normalizeTask({...task, id: input.id}))
-			// Background sync; a failure only leaves the parent's progress for the next update.
-			void syncParentProgress(client, input.id).catch(() => undefined)
+			// Background work, one step after the other because the database takes a single write at a
+			// time. A failure only leaves the parent's progress or the kanban bucket for the next update.
+			void (async () => {
+				await syncKanbanBucket(client, normalizeTask({...task, id: input.id}))
+				await syncParentProgress(client, input.id)
+			})().catch(() => undefined)
 		},
 		onSettled: ({id}, client) => invalidateTaskMembership(client, id),
 	})
@@ -463,26 +563,48 @@ export function moveTaskMutationOptions() {
 		}) => (await taskBucketUpdate({path: {project, view, bucket}, body: {task_id: task.id}})).data,
 		optimistic: {
 			queryKeys: ({project, view}) => [kanbanKeys.view(project, view)],
-			update: ({project, view, bucket, task}, client) => client.setQueriesData<BoardData>(
-				{queryKey: kanbanKeys.view(project, view)},
-				current => current ? {
-					...current,
-					buckets: moveTaskToBucket(current.buckets, task, bucket).map(normalizeBucket),
-				} : current,
-			),
+			update: ({project, view, bucket, task}, client) => {
+				// The status changes with the bucket, right away like the done state does.
+				const status = statusForBucket(client, project, view, bucket, task)
+				const moved = status === undefined ? task : {...task, ...status}
+				if (status !== undefined && task.id !== undefined) {
+					mapTaskEverywhere(client, task.id, current => ({...current, ...status}))
+				}
+				return client.setQueriesData<BoardData>(
+					{queryKey: kanbanKeys.view(project, view)},
+					current => current ? {
+						...current,
+						buckets: moveTaskToBucket(current.buckets, moved, bucket).map(normalizeBucket),
+					} : current,
+				)
+			},
 		},
 		onSuccess: (data, {project, view, bucket, task}, client) => {
 			const target = data.bucket_id ?? bucket
-			if (data.task) replaceTaskEverywhere(client, data.task)
+			// The response still has the old status; the one that goes with the bucket stays on screen
+			// until it is saved below.
+			const status = statusForBucket(client, project, view, target, task)
+			const withStatus = (item: Task): Task => status === undefined ? item : {...item, ...status}
+			if (data.task) replaceTaskEverywhere(client, withStatus(data.task))
 			client.setQueriesData<BoardData>(
 				{queryKey: kanbanKeys.view(project, view)},
 				current => current ? {
 					...current,
-					buckets: moveTaskToBucket(current.buckets, data.task ?? task, target).map(normalizeBucket),
+					buckets: moveTaskToBucket(current.buckets, withStatus(data.task ?? task), target).map(normalizeBucket),
 				} : current,
 			)
 			const id = data.task?.id ?? task.id
 			if (id !== undefined) reconcileTaskBuckets(client, {project, view, bucket: target, task: id})
+
+			// Saves the status that goes with the bucket. Slightly later, so it does not write at the same
+			// moment as the position the board saves after a drop.
+			if (id !== undefined && status !== undefined) {
+				setTimeout(() => {
+					void patchTasksRead({path: {task: id}, body: taskPatchBody(status)})
+						.then(({data: updated}) => replaceTaskEverywhere(client, updated))
+						.catch(() => undefined)
+				}, 800)
+			}
 		},
 		onSettled: ({task}, client) => invalidateTaskMembership(client, task.id),
 	})

@@ -498,6 +498,15 @@
 							}}
 						</XButton>
 						
+						<XButton
+							v-if="(task.percent_done ?? 0) > 0 && !task.done"
+							variant="secondary"
+							:icon="task.paused ? 'play' : 'pause'"
+							@click="togglePaused"
+						>
+							{{ task.paused ? $t('task.detail.actions.resume') : $t('task.detail.actions.pause') }}
+						</XButton>
+
 						<span class="action-heading">{{ $t('task.detail.organization') }}</span>
 						
 						<XButton
@@ -1286,9 +1295,16 @@ async function setPercentDone(percentDone: number) {
 	const newTask: ITask = {
 		...task.value,
 		percent_done: percentDone,
+		// Changing the progress of a paused task means it is picked up again.
+		paused: false,
 	}
 
 	return saveTask(newTask)
+}
+
+// Pausing keeps the progress; the kanban card follows to the default bucket, resuming brings it back to "Doing".
+async function togglePaused() {
+	return saveTask({...task.value, paused: !task.value.paused})
 }
 
 async function removeRepeatAfter() {

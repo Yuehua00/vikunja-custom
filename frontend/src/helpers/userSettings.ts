@@ -6,6 +6,7 @@ import type {DateDisplay} from '@/constants/dateDisplay'
 import type {TimeFormat} from '@/constants/timeFormat'
 import type {IRelationKind} from '@/types/IRelationKind'
 import type {CardDrawState} from '@/helpers/cardDraw'
+import type {ActiveFocus, FocusRecords} from '@/helpers/focus'
 import type {TaskReminder, UserGeneralSettings} from '@/client/generated'
 import {PrefixMode} from '@/modules/quickAddMagic'
 import {DEFAULT_PROJECT_VIEW_SETTINGS} from '@/constants/projectView'
@@ -36,6 +37,11 @@ export interface FrontendSettings {
 	default_due_time?: string
 	// Draw view settings and current card, keyed by project view id.
 	card_draw?: Record<string, CardDrawState>
+	// Pomodoro and stopwatch: the running timer (null when none), the finished sessions per month
+	// and the length of a pomodoro in minutes.
+	focus_active?: ActiveFocus | null
+	focus_records?: FocusRecords
+	focus_pomo_minutes?: number
 }
 
 export function taskRemindersFromSettings(

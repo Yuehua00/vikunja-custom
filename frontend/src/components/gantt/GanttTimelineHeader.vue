@@ -14,6 +14,7 @@
 				v-for="monthGroup in monthGroups"
 				:key="monthGroup.key"
 				class="timeunit-month"
+				:class="{'is-other-month': hasCurrentMonth && monthGroup.key !== currentMonthKey}"
 				:style="{ width: `${monthGroup.width}px` }"
 				role="columnheader"
 				:aria-label="$t('project.gantt.monthLabel', {month: monthGroup.label})"
@@ -32,6 +33,11 @@
 				v-for="date in timelineData"
 				:key="date.toISOString()"
 				class="timeunit"
+				:class="{
+					'is-week-start': date.getDay() === weekStart,
+					'is-month-start': date.getDate() === 1,
+					'is-other-month': hasCurrentMonth && monthKeyOf(date) !== currentMonthKey,
+				}"
 				:style="{ width: `${dayWidthPixels}px` }"
 				role="columnheader"
 				:aria-label="dateIsToday(date) 
@@ -62,6 +68,7 @@
 import {computed} from 'vue'
 import {useGlobalNow} from '@/composables/useGlobalNow'
 import {useWeekDayFromDate} from '@/helpers/time/formatDate'
+import {useAuthStore} from '@/stores/auth'
 import dayjs from 'dayjs'
 
 const props = defineProps<{
@@ -71,6 +78,13 @@ const props = defineProps<{
 
 const weekDayFromDate = useWeekDayFromDate()
 const { now: today } = useGlobalNow()
+const authStore = useAuthStore()
+
+const weekStart = computed(() => authStore.settings.week_start ?? 0)
+const monthKeyOf = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`
+const currentMonthKey = computed(() => monthKeyOf(today.value))
+// Only the month of today is shown at full strength; without it on screen nothing is dimmed.
+const hasCurrentMonth = computed(() => props.timelineData.some(date => monthKeyOf(date) === currentMonthKey.value))
 
 const dateIsToday = computed(() => {
 	const todayStr = today.value.toDateString()
@@ -82,6 +96,7 @@ const monthGroups = computed(() => {
 		(groups, date) => {
 			const month = date.getMonth()
 			const year = date.getFullYear()
+			// Same format as currentMonthKey, so the groups can be compared with it.
 			const key = `${year}-${month}`
 
 			const lastGroup = groups[groups.length - 1]
@@ -120,11 +135,17 @@ const monthGroups = computed(() => {
 		background: var(--white);
 		font-family: $vikunja-font;
 		font-weight: bold;
-		border-inline-end: 1px solid var(--grey-200);
+		border-inline-end: 1px solid var(--grey-300);
 		padding: 0.5rem 0;
 		text-align: center;
-		font-size: 1rem;
+		font-size: 1.2rem;
 		color: var(--grey-800);
+		transition: opacity .2s ease;
+
+		// Months other than the current one fade back.
+		&.is-other-month {
+			opacity: .6;
+		}
 	}
 }
 
@@ -132,9 +153,25 @@ const monthGroups = computed(() => {
 	display: flex;
 
 	.timeunit {
+		transition: opacity .2s ease;
+
+		&.is-other-month {
+			opacity: .6;
+		}
+
+		// The first day of a week gets a thin line and a semi-bold label, the first day of a month a bit more.
+		&.is-week-start {
+			box-shadow: inset 1px 0 0 var(--grey-400);
+			font-weight: 600;
+		}
+
+		&.is-month-start {
+			box-shadow: inset 1.5px 0 0 var(--grey-500);
+		}
+
 		.timeunit-wrapper {
 			padding: 0.5rem 0;
-			font-size: 1rem;
+			font-size: 1.15rem;
 			display: flex;
 			flex-direction: column;
 			align-items: center;
@@ -149,7 +186,7 @@ const monthGroups = computed(() => {
 			}
 
 			.weekday {
-				font-size: 0.8rem;
+				font-size: 0.9rem;
 			}
 		}
 	}

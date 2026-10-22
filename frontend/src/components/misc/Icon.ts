@@ -57,6 +57,7 @@ import {
 	faPen,
 	faPencilAlt,
 	faPercent,
+	faPause,
 	faPlay,
 	faPlus,
 	faPowerOff,
@@ -69,6 +70,7 @@ import {
 	faSortUp,
 	faStar as faStarSolid,
 	faStop,
+	faStopwatch,
 	faTachometerAlt,
 	faTags,
 	faTasks,
@@ -176,6 +178,7 @@ library.add(faPaste)
 library.add(faPen)
 library.add(faPencilAlt)
 library.add(faPercent)
+library.add(faPause)
 library.add(faPlay)
 library.add(faPlus)
 library.add(faPowerOff)
@@ -190,6 +193,7 @@ library.add(faSortUp)
 library.add(faStar)
 library.add(faStarSolid)
 library.add(faStop)
+library.add(faStopwatch)
 library.add(faSun)
 library.add(faTachometerAlt)
 library.add(faTags)

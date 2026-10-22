@@ -93,6 +93,8 @@
 							class="calendar-task"
 							:class="{
 								'is-done': entry.task.done,
+								'is-progress': isInProgress(entry.task),
+								'is-paused': isPaused(entry.task),
 								'is-continued': !isSpanStart(entry, day),
 							}"
 							:style="taskStyle(entry.task)"
@@ -139,6 +141,7 @@ import {isoToKebabDate} from '@/helpers/time/isoToKebabDate'
 import {useAuthStore} from '@/stores/auth'
 import type {Task} from '@/client/generated'
 import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {isInProgress, isPaused} from '@/helpers/taskStatus'
 
 import {
 	getCalendarRange,
@@ -315,20 +318,42 @@ function taskStyle(task: Task) {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: .5rem;
+	gap: .75rem 1rem;
 	flex-wrap: wrap;
-	margin-block-end: .75rem;
+	margin-block-end: 1rem;
 }
 
 .calendar-nav,
 .calendar-modes {
 	display: flex;
+	align-items: center;
+	gap: .5rem;
+
+	:deep(.button) {
+		min-inline-size: 2.75rem;
+		block-size: 2.5rem;
+		padding-inline: 1rem;
+		font-size: .95rem;
+	}
+}
+
+// Month and week as one segmented switch.
+.calendar-modes {
+	padding: .25rem;
 	gap: .25rem;
+	background: var(--grey-100);
+	border-radius: 12px;
+
+	:deep(.button) {
+		block-size: 2.25rem;
+		border-radius: 9px;
+	}
 }
 
 .calendar-title {
 	margin: 0;
-	font-size: 1.1rem;
+	font-size: 1.15rem;
+	font-weight: 600;
 	text-align: center;
 	flex: 1 1 auto;
 }
@@ -462,9 +487,31 @@ function taskStyle(task: Task) {
 		--priority-tint: 50%;
 	}
 
+	// A task being worked on is yellow; urgent keeps its red.
+	&.is-progress:not([data-priority-level='urgent']) {
+		background: color-mix(in srgb, var(--status-doing) 28%, transparent);
+
+		&:hover {
+			background: color-mix(in srgb, var(--status-doing) 36%, transparent);
+		}
+	}
+
+	// A paused task is a calm blue-grey; urgent keeps its red.
+	&.is-paused:not([data-priority-level='urgent']) {
+		background: color-mix(in srgb, var(--status-paused) 22%, transparent);
+
+		&:hover {
+			background: color-mix(in srgb, var(--status-paused) 30%, transparent);
+		}
+	}
+
+	// A finished task has a light green background instead of a strike-through.
 	&.is-done {
-		text-decoration: line-through;
-		opacity: .6;
+		background: color-mix(in srgb, var(--success) 18%, transparent);
+
+		&:hover {
+			background: color-mix(in srgb, var(--success) 26%, transparent);
+		}
 	}
 
 	&.is-continued {

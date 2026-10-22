@@ -10,6 +10,9 @@
 			tabindex="-1"
 			:data-is-overdue="isOverdue || undefined"
 			:data-priority-level="priorityLevel"
+			:data-done="task.done || undefined"
+			:data-progress="inProgress || undefined"
+			:data-paused="paused || undefined"
 			@click="openTaskDetail"
 			@keyup.enter="openTaskDetail"
 		>
@@ -63,6 +66,19 @@
 							{{ task.title }}
 						</RouterLink>
 					</TaskGlanceTooltip>
+				</span>
+
+				<span
+					v-if="inProgress"
+					class="status-chip mis-2"
+				>
+					{{ $t('task.status.inProgress') }}
+				</span>
+				<span
+					v-else-if="paused"
+					class="status-chip status-chip--paused mis-2"
+				>
+					{{ $t('task.status.paused') }}
 				</span>
 
 				<Labels
@@ -180,6 +196,15 @@
 				/>
 			</BaseButton>
 			<BaseButton
+				v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
+				v-tooltip="$t('focus.startFocus')"
+				class="focus-task"
+				@click.stop="showFocusCard = true"
+			>
+				<span class="is-sr-only">{{ $t('focus.startFocus') }}</span>
+				<Icon icon="stopwatch" />
+			</BaseButton>
+			<BaseButton
 				v-if="canDelete && !disabled"
 				class="delete-task"
 				@click.stop="showDeleteModal = true"
@@ -204,6 +229,13 @@
 			</template>
 		</template>
 
+		<FocusStartCard
+			v-if="showFocusCard"
+			:task-id="task.id!"
+			:task-title="task.title ?? ''"
+			:project-id="task.project_id"
+			@close="showFocusCard = false"
+		/>
 		<Modal
 			v-if="showDeleteModal"
 			@close="showDeleteModal = false"
@@ -247,6 +279,8 @@ import FancyCheckbox from '@/components/input/FancyCheckbox.vue'
 import ColorBubble from '@/components/misc/ColorBubble.vue'
 import Popup from '@/components/misc/Popup.vue'
 import Modal from '@/components/misc/Modal.vue'
+import FocusStartCard from '@/components/focus/FocusStartCard.vue'
+import {isInProgress, isPaused} from '@/helpers/taskStatus'
 
 
 import {formatDisplayDate, formatISO, formatDateLong} from '@/helpers/time/formatDate'
@@ -304,6 +338,8 @@ const task = computed(() => props.theTask)
 const router = useRouter()
 const queryClient = useQueryClient()
 const authStore = useAuthStore()
+const inProgress = computed(() => isInProgress(task.value))
+const paused = computed(() => isPaused(task.value))
 const priorityLevel = computed(() => getPriorityLevel(
 	task.value.priority,
 	task.value.done,
@@ -422,6 +458,7 @@ async function toggleFavorite() {
 	emit('taskUpdated', updated)
 }
 
+const showFocusCard = ref(false)
 const showDeleteModal = ref(false)
 
 async function deleteTask() {
@@ -500,6 +537,33 @@ defineExpose({
 	&[data-priority-level='urgent'] {
 		--priority-color: var(--danger);
 		--priority-tint: 42%;
+	}
+
+	// A task being worked on is yellow. Urgent keeps its red, so it is never missed.
+	&[data-progress]:not([data-priority-level='urgent']) {
+		background-color: color-mix(in srgb, var(--status-doing) 24%, transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--status-doing) 32%, transparent);
+		}
+	}
+
+	// A paused task is a calm blue-grey. Urgent keeps its red.
+	&[data-paused]:not([data-priority-level='urgent']) {
+		background-color: color-mix(in srgb, var(--status-paused) 18%, transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--status-paused) 26%, transparent);
+		}
+	}
+
+	// A finished task has a light green background instead of a strike-through.
+	&[data-done] {
+		background-color: color-mix(in srgb, var(--success) 16%, transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--success) 24%, transparent);
+		}
 	}
 
 	&:has(*:focus-visible), &:focus {
@@ -610,31 +674,39 @@ defineExpose({
 		}
 	}
 
+	.focus-task,
 	.delete-task {
 		opacity: 1;
 		text-align: center;
 		inline-size: 27px;
 		transition: opacity $transition, color $transition;
 		border-radius: $radius;
+	}
 
-		&:hover {
-			color: var(--danger);
-		}
+	.focus-task:hover {
+		color: var(--primary);
+	}
+
+	.delete-task:hover {
+		color: var(--danger);
 	}
 
 	@media(hover: hover) and (pointer: fine) {
 		& .favorite,
+		& .focus-task,
 		& .delete-task {
 			opacity: 0;
 		}
 
 		&:hover .favorite,
+		&:hover .focus-task,
 		&:hover .delete-task {
 			opacity: 1;
 		}
 	}
 
 	.favorite:focus,
+	.focus-task:focus,
 	.delete-task:focus {
 		opacity: 1;
 	}
@@ -664,11 +736,6 @@ defineExpose({
 				transform: translate(-50%, -50%);
 			}
 		}
-	}
-
-	.tasktext.done {
-		text-decoration: line-through;
-		color: var(--grey-500);
 	}
 
 	span.parent-tasks {

@@ -10,6 +10,37 @@
 			{{ getProjectTitle(currentProject) }}
 		</h1>
 
+		<div class="project-heading d-print-none">
+			<h1 class="page-title project-heading-title">
+				{{ currentProject.title === '' ? $t('misc.loading') : getProjectTitle(currentProject) }}
+			</h1>
+
+			<BaseButton
+				v-if="!isEditorContentEmpty(currentProject.description)"
+				:to="{ name: 'project.info', params: { projectId: currentProject.id } }"
+				class="project-heading-button"
+			>
+				<span class="is-sr-only">{{ $t('project.description') }}</span>
+				<Icon icon="circle-info" />
+			</BaseButton>
+
+			<ProjectSettingsDropdown
+				v-if="canWriteProject && currentProject.id !== -1"
+				:project="currentProject"
+			>
+				<template #trigger="{ toggleOpen, open }">
+					<BaseButton
+						class="project-heading-button"
+						:aria-expanded="open"
+						@click="toggleOpen"
+					>
+						<span class="is-sr-only">{{ $t('project.openSettingsMenu') }}</span>
+						<Icon icon="ellipsis-h" />
+					</BaseButton>
+				</template>
+			</ProjectSettingsDropdown>
+		</div>
+
 		<div
 			ref="switchViewContainerRef"
 			class="switch-view-container d-print-none"
@@ -90,11 +121,14 @@ import {useI18n} from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
 import Dropdown from '@/components/misc/Dropdown.vue'
 import DropdownItem from '@/components/misc/DropdownItem.vue'
+import ProjectSettingsDropdown from '@/components/project/ProjectSettingsDropdown.vue'
 import Icon from '@/components/misc/Icon'
 import Message from '@/components/misc/Message.vue'
 import CustomTransition from '@/components/misc/CustomTransition.vue'
 
 import {getProjectTitle} from '@/helpers/getProjectTitle'
+import {isEditorContentEmpty} from '@/helpers/editorContentEmpty'
+import {PERMISSIONS as Permissions} from '@/constants/permissions'
 import {useTitle} from '@/composables/useTitle'
 
 import {useViewFiltersStore} from '@/stores/viewFilters'
@@ -138,6 +172,12 @@ useResizeObserver(switchViewContainerRef, () => {
 })
 
 const currentProject = computed(() => queriedProject.value ?? normalizeProject({id: 0}))
+
+const canWriteProject = computed(() =>
+	currentProject.value.max_permission !== null &&
+	currentProject.value.max_permission !== undefined &&
+	currentProject.value.max_permission > Permissions.READ,
+)
 useTitle(() => currentProject.value?.id ? getProjectTitle(currentProject.value) : '')
 
 const views = computed(() => currentProject.value.views)
@@ -183,6 +223,31 @@ function getViewRoute(view: ProjectView) {
 </script>
 
 <style lang="scss" scoped>
+.project-heading {
+	display: flex;
+	align-items: center;
+	gap: .25rem;
+	margin-block-end: 1rem;
+}
+
+.project-heading-title {
+	margin: 0;
+	min-inline-size: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.project-heading-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-inline-size: 2.5rem;
+	min-block-size: 2.5rem;
+	color: var(--grey-400);
+	font-size: 1.25rem;
+}
+
 .switch-view-container {
 	position: relative;
 	min-block-size: $switch-view-height;

@@ -62,7 +62,7 @@
 				:height="32"
 				:rx="4"
 				:fill="getBarFillAttr(bar)"
-				:opacity="bar.meta?.isDone ? 0.5 : 1"
+				:opacity="bar.meta?.isDone && bar.meta?.color ? 0.5 : 1"
 				:stroke="getBarStroke(bar)"
 				:stroke-width="getBarStrokeWidth(bar)"
 				:stroke-dasharray="isDateless(bar) ? '5,5' : 'none'"
@@ -90,7 +90,7 @@
 					:height="32"
 					:rx="4"
 					:fill="getBarFillAttr(bar)"
-					:opacity="bar.meta?.isDone ? 0.5 : 1"
+					:opacity="bar.meta?.isDone && bar.meta?.color ? 0.5 : 1"
 					:stroke="getBarStroke(bar)"
 					:stroke-width="getBarStrokeWidth(bar)"
 					:stroke-dasharray="bar.meta?.hasDerivedDates ? '4,2' : 'none'"
@@ -101,7 +101,7 @@
 					:fill="getParentDiamondFill(bar)"
 					:stroke="getBarFillAttr(bar)"
 					stroke-width="1"
-					:opacity="bar.meta?.isDone ? 0.5 : 1"
+					:opacity="bar.meta?.isDone && bar.meta?.color ? 0.5 : 1"
 				/>
 				<!-- Right diamond -->
 				<polygon
@@ -109,7 +109,7 @@
 					:fill="getParentDiamondFill(bar)"
 					:stroke="getBarFillAttr(bar)"
 					stroke-width="1"
-					:opacity="bar.meta?.isDone ? 0.5 : 1"
+					:opacity="bar.meta?.isDone && bar.meta?.color ? 0.5 : 1"
 				/>
 			</g>
 
@@ -165,7 +165,7 @@
 				:text-anchor="bar.meta?.dateType === 'endOnly' ? 'end' : 'start'"
 				class="gantt-bar-text"
 				:fill="getBarTextColor(bar)"
-				:text-decoration="bar.meta?.isDone ? 'line-through' : 'none'"
+				text-decoration="none"
 				:clip-path="`url(#clip-${bar.id})`"
 				aria-hidden="true"
 			>
@@ -389,7 +389,19 @@ const PRIORITY_FILL = {
 } as const
 
 function getPriorityFill(bar: GanttBarModel) {
+	// A finished task is light green, like in the other views.
+	if (bar.meta?.isDone && !bar.meta?.color) {
+		return 'color-mix(in srgb, var(--success) 35%, var(--white))'
+	}
 	const level = bar.meta?.priorityLevel
+	// A task being worked on is yellow; urgent keeps its red.
+	if (bar.meta?.isInProgress && level !== 'urgent' && !bar.meta?.color) {
+		return 'color-mix(in srgb, var(--status-doing) 55%, var(--white))'
+	}
+	// A paused task is a calm blue-grey.
+	if (bar.meta?.isPaused && level !== 'urgent' && !bar.meta?.color) {
+		return 'color-mix(in srgb, var(--status-paused) 45%, var(--white))'
+	}
 	if (!level || bar.meta?.color) {
 		return undefined
 	}

@@ -31,7 +31,7 @@
 								#
 							</FancyCheckbox>
 							<FancyCheckbox v-model="activeColumns.done">
-								{{ $t('task.attributes.done') }}
+								{{ $t('task.attributes.progress') }}
 							</FancyCheckbox>
 							<FancyCheckbox v-model="activeColumns.project">
 								{{ $t('task.attributes.project') }}
@@ -61,7 +61,7 @@
 								{{ $t('task.attributes.endDate') }}
 							</FancyCheckbox>
 							<FancyCheckbox v-model="activeColumns.percentDone">
-								{{ $t('task.attributes.percentDone') }}
+								{{ $t('task.attributes.percentDoneColumn') }}
 							</FancyCheckbox>
 							<FancyCheckbox v-model="activeColumns.doneAt">
 								{{ $t('task.attributes.doneAt') }}
@@ -116,10 +116,10 @@
 										v-if="activeColumns.done"
 										:aria-sort="ariaSort('done')"
 									>
-										{{ $t('task.attributes.done') }}
+										{{ $t('task.attributes.progress') }}
 										<Sort
 											:order="sortBy.done"
-											:label="$t('task.attributes.done')"
+											:label="$t('task.attributes.progress')"
 											@click="sort('done', $event)"
 										/>
 									</th>
@@ -194,10 +194,10 @@
 										v-if="activeColumns.percentDone"
 										:aria-sort="ariaSort('percent_done')"
 									>
-										{{ $t('task.attributes.percentDone') }}
+										{{ $t('task.attributes.percentDoneColumn') }}
 										<Sort
 											:order="sortBy.percent_done"
-											:label="$t('task.attributes.percentDone')"
+											:label="$t('task.attributes.percentDoneColumn')"
 											@click="sort('percent_done', $event)"
 										/>
 									</th>
@@ -244,6 +244,9 @@
 									v-for="t in tasks"
 									:key="t.id"
 									:data-priority-level="priorityLevel(t)"
+									:data-done="t.done || undefined"
+									:data-progress="isInProgress(t) || undefined"
+									:data-paused="isPaused(t) || undefined"
 								>
 									<td v-if="activeColumns.index">
 										<RouterLink :to="taskDetailRoutes[t.id]">
@@ -251,10 +254,7 @@
 										</RouterLink>
 									</td>
 									<td v-if="activeColumns.done">
-										<Done
-											:is-done="t.done"
-											variant="small"
-										/>
+										{{ statusText(t) }}
 									</td>
 									<td v-if="activeColumns.project">
 										<RouterLink
@@ -345,7 +345,6 @@ import {useStorage} from '@vueuse/core'
 import {useRouter} from 'vue-router'
 
 import ProjectWrapper from '@/components/project/ProjectWrapper.vue'
-import Done from '@/components/misc/Done.vue'
 import User from '@/components/misc/User.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
 import TaskGlanceTooltip from '@/components/tasks/partials/TaskGlanceTooltip.vue'
@@ -369,6 +368,7 @@ import {isSavedFilterProject} from '@/client/queries/projects'
 import {useProjects} from '@/composables/useProjects'
 import {useI18n} from 'vue-i18n'
 import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {isInProgress, isPaused} from '@/helpers/taskStatus'
 import {useAuthStore} from '@/stores/auth'
 
 const props = defineProps<{
@@ -397,6 +397,17 @@ const PRIORITY_KEYS: Record<number, string> = {
 	[PRIORITIES.HIGH]: 'high',
 	[PRIORITIES.URGENT]: 'urgent',
 	[PRIORITIES.DO_NOW]: 'doNow',
+}
+
+// The progress column says in plain words how far a task is.
+function statusText(task: TaskResponse) {
+	if (task.done) {
+		return translate('task.status.done')
+	}
+	if (isPaused(task)) {
+		return translate('task.status.paused')
+	}
+	return translate(isInProgress(task) ? 'task.status.inProgress' : 'task.status.notStarted')
 }
 
 function priorityName(priority: number) {
@@ -519,6 +530,33 @@ const taskDetailRoutes = computed(() => Object.fromEntries(
 	tbody tr[data-priority-level='urgent'] {
 		--priority-color: var(--danger);
 		--priority-tint: 42%;
+	}
+
+	// A task being worked on is yellow; urgent keeps its red.
+	tbody tr[data-progress]:not([data-priority-level='urgent']) {
+		background-color: color-mix(in srgb, var(--status-doing) 24%, transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--status-doing) 32%, transparent);
+		}
+	}
+
+	// A paused task is a calm blue-grey; urgent keeps its red.
+	tbody tr[data-paused]:not([data-priority-level='urgent']) {
+		background-color: color-mix(in srgb, var(--status-paused) 18%, transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--status-paused) 26%, transparent);
+		}
+	}
+
+	// A finished task has a light green background.
+	tbody tr[data-done] {
+		background-color: color-mix(in srgb, var(--success) 16%, transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--success) 24%, transparent);
+		}
 	}
 }
 

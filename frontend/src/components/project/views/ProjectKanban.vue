@@ -294,7 +294,7 @@
 import {useKanban} from '@/composables/useKanban'
 import {bucketHasMore, kanbanKeys, type BucketResponse} from '@/client/queries/kanban'
 import {removeTaskFromBoard} from '@/client/queries/taskCache'
-import {useUpdateTaskPositionMutation, useMoveTaskMutation} from '@/client/queries/taskMutations'
+import {reconcileDoingBucket, useUpdateTaskPositionMutation, useMoveTaskMutation} from '@/client/queries/taskMutations'
 import {
 	useCreateBucketMutation,
 	useDeleteBucketMutation,
@@ -489,6 +489,17 @@ const boardParams = computed(() => ({...params.value, filter_timezone: authStore
 const board = useKanban(projectId, () => props.viewId, boardParams)
 const queryClient = useQueryClient()
 const buckets = board.buckets
+
+// Once per visit, when the board is up to date: tasks that are in progress but still in the default
+// bucket move to "Doing". Waiting for the fetch keeps a stale copy of the board from deciding.
+let doingReconciled = false
+watch([() => board.data.value, () => board.isFetching.value], ([data, fetching]) => {
+	if (!data || fetching || doingReconciled || !canWrite.value || !view.value?.id) {
+		return
+	}
+	doingReconciled = true
+	void reconcileDoingBucket(queryClient, projectId.value, view.value, data.buckets).catch(() => undefined)
+}, {immediate: true})
 const createBucketMutation = useCreateBucketMutation()
 const deleteBucketMutation = useDeleteBucketMutation(t('project.kanban.deleteBucketSuccess'))
 const updateBucketMutation = useUpdateBucketMutation()

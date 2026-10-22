@@ -4,6 +4,10 @@
 		class="content loader-container"
 		:class="{'is-loading': loading}"
 	>
+		<h1 class="page-title">
+			{{ $t('project.projects') }}
+		</h1>
+
 		<header class="project-header">
 			<FancyCheckbox
 				v-model="showArchived"

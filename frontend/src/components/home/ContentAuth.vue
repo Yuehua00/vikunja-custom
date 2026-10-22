@@ -41,14 +41,16 @@
 
 				<QuickActions />
 
-				<RouterView
-					v-slot="{ Component }"
-					:route="routeWithModal"
-				>
-					<keep-alive :include="['project.view']">
-						<component :is="Component" />
-					</keep-alive>
-				</RouterView>
+				<div class="page-container">
+					<RouterView
+						v-slot="{ Component }"
+						:route="routeWithModal"
+					>
+						<keep-alive :include="['project.view']">
+							<component :is="Component" />
+						</keep-alive>
+					</RouterView>
+				</div>
 
 				<Modal
 					:enabled="typeof currentModal !== 'undefined'"

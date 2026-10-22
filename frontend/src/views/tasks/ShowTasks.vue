@@ -3,9 +3,9 @@
 		v-cy="'showTasks'"
 		class="is-max-width-desktop has-text-start"
 	>
-		<h2 class="mbe-2 title">
+		<h1 class="page-title">
 			{{ pageTitle }}
-		</h2>
+		</h1>
 		<Message
 			v-if="filteredLabels.length > 0"
 			class="label-filter-info mbe-2"

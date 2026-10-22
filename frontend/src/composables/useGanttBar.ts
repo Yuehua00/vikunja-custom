@@ -14,6 +14,8 @@ export interface GanttBarModel {
 		hasActualDates?: boolean
 		dateType?: GanttBarDateType
 		isDone?: boolean
+		isInProgress?: boolean
+		isPaused?: boolean
 		priorityLevel?: PriorityLevel
 		task?: unknown
 		isParent?: boolean

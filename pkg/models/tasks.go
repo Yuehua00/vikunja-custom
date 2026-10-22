@@ -113,6 +113,8 @@ type Task struct {
 	PercentDone float64 `xorm:"DOUBLE null" json:"percent_done" doc:"How far the task is from done, between 0 and 1."`
 	// How much the user wants to get to this task, independent of its priority. 0 means not set.
 	Importance int64 `xorm:"bigint null" json:"importance" valid:"range(0|5)" doc:"How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority."`
+	// A task that was started and is put aside for now. Its progress is kept, it just does not count as in progress.
+	Paused bool `xorm:"bool null" json:"paused" doc:"Whether the task was started and is paused for now. The progress is kept."`
 
 	// The task identifier, based on the project identifier and the task's index
 	Identifier string `xorm:"-" json:"identifier" readOnly:"true" doc:"The textual task identifier, derived from the project identifier and the task index (e.g. \"PROJ-12\")."`
@@ -1330,6 +1332,7 @@ func (t *Task) updateSingleTask(s *xorm.Session, a web.Auth, fields []string) (e
 		"hex_color",
 		"percent_done",
 		"importance",
+		"paused",
 		"project_id",
 		"bucket_id",
 		"repeat_mode",
@@ -1386,6 +1389,9 @@ func (t *Task) updateSingleTask(s *xorm.Session, a web.Auth, fields []string) (e
 		}
 		if !fieldSet["importance"] {
 			t.Importance = ot.Importance
+		}
+		if !fieldSet["paused"] {
+			t.Paused = ot.Paused
 		}
 		if !fieldSet["project_id"] {
 			t.ProjectID = ot.ProjectID
@@ -1645,6 +1651,10 @@ func (t *Task) updateSingleTask(s *xorm.Session, a web.Auth, fields []string) (e
 	// Importance
 	if t.Importance == 0 {
 		ot.Importance = 0
+	}
+	// Paused
+	if !t.Paused {
+		ot.Paused = false
 	}
 	// Repeat from current date
 	if t.RepeatMode == TaskRepeatModeDefault {

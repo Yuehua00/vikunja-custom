@@ -82,6 +82,62 @@ button.table {
   margin: 0 auto;
 }
 
+// Every page except the home page sits in one centered column, so the titles line up and a list is as
+// wide as a table, a gantt chart or a kanban board. Wide content scrolls sideways inside it.
+.app-content:not(.home) .page-container {
+  max-width: var(--page-width, 80rem);
+  margin-inline: auto;
+}
+
+// A task that is being worked on (started, not finished yet) is yellow. A plain yellow, because the
+// warning color of the theme is closer to orange and is already used for the medium priority.
+:root {
+  --status-doing: hsl(48, 96%, 53%);
+  // A task that was started and is put aside for now: a calm blue-grey.
+  --status-paused: hsl(215, 22%, 58%);
+}
+
+// The label of such a task, yellow like its background.
+.status-chip {
+  display: inline-block;
+  padding: .05rem .55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-doing) 35%, var(--white));
+  color: var(--grey-800);
+  font-size: .7rem;
+  font-weight: 500;
+  line-height: 1.6;
+  white-space: nowrap;
+
+  &.status-chip--paused {
+    background: color-mix(in srgb, var(--status-paused) 28%, var(--white));
+  }
+}
+
+// Inside that column the narrower content fills it instead of being narrower and centered again.
+.app-content:not(.home) .is-max-width-desktop {
+  max-width: none;
+  margin-inline: 0;
+
+  // The rows of a task list were capped at the same width on their own, which left a gap at the end.
+  .tasks .task {
+    max-width: none;
+  }
+}
+
+// The title every page except the home page starts with: same place, size and weight everywhere.
+// The extra selectors beat the heading rules of .content.
+.page-title,
+.content h1.page-title,
+.content h2.page-title {
+  margin: 0 0 1rem;
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: start;
+  color: var(--text);
+}
+
 .has-no-shadow {
   &,
   &.is-hovered,

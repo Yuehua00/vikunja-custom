@@ -414,6 +414,7 @@ function start() {
 	return updateTask.mutateAsync({
 		id: card.value.id,
 		percent_done: Math.max(card.value.percent_done, 0.1),
+		paused: false,
 		start_date: nowIso(),
 	})
 }
@@ -425,7 +426,7 @@ async function setPercent(percent: number) {
 	if (percent >= 1) {
 		return finish()
 	}
-	await updateTask.mutateAsync({id: card.value.id, percent_done: percent, done: false})
+	await updateTask.mutateAsync({id: card.value.id, percent_done: percent, done: false, paused: false})
 }
 
 // Finishing sets the end date to the day it was finished, and offers to take it back.
@@ -449,14 +450,25 @@ async function undoFinish(id: number, percent: number, endDate: string | undefin
 	await saveDrawState({task_id: id, drawn_at: new Date().toISOString()})
 }
 
-// The start date keeps a skipped card out of the draw until it has passed.
+// The start date keeps a skipped card out of the draw until it has passed. Offers to take it back.
 async function skip() {
 	if (!card.value) {
 		return
 	}
-	const id = card.value.id
+	const {id, start_date: startDate} = card.value
 	await updateTask.mutateAsync({id, start_date: dayjs().add(SKIP_DAYS, 'day').toISOString()})
 	await drawNew(id)
+
+	success({message: t('project.draw.skipped', {count: SKIP_DAYS})}, [{
+		title: t('task.undo'),
+		callback: () => undoSkip(id, startDate),
+	}])
+}
+
+// Puts the start date back and shows the card again.
+async function undoSkip(id: number, startDate: string | undefined) {
+	await updateTask.mutateAsync({id, start_date: startDate ?? ''})
+	await saveDrawState({task_id: id, drawn_at: new Date().toISOString()})
 }
 </script>
 

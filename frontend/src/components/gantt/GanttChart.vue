@@ -116,6 +116,7 @@ import Loading from '@/components/misc/Loading.vue'
 
 import {MILLISECONDS_A_DAY} from '@/constants/date'
 import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {isInProgress, isPaused} from '@/helpers/taskStatus'
 import {useAuthStore} from '@/stores/auth'
 import {roundToNaturalDayBoundary} from '@/helpers/time/roundToNaturalDayBoundary'
 
@@ -131,7 +132,8 @@ const emit = defineEmits<{
   (e: 'update:task', task: ITaskPartialWithId): void
 }>()
 
-const DAY_WIDTH_PIXELS_MIN = 30
+// Wide enough for the larger day and weekday labels of the timeline header.
+const DAY_WIDTH_PIXELS_MIN = 40
 const dayWidthPixels = ref(0)
 let resizeObserver: ResizeObserver | undefined
 
@@ -303,6 +305,8 @@ function transformTaskToGanttBar(node: GanttTaskTreeNode): GanttBarModel {
 			),
 			dateType,
 			isDone: t.done,
+			isInProgress: isInProgress(t),
+			isPaused: isPaused(t),
 			priorityLevel: getPriorityLevel(
 				t.priority,
 				t.done,

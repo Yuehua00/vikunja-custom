@@ -2181,6 +2181,10 @@ export type Task = {
      */
     importance?: number;
     /**
+     * Whether the task was started and is paused for now. The progress is kept.
+     */
+    paused?: boolean;
+    /**
      * The task's position, saved per view. Only non-zero when the task is fetched through a view endpoint; use the task-position endpoint to change it.
      */
     readonly position?: number;
@@ -2521,6 +2525,10 @@ export type TaskReadOneBody = {
      * How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority.
      */
     importance?: number;
+    /**
+     * Whether the task was started and is paused for now. The progress is kept.
+     */
+    paused?: boolean;
     /**
      * The task's position, saved per view. Only non-zero when the task is fetched through a view endpoint; use the task-position endpoint to change it.
      */
@@ -4478,6 +4486,10 @@ export type TaskWritable = {
      * How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority.
      */
     importance?: number;
+    /**
+     * Whether the task was started and is paused for now. The progress is kept.
+     */
+    paused?: boolean;
     priority?: number;
     /**
      * The id of the project this task belongs to. On create it is taken from the URL; on update, setting it to a different project moves the task (requires write access to the target project).
@@ -4583,6 +4595,10 @@ export type TaskReadOneBodyWritable = {
      * How important this task is to the user, from 1 to 5. 0 means not set. Independent of the priority.
      */
     importance?: number;
+    /**
+     * Whether the task was started and is paused for now. The progress is kept.
+     */
+    paused?: boolean;
     priority?: number;
     /**
      * The id of the project this task belongs to. On create it is taken from the URL; on update, setting it to a different project moves the task (requires write access to the target project).

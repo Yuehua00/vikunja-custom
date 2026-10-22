@@ -37,7 +37,7 @@
 				v-for="subtask in subtasks"
 				:key="subtask.id"
 				class="subtask-row"
-				:class="{'is-done': subtask.done}"
+				:class="{'is-done': subtask.done, 'is-progress': isInProgress(subtask), 'is-paused': isPaused(subtask)}"
 				:data-priority-level="priorityLevel(subtask)"
 			>
 				<FancyCheckbox
@@ -100,6 +100,7 @@ import {taskQuery, type TaskResponse} from '@/client/queries/tasks'
 import {useUpdateTaskMutation} from '@/client/queries/taskMutations'
 import {computeParentProgress} from '@/helpers/subtaskProgress'
 import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {isInProgress, isPaused} from '@/helpers/taskStatus'
 import {useAuthStore} from '@/stores/auth'
 import {isSetDate} from '@/components/calendar/calendarHelpers'
 
@@ -234,9 +235,19 @@ async function setDueDate(subtask: TaskResponse, value: string) {
 		--priority-tint: 42%;
 	}
 
-	&.is-done .subtask-title {
-		text-decoration: line-through;
-		color: var(--grey-500);
+	// A subtask being worked on is yellow; urgent keeps its red.
+	&.is-progress:not([data-priority-level='urgent']) {
+		background: color-mix(in srgb, var(--status-doing) 24%, transparent);
+	}
+
+	// A paused subtask is a calm blue-grey; urgent keeps its red.
+	&.is-paused:not([data-priority-level='urgent']) {
+		background: color-mix(in srgb, var(--status-paused) 18%, transparent);
+	}
+
+	// A finished subtask has a light green background instead of a strike-through.
+	&.is-done {
+		background: color-mix(in srgb, var(--success) 16%, transparent);
 	}
 }
 

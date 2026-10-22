@@ -9,6 +9,9 @@
 		}"
 		:style="{'background-color': color ?? undefined}"
 		:data-priority-level="priorityLevel"
+		:data-done="task.done || undefined"
+		:data-progress="inProgress || undefined"
+		:data-paused="paused || undefined"
 		:data-task-id="task.id"
 		:data-project-id="task.project_id"
 		:data-is-overdue="isOverdue || undefined"
@@ -64,6 +67,19 @@
 					{{ task.title }}
 				</RouterLink>
 			</h3>
+
+			<span
+				v-if="inProgress"
+				class="status-chip kanban-card__status"
+			>
+				{{ $t('task.status.inProgress') }}
+			</span>
+			<span
+				v-else-if="paused"
+				class="status-chip status-chip--paused kanban-card__status"
+			>
+				{{ $t('task.status.paused') }}
+			</span>
 			
 			<span
 				v-if="projectTitle"
@@ -145,6 +161,7 @@ import {useProjects} from '@/composables/useProjects'
 import {useDelayedLoading} from '@/composables/useDelayedLoading'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
 import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
+import {isInProgress, isPaused} from '@/helpers/taskStatus'
 import {useAuthStore} from '@/stores/auth'
 
 const props = defineProps<{
@@ -165,6 +182,8 @@ const showLoading = useDelayedLoading(loadingInternal)
 const color = computed(() => getHexColor(props.task.hex_color))
 
 const authStore = useAuthStore()
+const inProgress = computed(() => isInProgress(props.task))
+const paused = computed(() => isPaused(props.task))
 const priorityLevel = computed(() => getPriorityLevel(
 	props.task.priority,
 	props.task.done,
@@ -392,6 +411,21 @@ $task-background: var(--white);
 		--priority-tint: 42%;
 	}
 
+	// A task being worked on is yellow; urgent keeps its red and a custom task color still wins.
+	&[data-progress]:not([data-priority-level='urgent']) {
+		background: color-mix(in srgb, var(--status-doing) 24%, $task-background);
+	}
+
+	// A paused task is a calm blue-grey; urgent keeps its red and a custom task color still wins.
+	&[data-paused]:not([data-priority-level='urgent']) {
+		background: color-mix(in srgb, var(--status-paused) 18%, $task-background);
+	}
+
+	// A finished task has a light green background; a custom task color still wins.
+	&[data-done] {
+		background: color-mix(in srgb, var(--success) 16%, $task-background);
+	}
+
 	span {
 		inline-size: auto;
 	}
@@ -450,6 +484,10 @@ $task-background: var(--white);
 
 .kanban-card__done {
 	margin-inline-end: .25rem;
+}
+
+.kanban-card__status {
+	margin-block-end: .25rem;
 }
 
 .task-progress {

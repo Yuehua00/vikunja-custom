@@ -74,6 +74,14 @@
 						{{ $t('team.title') }}
 					</RouterLink>
 				</li>
+				<li>
+					<RouterLink :to="{ name: 'focus'}">
+						<span class="menu-item-icon icon">
+							<Icon icon="stopwatch" />
+						</span>
+						{{ $t('focus.title') }}
+					</RouterLink>
+				</li>
 				<li v-if="timeTrackingEnabled">
 					<RouterLink :to="{ name: 'time-tracking'}">
 						<span class="menu-item-icon icon">
