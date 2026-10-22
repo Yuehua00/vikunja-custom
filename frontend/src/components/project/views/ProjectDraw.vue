@@ -225,6 +225,7 @@ import {useUpdateTaskMutation} from '@/client/queries/taskMutations'
 import {useUpdateFrontendSettingsMutation} from '@/client/queries/account'
 import {useAuthStore} from '@/stores/auth'
 import {success} from '@/message'
+import {confirmFinishingSubtasks} from '@/composables/useFinishConfirm'
 import {
 	DEFAULT_CARD_DRAW_STATE,
 	SKIP_DAYS,
@@ -432,6 +433,10 @@ async function setPercent(percent: number) {
 // Finishing sets the end date to the day it was finished, and offers to take it back.
 async function finish() {
 	if (!card.value) {
+		return
+	}
+	// Finishing a card finishes its unfinished subtasks, so ask first.
+	if (!(await confirmFinishingSubtasks(card.value))) {
 		return
 	}
 	const {id, percent_done: percent, end_date: endDate} = card.value

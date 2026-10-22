@@ -42,7 +42,9 @@ import {getDefaultBucketId, moveTaskToBucket} from '@/helpers/task'
 import {computeParentProgress} from '@/helpers/subtaskProgress'
 import {isInProgress, isPaused} from '@/helpers/taskStatus'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
-import {translatedError} from '@/message'
+import {success, translatedError} from '@/message'
+import {i18n} from '@/i18n'
+import {queryClient} from '@/client/queryClient'
 
 const API_ZERO_DATE = '0001-01-01T00:00:00Z'
 
@@ -247,31 +249,52 @@ export async function reconcileDoingBucket(
 // The progress a task gets when it is dragged into "Doing", so it counts as being worked on.
 const DOING_START_PERCENT = 0.1
 
-// The bucket and the status of a task go together: "Doing" means in progress, the default bucket means not
-// started, or paused when there is progress. Returns what has to change on a task after a move into that
-// bucket, undefined when it can stay as is. The progress itself is never taken away.
+// What a task needs after a move into a bucket: `show` is applied on screen at once, `save` is what is
+// written to the server afterwards (the server already handles the done state of a move itself, and writing
+// it again would reschedule a repeating task twice).
+interface BucketStatus {
+	show: Partial<Task>
+	save: Partial<Task>
+}
+
+// The bucket and the status of a task go together: "Done" means finished with its progress recorded as 100%,
+// "Doing" means in progress, the default bucket means not started, or paused when there is progress. Undefined
+// when the task can stay as is. Progress is never taken away: a task that was finished keeps its 100% when it
+// is dragged out of "Done" again.
 function statusForBucket(
 	client: QueryClient,
 	project: number,
 	viewId: number,
 	bucketId: number,
 	task: Pick<Task, 'done' | 'percent_done' | 'paused'>,
-): Partial<Task> | undefined {
-	if (task.done) return undefined
+): BucketStatus | undefined {
 	const buckets = cachedViewBuckets(client, project, viewId)
 	const target = buckets?.find(item => item.id === bucketId)
 	if (!buckets || !target) return undefined
 
 	const percent = task.percent_done ?? 0
+	const view = getCachedProject(project, client)?.views?.find(item => item.id === viewId)
+
+	if (view?.done_bucket_id && target.id === view.done_bucket_id) {
+		return task.done && percent >= 1
+			? undefined
+			: {show: {done: true, percent_done: 1}, save: {percent_done: 1}}
+	}
 	if (target.title?.trim().toLowerCase() === 'doing') {
-		// A paused task carries on with its progress, one that never started gets a first bit.
+		// A task that never had progress gets a first bit, one that has some (also a finished one) keeps it.
+		const next = percent === 0 ? DOING_START_PERCENT : percent
+		if (task.done) {
+			return {show: {done: false, paused: false, percent_done: next}, save: {paused: false, percent_done: next}}
+		}
 		return task.paused || percent === 0
-			? {paused: false, ...(percent === 0 ? {percent_done: DOING_START_PERCENT} : {})}
+			? {show: {paused: false, percent_done: next}, save: {paused: false, percent_done: next}}
 			: undefined
 	}
-	const view = getCachedProject(project, client)?.views?.find(item => item.id === viewId)
 	if (view && target.id === getDefaultBucketId(view, buckets)) {
-		return percent > 0 && !task.paused ? {paused: true} : undefined
+		// With progress the task counts as paused, otherwise the board would put it back into "Doing".
+		if (percent > 0 && (task.done || !task.paused)) {
+			return {show: {done: false, paused: true}, save: {paused: true}}
+		}
 	}
 	return undefined
 }
@@ -314,24 +337,172 @@ export async function syncParentProgress(client: QueryClient, id: number, depth 
 	}
 }
 
+// ---- Finishing a task finishes its subtasks, reopening it brings them back as they were ----
+
+// What is needed to put a task back: whether it was done, how far it was and whether it was paused.
+interface TaskState {
+	id: number
+	done: boolean
+	percent_done: number
+	paused: boolean
+}
+
+// The state of a task before it was finished, with the states of the subtasks that were finished with it.
+interface Cascade {
+	parent: TaskState
+	subtasks: TaskState[]
+}
+
+const CASCADE_STORAGE_KEY = 'subtaskCascades'
+
+function loadCascades(): Record<string, Cascade> {
+	try {
+		return JSON.parse(localStorage.getItem(CASCADE_STORAGE_KEY) ?? '{}')
+	} catch {
+		return {}
+	}
+}
+
+function saveCascades(cascades: Record<string, Cascade>) {
+	try {
+		localStorage.setItem(CASCADE_STORAGE_KEY, JSON.stringify(cascades))
+	} catch {
+		// Without it a reopened task just cannot bring its subtasks back, which is not worth an error.
+	}
+}
+
+const stateOf = (task: Pick<Task, 'id' | 'done' | 'percent_done' | 'paused'>): TaskState => ({
+	id: task.id!,
+	done: Boolean(task.done),
+	percent_done: task.percent_done ?? 0,
+	paused: Boolean(task.paused),
+})
+
+function findCachedTask(client: QueryClient, id: number): TaskResponse | undefined {
+	for (const [, task] of client.getQueriesData<TaskResponse>({queryKey: taskKeys.details})) {
+		if (task?.id === id) return task
+	}
+	for (const [, tasks] of client.getQueriesData<TaskResponse[]>({queryKey: taskKeys.allLists})) {
+		const found = tasks?.find(item => item.id === id)
+		if (found) return found
+	}
+	for (const [, list] of client.getQueriesData<PaginatedTaskResponse>({queryKey: taskKeys.lists})) {
+		const found = list?.items.find(item => item.id === id)
+		if (found) return found
+	}
+	return undefined
+}
+
+// The state a task had right before the update that is being made, so that undoing what finishing it did to
+// its subtasks can put the task itself back too.
+const previousStates = new Map<number, TaskState>()
+
+function rememberPreviousState(client: QueryClient, id: number) {
+	const cached = findCachedTask(client, id)
+	if (cached) previousStates.set(id, stateOf(cached))
+}
+
+// Writes some fields of a task and brings the caches up to date. A write that changes nothing is answered with
+// 304 and no body. That is not an error here, there is just nothing to bring up to date, but the client treats
+// every status outside 200 to 299 as a failure unless it is told not to throw.
+async function patchTaskFields(client: QueryClient, id: number, fields: Partial<Task>): Promise<TaskResponse | undefined> {
+	const {data, error, response} = await patchTasksRead({
+		path: {task: id},
+		body: taskPatchBody(fields),
+		throwOnError: false,
+	})
+	if (response?.status === 304) return undefined
+	if (error !== undefined || !data) throw error ?? new Error('The task could not be saved')
+	replaceTaskEverywhere(client, data)
+	return normalizeTask({...data, id})
+}
+
+async function applyTaskState(client: QueryClient, state: TaskState) {
+	const updated = await patchTaskFields(client, state.id, {
+		done: state.done,
+		percent_done: state.percent_done,
+		paused: state.paused,
+	})
+	if (updated) reconcileDoneBuckets(client, updated)
+}
+
+// Puts the subtasks that were finished with a task back as they were, unless one of them was changed since,
+// and optionally the task itself too. Does the same for the subtasks of those subtasks.
+async function restoreCascade(client: QueryClient, parentId: number, includeParent: boolean, depth = 0) {
+	const cascades = loadCascades()
+	const cascade = cascades[parentId]
+	if (!cascade || depth > MAX_PARENT_DEPTH) return
+	delete cascades[parentId]
+	saveCascades(cascades)
+
+	const fresh = await client.fetchQuery({...taskQuery(parentId), staleTime: 0})
+	const current = new Map((fresh.related_tasks.subtask ?? []).map(subtask => [subtask.id, subtask]))
+	for (const state of cascade.subtasks) {
+		if (!current.get(state.id)?.done) continue
+		await applyTaskState(client, state)
+		await restoreCascade(client, state.id, false, depth + 1)
+	}
+	if (includeParent) await applyTaskState(client, cascade.parent)
+}
+
+// A task that was finished takes its unfinished subtasks with it, and a pop-up lists them. Undoing it in the
+// pop-up puts everything back.
+async function finishSubtasks(client: QueryClient, parent: TaskResponse, previous: TaskState | undefined, depth = 0) {
+	if (!parent.done || depth > MAX_PARENT_DEPTH) return
+	const fresh = await client.fetchQuery({...taskQuery(parent.id), staleTime: 0})
+	const open = (fresh.related_tasks.subtask ?? []).filter(subtask => !subtask.done)
+	if (open.length === 0) return
+
+	const cascades = loadCascades()
+	cascades[parent.id] = {parent: previous ?? stateOf(parent), subtasks: open.map(stateOf)}
+	saveCascades(cascades)
+
+	for (const subtask of open) {
+		const updated = await patchTaskFields(client, subtask.id, {done: true, percent_done: 1})
+			?? normalizeTask({...subtask, done: true, percent_done: 1})
+		reconcileDoneBuckets(client, updated)
+		await finishSubtasks(client, updated, undefined, depth + 1)
+	}
+
+	const shown = open.slice(0, 5).map(subtask => subtask.title).join('、') + (open.length > 5 ? '...' : '')
+	success({
+		message: i18n.global.t('task.subtasks.finishedWithParent', {parent: parent.title, count: open.length, tasks: shown}),
+	}, [{
+		title: i18n.global.t('task.undo'),
+		callback: () => { void restoreCascade(client, parent.id, true).catch(() => undefined) },
+	}])
+}
+
 export function updateTaskMutationOptions(optimistic = false) {
 	return contextMutationOptions({
-		mutationFn: async (task: Task & Required<Pick<Task, 'id'>>) => (await patchTasksRead({
-			path: {task: task.id},
-			body: taskPatchBody(task),
-		})).data,
+		mutationFn: async (task: Task & Required<Pick<Task, 'id'>>) => {
+			// An optimistic update has already changed the cache by now, and remembered the state before that.
+			if (!optimistic) rememberPreviousState(queryClient, task.id)
+			return (await patchTasksRead({
+				path: {task: task.id},
+				body: taskPatchBody(task),
+			})).data
+		},
 		optimistic: optimistic ? {
 			queryKeys: ({id}, client) => taskQueryKeys(client, id),
-			update: (task, client) => replaceTaskEverywhere(client, task),
+			update: (task, client) => {
+				rememberPreviousState(client, task.id)
+				replaceTaskEverywhere(client, task)
+			},
 		} : undefined,
 		onSuccess: (task, input, client) => {
 			replaceTaskEverywhere(client, task)
 			reconcileDoneBuckets(client, normalizeTask({...task, id: input.id}))
 			// Background work, one step after the other because the database takes a single write at a
-			// time. A failure only leaves the parent's progress or the kanban bucket for the next update.
+			// time. A failure only leaves the parent's progress, the kanban bucket or the subtasks for the
+			// next update.
 			void (async () => {
 				await syncKanbanBucket(client, normalizeTask({...task, id: input.id}))
 				await syncParentProgress(client, input.id)
+				// Finishing a task finishes its subtasks. Reopening it leaves them as they are.
+				if (task.done) {
+					await finishSubtasks(client, normalizeTask({...task, id: input.id}), previousStates.get(input.id))
+				}
 			})().catch(() => undefined)
 		},
 		onSettled: ({id}, client) => invalidateTaskMembership(client, id),
@@ -566,9 +737,9 @@ export function moveTaskMutationOptions() {
 			update: ({project, view, bucket, task}, client) => {
 				// The status changes with the bucket, right away like the done state does.
 				const status = statusForBucket(client, project, view, bucket, task)
-				const moved = status === undefined ? task : {...task, ...status}
+				const moved = status === undefined ? task : {...task, ...status.show}
 				if (status !== undefined && task.id !== undefined) {
-					mapTaskEverywhere(client, task.id, current => ({...current, ...status}))
+					mapTaskEverywhere(client, task.id, current => ({...current, ...status.show}))
 				}
 				return client.setQueriesData<BoardData>(
 					{queryKey: kanbanKeys.view(project, view)},
@@ -584,7 +755,7 @@ export function moveTaskMutationOptions() {
 			// The response still has the old status; the one that goes with the bucket stays on screen
 			// until it is saved below.
 			const status = statusForBucket(client, project, view, target, task)
-			const withStatus = (item: Task): Task => status === undefined ? item : {...item, ...status}
+			const withStatus = (item: Task): Task => status === undefined ? item : {...item, ...status.show}
 			if (data.task) replaceTaskEverywhere(client, withStatus(data.task))
 			client.setQueriesData<BoardData>(
 				{queryKey: kanbanKeys.view(project, view)},
@@ -596,13 +767,27 @@ export function moveTaskMutationOptions() {
 			const id = data.task?.id ?? task.id
 			if (id !== undefined) reconcileTaskBuckets(client, {project, view, bucket: target, task: id})
 
-			// Saves the status that goes with the bucket. Slightly later, so it does not write at the same
-			// moment as the position the board saves after a drop.
-			if (id !== undefined && status !== undefined) {
+			// Saves the status that goes with the bucket, and takes the subtasks along when the task was finished.
+			// Reopening it leaves them as they are. Slightly later, one step after the other, so it does not
+			// write at the same moment as the position the board saves after a drop.
+			const nowDone = data.task?.done ?? status?.show.done
+			const toSave = status !== undefined && Object.keys(status.save).length > 0
+			// A subtask that was moved changes how far its parent is: finished with its last subtask, and
+			// reopened as soon as one of them is.
+			const hasParent = (data.task?.related_tasks?.parenttask ?? task.related_tasks?.parenttask ?? []).length > 0
+			if (id !== undefined && (toSave || nowDone === true || hasParent)) {
 				setTimeout(() => {
-					void patchTasksRead({path: {task: id}, body: taskPatchBody(status)})
-						.then(({data: updated}) => replaceTaskEverywhere(client, updated))
-						.catch(() => undefined)
+					void (async () => {
+						if (status !== undefined && toSave) {
+							await patchTaskFields(client, id, status.save)
+						}
+						if (nowDone === true) {
+							await finishSubtasks(client, normalizeTask({...withStatus(data.task ?? task), id}), stateOf(task))
+						}
+						if (hasParent) {
+							await syncParentProgress(client, id)
+						}
+					})().catch(() => undefined)
 				}, 800)
 			}
 		},

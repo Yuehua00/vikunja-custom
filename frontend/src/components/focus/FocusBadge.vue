@@ -1,11 +1,11 @@
 <template>
 	<Teleport to="body">
 		<div
-			v-if="active && !onFocusPage"
+			v-if="showWindow"
 			ref="windowEl"
 			v-cy="'focusFloat'"
 			class="focus-float"
-			:class="{'is-dragging': dragging}"
+			:class="{'is-dragging': dragging, 'is-ended': !active && ended}"
 			:style="positionStyle"
 			role="region"
 			:aria-label="$t('focus.title')"
@@ -20,24 +20,44 @@
 					:color="color"
 				/>
 				<span class="focus-float-title">
-					{{ active.task_title || $t('focus.noTask') }}
+					{{ (active ?? ended)?.task_title || $t('focus.noTask') }}
 				</span>
 			</div>
-			<RouterLink
-				:to="{name: 'focus'}"
-				class="focus-float-time"
-				:title="$t('focus.openFocusPage')"
-			>
-				{{ display }}
-			</RouterLink>
-			<BaseButton
-				v-tooltip="active.mode === 'pomo' ? $t('focus.abandon') : $t('focus.stopAndRecord')"
-				class="focus-float-stop"
-				:aria-label="active.mode === 'pomo' ? $t('focus.abandon') : $t('focus.stopAndRecord')"
-				@click="stop"
-			>
-				<Icon icon="stop" />
-			</BaseButton>
+
+			<template v-if="active">
+				<RouterLink
+					:to="{name: 'focus'}"
+					class="focus-float-time"
+					:title="$t('focus.openFocusPage')"
+				>
+					{{ display }}
+				</RouterLink>
+				<BaseButton
+					v-tooltip="active.mode === 'pomo' ? $t('focus.abandon') : $t('focus.stopAndRecord')"
+					class="focus-float-stop"
+					:aria-label="active.mode === 'pomo' ? $t('focus.abandon') : $t('focus.stopAndRecord')"
+					@click="stop"
+				>
+					<Icon icon="stop" />
+				</BaseButton>
+			</template>
+
+			<!-- The time is up: the window stays and asks what is next. The session is recorded already. -->
+			<template v-else>
+				<span class="focus-float-up">{{ $t('focus.timeUp') }}</span>
+				<BaseButton
+					class="focus-float-action"
+					@click="dismissEnded"
+				>
+					{{ $t('focus.endedDone') }}
+				</BaseButton>
+				<BaseButton
+					class="focus-float-action is-primary"
+					@click="startAnother"
+				>
+					{{ $t('focus.endedAnother') }}
+				</BaseButton>
+			</template>
 		</div>
 	</Teleport>
 </template>
@@ -55,18 +75,21 @@ import {formatClock, projectColorOf} from '@/helpers/focus'
 
 // The timer as a small window that floats above every page and can be dragged. It is always mounted,
 // so it is also the one place that notices a pomodoro running out.
-const {active, elapsed, remaining, abandon, finish} = useFocusTimer()
+const {active, ended, dismissEnded, startAnother, elapsed, remaining, abandon, finish} = useFocusTimer()
 useFocusCompletion()
 
 const route = useRoute()
 const projectList = useProjects()
 
-// The focus page shows the same timer in full, so the window would only be in the way there.
+// The focus page shows a running timer in full, so the window would only be in the way there. A timer that
+// has run out is still shown, because the page itself has nothing that asks what comes next.
 const onFocusPage = computed(() => route.name === 'focus')
+const showWindow = computed(() => Boolean(active.value ? !onFocusPage.value : ended.value))
 
-const color = computed(() => active.value?.project_id
-	? projectColorOf(projectList.projects[active.value.project_id]?.hex_color)
-	: undefined)
+const color = computed(() => {
+	const projectId = (active.value ?? ended.value)?.project_id
+	return projectId ? projectColorOf(projectList.projects[projectId]?.hex_color) : undefined
+})
 
 const display = computed(() => formatClock(active.value?.mode === 'pomo' ? remaining.value : elapsed.value))
 
@@ -214,6 +237,59 @@ function onPointerUp(event: PointerEvent) {
 	font-size: 1.15rem;
 	font-weight: 600;
 	font-variant-numeric: tabular-nums;
+}
+
+// The time is up: a ring that pulses until the user decides, so it is not overlooked.
+.focus-float.is-ended {
+	border-color: var(--primary);
+	animation: focus-float-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes focus-float-pulse {
+	0%,
+	100% {
+		box-shadow: 0 10px 30px rgba(0, 0, 0, .18), 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent);
+	}
+
+	50% {
+		box-shadow: 0 10px 30px rgba(0, 0, 0, .18), 0 0 0 .6rem color-mix(in srgb, var(--primary) 0%, transparent);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.focus-float.is-ended {
+		animation: none;
+	}
+}
+
+.focus-float-up {
+	color: var(--primary);
+	font-size: 1.05rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.focus-float-action {
+	padding: .4rem .95rem;
+	border-radius: 999px;
+	background: var(--grey-100);
+	color: var(--text);
+	font-size: .85rem;
+	white-space: nowrap;
+	transition: background $transition;
+
+	&:hover {
+		background: var(--grey-200);
+	}
+
+	&.is-primary {
+		background: var(--primary);
+		color: var(--white);
+
+		&:hover {
+			background: color-mix(in srgb, var(--primary) 85%, black);
+		}
+	}
 }
 
 .focus-float-stop {

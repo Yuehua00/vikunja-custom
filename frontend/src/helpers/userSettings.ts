@@ -6,7 +6,7 @@ import type {DateDisplay} from '@/constants/dateDisplay'
 import type {TimeFormat} from '@/constants/timeFormat'
 import type {IRelationKind} from '@/types/IRelationKind'
 import type {CardDrawState} from '@/helpers/cardDraw'
-import type {ActiveFocus, FocusRecords} from '@/helpers/focus'
+import type {ActiveFocus, FocusEnded, FocusRecords} from '@/helpers/focus'
 import type {TaskReminder, UserGeneralSettings} from '@/client/generated'
 import {PrefixMode} from '@/modules/quickAddMagic'
 import {DEFAULT_PROJECT_VIEW_SETTINGS} from '@/constants/projectView'
@@ -40,6 +40,8 @@ export interface FrontendSettings {
 	// Pomodoro and stopwatch: the running timer (null when none), the finished sessions per month
 	// and the length of a pomodoro in minutes.
 	focus_active?: ActiveFocus | null
+	// The pomodoro that just ran out and waits for the user to finish it or start another one.
+	focus_ended?: FocusEnded | null
 	focus_records?: FocusRecords
 	focus_pomo_minutes?: number
 }

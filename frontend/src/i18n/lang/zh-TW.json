@@ -26,6 +26,9 @@
 		"startFocus": "開始計時",
 		"started": "已開始計時。",
 		"completed": "番茄鐘完成，已記錄。",
+		"timeUp": "計時結束",
+		"endedDone": "完成",
+		"endedAnother": "再來一顆番茄",
 		"alreadyRunning": "目前正在為「{task}」計時。",
 		"openFocusPage": "前往專注頁",
 		"noTasksToPick": "沒有可以選的事項。",
@@ -853,6 +856,7 @@
 		"importance": {
 			"setTo": "重要度 {count}"
 		},
+		"subtaskOf": "子項目：{parent}",
 		"status": {
 			"done": "完成",
 			"inProgress": "處理中",
@@ -863,7 +867,11 @@
 			"title": "子項目",
 			"summary": "已完成 {done} / {total}",
 			"empty": "還沒有子項目，在下方新增一個，把這件事拆成步驟。",
-			"addPlaceholder": "輸入子項目，按 Enter 新增"
+			"addPlaceholder": "輸入子項目，按 Enter 新增",
+			"finishedWithParent": "「{parent}」已完成，其中 {count} 個子項目也一併設為完成：{tasks}",
+			"finishTitle": "要完成「{task}」嗎？",
+			"finishText": "還有 {count} 個子項目沒有完成，完成這個任務會把下列子項目全部設為完成：",
+			"finishConfirm": "確認，全部完成"
 		},
 		"show": {
 			"titleCurrent": "目前任務",

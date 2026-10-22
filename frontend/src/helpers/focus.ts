@@ -26,6 +26,15 @@ export interface ActiveFocus {
 	duration_seconds?: number
 }
 
+// A pomodoro that has just run out. It stays until the user decides what is next: it is already recorded.
+export interface FocusEnded {
+	task_id: number | null
+	task_title: string
+	project_id?: number | null
+	duration_seconds: number
+	ended_at: string
+}
+
 export interface FocusRecord {
 	id: string
 	task_id: number | null

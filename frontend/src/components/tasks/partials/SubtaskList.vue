@@ -130,11 +130,12 @@ function priorityLevel(subtask: TaskResponse) {
 }
 
 async function setDone(subtask: TaskResponse, done: boolean) {
-	// A reopened subtask must not keep a full percentage, or it would still count as finished.
+	// A finished subtask records full progress. A reopened one must not keep it, or it would still count as
+	// finished in the progress of its parent.
 	await updateTask.mutateAsync({
 		id: subtask.id,
 		done,
-		...(!done && subtask.percent_done >= 1 ? {percent_done: 0} : {}),
+		...(done ? {percent_done: 1} : subtask.percent_done >= 1 ? {percent_done: 0} : {}),
 	})
 }
 

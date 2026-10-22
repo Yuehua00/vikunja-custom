@@ -748,6 +748,7 @@ import {getScrollParent} from '@/helpers/getScrollParent'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
 import {REMINDER_PERIOD_RELATIVE_TO_TYPES} from '@/types/IReminderPeriodRelativeTo'
 import {playPopSound} from '@/helpers/playPop'
+import {confirmFinishingSubtasks} from '@/composables/useFinishConfirm'
 import {taskLoadErrorAction} from './taskDetailError'
 
 import {
@@ -1227,9 +1228,17 @@ async function deleteTask() {
 }
 
 async function toggleTaskDone() {
+	// Finishing a task finishes its unfinished subtasks, so ask first.
+	if (!task.value.done && !(await confirmFinishingSubtasks(task.value))) {
+		return
+	}
+
+	const before = klona(task.value)
 	const newTask = {
 		...task.value,
-		done: !task.value.done,
+		done: !before.done,
+		// Finishing a task records full progress, which stays when it is reopened. Only undo takes it back.
+		...(before.done ? {} : {percent_done: 1}),
 	}
 
 	if (newTask.done) {
@@ -1238,7 +1247,12 @@ async function toggleTaskDone() {
 
 	await saveTask(
 		newTask,
-		toggleTaskDone,
+		() => saveTask({
+			...task.value,
+			done: before.done,
+			percent_done: before.percent_done,
+			paused: before.paused,
+		}),
 	)
 }
 
@@ -1292,9 +1306,18 @@ async function setImportance(importance: number) {
 }
 
 async function setPercentDone(percentDone: number) {
+	// Full progress finishes the task and with it its unfinished subtasks, so ask first. When declined the
+	// select goes back to the progress the task has.
+	if (percentDone >= 1 && !task.value.done && !(await confirmFinishingSubtasks(task.value))) {
+		task.value.percent_done = taskQuery.task.value?.percent_done ?? 0
+		return
+	}
+
 	const newTask: ITask = {
 		...task.value,
 		percent_done: percentDone,
+		// Full progress finishes the task, and less than that reopens a finished one, like in the draw view.
+		done: percentDone >= 1,
 		// Changing the progress of a paused task means it is picked up again.
 		paused: false,
 	}

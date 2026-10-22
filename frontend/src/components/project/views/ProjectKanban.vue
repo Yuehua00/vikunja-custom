@@ -295,6 +295,7 @@ import {useKanban} from '@/composables/useKanban'
 import {bucketHasMore, kanbanKeys, type BucketResponse} from '@/client/queries/kanban'
 import {removeTaskFromBoard} from '@/client/queries/taskCache'
 import {reconcileDoingBucket, useUpdateTaskPositionMutation, useMoveTaskMutation} from '@/client/queries/taskMutations'
+import {confirmFinishingSubtasks} from '@/composables/useFinishConfirm'
 import {
 	useCreateBucketMutation,
 	useDeleteBucketMutation,
@@ -445,6 +446,7 @@ const bucketDraggableComponentData = computed(() => ({
 }))
 const {currentProject: project} = useCurrentProject()
 const view = computed(() => project.value?.views.find(view => view.id === props.viewId) as ProjectView || null)
+const doneBucketId = computed(() => view.value?.done_bucket_id)
 const canWrite = computed(() =>
 	typeof project.value?.max_permission === 'number' &&
 	project.value.max_permission > Permissions.READ &&
@@ -591,6 +593,11 @@ async function updateTaskPosition(e: SortableEvent & {originalEvent?: MouseEvent
 		const before = bucket.tasks[index - 1]
 		const after = bucket.tasks[index + 1]
 		if (bucket.id !== sourceBucket.value) {
+			// Dropping a task into "Done" finishes its unfinished subtasks, so ask first. When declined nothing
+			// is changed and the board goes back to how it was.
+			if (bucket.id === doneBucketId.value && !task.done && !(await confirmFinishingSubtasks(task))) {
+				return
+			}
 			const result = await moveMutation.mutateAsync({project, view, bucket: bucket.id, task})
 			if (result.bucket_id !== undefined && result.bucket_id !== bucket.id) return
 		}

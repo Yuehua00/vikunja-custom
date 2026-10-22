@@ -21,6 +21,7 @@
 				class="is-inline-flex is-align-items-center"
 			>
 				<FancyCheckbox
+					:key="checkboxKey"
 					:model-value="task.done ?? false"
 					:disabled="isArchived || disabled || !canMarkAsDone"
 					:aria-label="$t('task.detail.markAsDone', {task: task.title})"
@@ -157,7 +158,7 @@
 			</div>
 
 			<ProgressBar
-				v-if="(task.percent_done ?? 0) > 0"
+				v-if="!task.done && (task.percent_done ?? 0) > 0"
 				:value="(task.percent_done ?? 0) * 100"
 				is-small
 			/>
@@ -281,6 +282,7 @@ import Popup from '@/components/misc/Popup.vue'
 import Modal from '@/components/misc/Modal.vue'
 import FocusStartCard from '@/components/focus/FocusStartCard.vue'
 import {isInProgress, isPaused} from '@/helpers/taskStatus'
+import {confirmFinishingSubtasks} from '@/composables/useFinishConfirm'
 
 
 import {formatDisplayDate, formatISO, formatDateLong} from '@/helpers/time/formatDate'
@@ -397,8 +399,17 @@ const isOverdue = computed(() => (
 
 let oldTask: ITask
 
+// Changing the key puts the checkbox back to what the task says, after a tick that was not carried out.
+const checkboxKey = ref(0)
+
 async function markAsDone(checked: boolean, wasReverted: boolean = false) {
 	if (!wasReverted) oldTask = {...task.value}
+
+	// Finishing a task finishes its unfinished subtasks, so ask first and leave everything as it is if not.
+	if (checked && !wasReverted && !(await confirmFinishingSubtasks(task.value))) {
+		checkboxKey.value++
+		return
+	}
 
 	// Fire the request immediately and with the intended done value snapshotted, so a re-render or
 	// teardown during the animation delay can neither drop the save nor make it send a stale state.
@@ -407,6 +418,9 @@ async function markAsDone(checked: boolean, wasReverted: boolean = false) {
 		...source,
 		id: source.id!,
 		done: checked,
+		// Finishing a task records full progress, which stays when the task is reopened or moved around.
+		// Only undo takes it back to the progress the task had before.
+		...(checked ? {percent_done: 1} : wasReverted ? {percent_done: oldTask.percent_done, paused: oldTask.paused} : {}),
 	}).catch(() => undefined)
 
 	const finish = async () => {
@@ -508,6 +522,18 @@ defineExpose({
 
 	&:hover {
 		background-color: var(--grey-100);
+	}
+
+	// The progress bar has the same size and place in every row, whether a task or a subtask, so the bars line up.
+	:deep(.progress-bar) {
+		flex: 0 0 16rem;
+		inline-size: 16rem;
+		margin-inline: auto .75rem;
+
+		@media screen and (max-width: $tablet) {
+			flex-basis: 8rem;
+			inline-size: 8rem;
+		}
 	}
 
 	// The priority is shown as a tinted background instead of a label.

@@ -26,6 +26,9 @@
     "startFocus": "Start a timer",
     "started": "Timer started.",
     "completed": "Pomodoro finished and recorded.",
+    "timeUp": "Time is up",
+    "endedDone": "Done",
+    "endedAnother": "Another pomodoro",
     "alreadyRunning": "A timer is already running for {task}.",
     "openFocusPage": "Open the focus page",
     "noTasksToPick": "No tasks to pick from.",
@@ -1182,6 +1185,7 @@
     "importance": {
       "setTo": "Importance {count}"
     },
+    "subtaskOf": "Subtask of {parent}",
     "status": {
       "done": "Done",
       "inProgress": "In progress",
@@ -1192,7 +1196,11 @@
       "title": "Subtasks",
       "summary": "{done} of {total} done",
       "empty": "No subtasks yet. Add one below to break this task into steps.",
-      "addPlaceholder": "Add a subtask and press Enter"
+      "addPlaceholder": "Add a subtask and press Enter",
+      "finishedWithParent": "{parent} is done, and {count} of its subtasks were finished with it: {tasks}",
+      "finishTitle": "Finish {task}?",
+      "finishText": "{count} subtasks are not finished yet. Finishing this task sets all of them to done:",
+      "finishConfirm": "Confirm, finish all"
     },
     "show": {
       "titleCurrent": "Current Tasks",

@@ -12,6 +12,7 @@
 		:data-done="task.done || undefined"
 		:data-progress="inProgress || undefined"
 		:data-paused="paused || undefined"
+		:data-subtask="parentTitle ? true : undefined"
 		:data-task-id="task.id"
 		:data-project-id="task.project_id"
 		:data-is-overdue="isOverdue || undefined"
@@ -55,6 +56,14 @@
 				</span>
 			</div>
 			
+			<div
+				v-if="parentTitle"
+				class="kanban-card__parent"
+			>
+				<Icon icon="sitemap" />
+				{{ $t('task.subtaskOf', {parent: parentTitle}) }}
+			</div>
+
 			<h3>
 				<RouterLink
 					:to="{ name: 'task.detail', params: {id: task.id} }"
@@ -89,7 +98,7 @@
 			</span>
 
 			<ProgressBar
-				v-if="task.percent_done > 0"
+				v-if="!task.done && task.percent_done > 0"
 				class="task-progress"
 				:value="task.percent_done * 100"
 			/>
@@ -162,6 +171,7 @@ import {useDelayedLoading} from '@/composables/useDelayedLoading'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
 import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
 import {isInProgress, isPaused} from '@/helpers/taskStatus'
+import {confirmFinishingSubtasks} from '@/composables/useFinishConfirm'
 import {useAuthStore} from '@/stores/auth'
 
 const props = defineProps<{
@@ -184,6 +194,8 @@ const color = computed(() => getHexColor(props.task.hex_color))
 const authStore = useAuthStore()
 const inProgress = computed(() => isInProgress(props.task))
 const paused = computed(() => isPaused(props.task))
+// The title of the task this one is a subtask of, so a subtask can be told from a task on the board.
+const parentTitle = computed(() => props.task.related_tasks?.parenttask?.[0]?.title)
 const priorityLevel = computed(() => getPriorityLevel(
 	props.task.priority,
 	props.task.done,
@@ -215,11 +227,18 @@ async function toggleTaskDone(task: TaskResponse) {
 	const isRecurringTask = task.repeat_after > 0 || task.repeat_mode === TASK_REPEAT_MODES.REPEAT_MODE_MONTH
 	const wasBeingMarkedDone = !task.done
 	
+	// Finishing a task finishes its unfinished subtasks, so ask first.
+	if (!task.done && !(await confirmFinishingSubtasks(task))) {
+		return
+	}
+
 	loadingInternal.value = true
 	try {
 		const updatedTask = await updateTask.mutateAsync({
 			...task,
 			done: !task.done,
+			// Finishing a task records full progress, which stays when it is reopened.
+			...(task.done ? {} : {percent_done: 1}),
 		})
 
 		if (updatedTask.done) {
@@ -488,6 +507,20 @@ $task-background: var(--white);
 
 .kanban-card__status {
 	margin-block-end: .25rem;
+}
+
+// A subtask carries a line with its parent and a bar on the start side.
+.kanban-card__parent {
+	display: flex;
+	align-items: center;
+	gap: .35rem;
+	margin-block-end: .25rem;
+	font-size: .75rem;
+	color: var(--primary);
+}
+
+.task[data-subtask] {
+	box-shadow: inset 3px 0 0 var(--primary), var(--shadow-xs);
 }
 
 .task-progress {

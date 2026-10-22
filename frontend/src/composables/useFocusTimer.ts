@@ -1,10 +1,8 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
-import {useI18n} from 'vue-i18n'
 
 import {useUpdateFrontendSettingsMutation} from '@/client/queries/account'
 import {useAuthStore} from '@/stores/auth'
-import {playPopSound} from '@/helpers/playPop'
-import {success} from '@/message'
+import {playFocusAlarm} from '@/helpers/focusAlarm'
 import {
 	MIN_RECORD_SECONDS,
 	buildRecord,
@@ -14,6 +12,7 @@ import {
 	monthKey,
 	remainingSeconds,
 	type ActiveFocus,
+	type FocusEnded,
 	type FocusMode,
 	type FocusRecords,
 } from '@/helpers/focus'
@@ -52,6 +51,7 @@ export function useFocusTimer() {
 
 	const settings = computed(() => authStore.settings.frontend_settings)
 	const active = computed<ActiveFocus | null>(() => settings.value.focus_active ?? null)
+	const ended = computed<FocusEnded | null>(() => settings.value.focus_ended ?? null)
 	const records = computed(() => flattenRecords(settings.value.focus_records))
 	const pomoMinutes = computed(() => clampPomoMinutes(settings.value.focus_pomo_minutes))
 
@@ -77,6 +77,8 @@ export function useFocusTimer() {
 			return
 		}
 		await save({
+			// Starting something new answers the question the ended pomodoro was still asking.
+			focus_ended: null,
 			focus_active: {
 				task_id: input.taskId,
 				task_title: input.taskTitle,
@@ -107,10 +109,47 @@ export function useFocusTimer() {
 				const key = monthKey(new Date(current.started_at))
 				next[key] = [...(next[key] ?? []).filter(item => item.id !== record.id), record]
 			}
-			await save({focus_active: null, focus_records: next})
+			// A pomodoro that ran out stays visible as ended, until the user decides what comes next.
+			await save({
+				focus_active: null,
+				focus_records: next,
+				focus_ended: completed && current.duration_seconds !== undefined
+					? {
+						task_id: current.task_id,
+						task_title: current.task_title,
+						project_id: current.project_id,
+						duration_seconds: current.duration_seconds,
+						ended_at: endedAt.toISOString(),
+					}
+					: null,
+			})
 		} finally {
 			finishing = false
 		}
+	}
+
+	// Closes the notice of an ended pomodoro.
+	function dismissEnded() {
+		return save({focus_ended: null})
+	}
+
+	// Starts the next pomodoro for the same task and of the same length as the one that just ended.
+	async function startAnother() {
+		const previous = ended.value
+		if (!previous || active.value) {
+			return
+		}
+		await save({
+			focus_ended: null,
+			focus_active: {
+				task_id: previous.task_id,
+				task_title: previous.task_title,
+				project_id: previous.project_id ?? null,
+				mode: 'pomo',
+				started_at: new Date().toISOString(),
+				duration_seconds: previous.duration_seconds,
+			},
+		})
 	}
 
 	// Drops the running timer without recording it.
@@ -134,6 +173,9 @@ export function useFocusTimer() {
 
 	return {
 		active,
+		ended,
+		dismissEnded,
+		startAnother,
 		records,
 		pomoMinutes,
 		elapsed,
@@ -148,7 +190,6 @@ export function useFocusTimer() {
 
 // Records a pomodoro when its time is up, wherever the user is. Used once, by the always visible badge.
 export function useFocusCompletion() {
-	const {t} = useI18n({useScope: 'global'})
 	const timer = useFocusTimer()
 
 	watch(
@@ -158,8 +199,8 @@ export function useFocusCompletion() {
 				return
 			}
 			await timer.finish(true)
-			playPopSound()
-			success({message: t('focus.completed')})
+			// The floating window now says the time is up; the alarm makes sure it is noticed.
+			playFocusAlarm()
 		},
 		{immediate: true},
 	)
