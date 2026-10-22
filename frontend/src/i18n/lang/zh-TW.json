@@ -1,4 +1,22 @@
 {
+	"habits": {
+		"title": "今天",
+		"edit": "編輯習慣",
+		"finishEditing": "取消",
+		"nothingToday": "今天沒有排習慣，可以休息或做下面的其他習慣。",
+		"otherHabits": "其他習慣",
+		"thisWeek": "本週 {done} / {target}",
+		"streak": "連續 {n} 週達標",
+		"openProject": "開啟專案",
+		"name": "習慣名稱",
+		"weeklyTarget": "每週目標",
+		"project": "專案",
+		"noProject": "不連結專案",
+		"add": "新增習慣",
+		"newName": "新習慣",
+		"remove": "刪除",
+		"save": "儲存"
+	},
 	"focus": {
 		"title": "專注",
 		"pomo": "番茄鐘",

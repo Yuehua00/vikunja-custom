@@ -7,6 +7,7 @@ import type {TimeFormat} from '@/constants/timeFormat'
 import type {IRelationKind} from '@/types/IRelationKind'
 import type {CardDrawState} from '@/helpers/cardDraw'
 import type {ActiveFocus, FocusEnded, FocusRecords} from '@/helpers/focus'
+import type {Habit, HabitLogs} from '@/helpers/habits'
 import type {TaskReminder, UserGeneralSettings} from '@/client/generated'
 import {PrefixMode} from '@/modules/quickAddMagic'
 import {DEFAULT_PROJECT_VIEW_SETTINGS} from '@/constants/projectView'
@@ -44,6 +45,9 @@ export interface FrontendSettings {
 	focus_ended?: FocusEnded | null
 	focus_records?: FocusRecords
 	focus_pomo_minutes?: number
+	// Daily habits and the days they were done (see helpers/habits.ts). Defaults apply while unset.
+	habits?: Habit[]
+	habit_logs?: HabitLogs
 }
 
 export function taskRemindersFromSettings(

@@ -24,17 +24,7 @@
 			@tasksAdded="updateTaskKey"
 		/>
 		<ImportHint v-if="tasksLoaded" />
-		<div
-			v-if="authStore.settings.frontend_settings.show_last_viewed !== false && projectHistory.length > 0"
-			class="is-max-width-desktop has-text-start mbs-4"
-		>
-			<h2>{{ $t('home.lastViewed') }}</h2>
-			<ProjectCardGrid
-				v-cy="'projectCardGrid'"
-				:projects="projectHistory"
-				:show-even-number-of-projects="true"
-			/>
-		</div>
+		<TodayOverview class="is-max-width-desktop has-text-start mbs-4" />
 		<div
 			v-if="projectList.hasProjects"
 			class="is-max-width-desktop has-text-start mbs-4"
@@ -59,12 +49,11 @@ import {useRoute, useRouter} from 'vue-router'
 
 import Message from '@/components/misc/Message.vue'
 import ShowTasks from '@/views/tasks/ShowTasks.vue'
-import ProjectCardGrid from '@/components/project/partials/ProjectCardGrid.vue'
+import TodayOverview from '@/components/home/TodayOverview.vue'
 import AddTask from '@/components/tasks/AddTask.vue'
 import ImportHint from '@/components/home/ImportHint.vue'
 import CalendarView from '@/components/calendar/CalendarView.vue'
 
-import {getHistory} from '@/modules/projectHistory'
 import {parseDateOrNull} from '@/helpers/parseDateOrNull'
 import {formatDateSince, formatDisplayDate} from '@/helpers/time/formatDate'
 import {useDaytimeSalutation} from '@/composables/useDaytimeSalutation'
@@ -78,17 +67,6 @@ const authStore = useAuthStore()
 const projectList = useProjects()
 const route = useRoute()
 const router = useRouter()
-
-const projectHistory = computed(() => {
-	// If we don't check this, it tries to load the project background right after logging out	
-	if(!authStore.authenticated) {
-		return []
-	}
-	
-	return getHistory()
-		.map(l => projectList.projects[l.id])
-		.filter(l => Boolean(l))
-})
 
 const tasksLoaded = ref(false)
 

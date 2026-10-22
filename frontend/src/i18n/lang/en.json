@@ -1,4 +1,22 @@
 {
+  "habits": {
+    "title": "Today",
+    "edit": "Edit habits",
+    "finishEditing": "Cancel",
+    "nothingToday": "No habit is planned for today. Rest, or pick one of the other habits below.",
+    "otherHabits": "Other habits",
+    "thisWeek": "This week {done} / {target}",
+    "streak": "{n} weeks in a row",
+    "openProject": "Open project",
+    "name": "Habit name",
+    "weeklyTarget": "Per week",
+    "project": "Project",
+    "noProject": "No project",
+    "add": "Add habit",
+    "newName": "New habit",
+    "remove": "Remove",
+    "save": "Save"
+  },
   "focus": {
     "title": "Focus",
     "pomo": "Pomodoro",
