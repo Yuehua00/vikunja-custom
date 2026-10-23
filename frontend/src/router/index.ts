@@ -463,6 +463,11 @@ const router = createRouter({
 			component: () => import('@/views/collect/CollectView.vue'),
 		},
 		{
+			path: '/diary',
+			name: 'diary',
+			component: () => import('@/views/diary/DiaryView.vue'),
+		},
+		{
 			path: '/admin',
 			component: () => import('@/views/admin/AdminShell.vue'),
 			meta: {

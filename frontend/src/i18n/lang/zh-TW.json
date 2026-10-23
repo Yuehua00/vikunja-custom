@@ -55,6 +55,45 @@
 		"dueTomorrow": "明天到期",
 		"dueInDays": "{count} 天後到期"
 	},
+	"nightMode": {
+		"title": "深夜模式",
+		"enable": "晚上自動調暗介面，並提醒我收工",
+		"help": "時間到了會自動切成深色並加上暖色遮罩，結束時間後恢復原本的外觀。只儲存在這個瀏覽器。",
+		"start": "開始調暗",
+		"end": "恢復原樣",
+		"remind": "提醒收工",
+		"reminderTitle": "已經很晚了",
+		"reminderText": "今天先到這裡，休息一下，明天再繼續。",
+		"writeDiary": "寫日記",
+		"done": "好，收工",
+		"snooze": "再 30 分鐘"
+	},
+	"diary": {
+		"title": "日記",
+		"today": "今天",
+		"previousDay": "前一天",
+		"nextDay": "後一天",
+		"mood": "心情",
+		"moods": {
+			"good": "好",
+			"ok": "普通",
+			"low": "低落"
+		},
+		"placeholder": "今天過得怎麼樣？",
+		"saving": "儲存中...",
+		"saved": "已儲存",
+		"saveFailed": "日記儲存失敗，請再試一次。",
+		"past": "過往日記",
+		"openDay": "開啟 {date} 的日記",
+		"jar": {
+			"title": "心情罐",
+			"unit": "篇日記",
+			"summary": "{month}寫了 {count} 天",
+			"previousMonth": "上個月",
+			"nextMonth": "下個月",
+			"write": "去寫今天的日記"
+		}
+	},
 	"collect": {
 		"title": "收集",
 		"project": "專案",

@@ -74,7 +74,9 @@
 					'is-outside': mode === 'month' && !isSameMonth(day),
 					'is-week': mode === 'week',
 					'is-drop-target': dropTarget === day.getTime(),
+					'has-mood': moodOfDay(day) !== undefined,
 				}"
+				:style="moodStyle(day)"
 				@dragover="onDragOver($event, day)"
 				@dragleave="onDragLeave(day)"
 				@drop="onDrop($event, day)"
@@ -82,6 +84,12 @@
 				<div class="calendar-day-number">
 					{{ day.getDate() }}
 				</div>
+				<RouterLink
+					v-if="moodOfDay(day)"
+					class="calendar-mood-dot"
+					:to="{name: 'diary', query: {date: diaryDateKey(day)}}"
+					:title="$t('diary.openDay', {date: diaryDateKey(day)})"
+				/>
 
 				<ul class="calendar-tasks">
 					<li
@@ -142,6 +150,8 @@ import {useAuthStore} from '@/stores/auth'
 import type {Task} from '@/client/generated'
 import {PRIORITIES, getPriorityLevel} from '@/constants/priorities'
 import {isInProgress, isPaused} from '@/helpers/taskStatus'
+import {useDiary} from '@/client/queries/diary'
+import {MOOD_COLORS, diaryDateKey} from '@/helpers/diary'
 
 import {
 	getCalendarRange,
@@ -171,6 +181,18 @@ const MAX_TASKS_PER_DAY_IN_MONTH = 3
 const {locale} = useI18n()
 const route = useRoute()
 const authStore = useAuthStore()
+
+// The mood of a day's diary entry tints its cell.
+const {moodByDate} = useDiary()
+
+function moodOfDay(day: Date) {
+	return moodByDate.value.get(diaryDateKey(day))
+}
+
+function moodStyle(day: Date) {
+	const mood = moodOfDay(day)
+	return mood ? {'--mood-color': MOOD_COLORS[mood]} : undefined
+}
 
 const mode = ref<CalendarMode>('month')
 const anchor = ref(startOfDay(new Date()))
@@ -410,6 +432,10 @@ function taskStyle(task: Task) {
 		}
 	}
 
+	&.has-mood {
+		background: color-mix(in srgb, var(--mood-color) 18%, var(--white));
+	}
+
 	&.is-drop-target {
 		background: color-mix(in srgb, var(--primary) 12%, var(--white));
 		outline: 2px dashed var(--primary);
@@ -431,6 +457,15 @@ function taskStyle(task: Task) {
 	line-height: 1.5rem;
 	text-align: center;
 	border-radius: 999px;
+}
+
+.calendar-mood-dot {
+	display: inline-block;
+	inline-size: .6rem;
+	block-size: .6rem;
+	margin-inline-start: .3rem;
+	background: var(--mood-color);
+	border-radius: 50%;
 }
 
 .calendar-tasks {

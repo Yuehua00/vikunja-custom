@@ -35,6 +35,7 @@
 			<AddToHomeScreen v-if="!isQuickAddMode" />
 			<UpdateNotification v-if="!isQuickAddMode" />
 			<Notification />
+			<NightReminder v-if="!isQuickAddMode && authStore.authUser" />
 			<DemoMode v-if="!isQuickAddMode" />
 		</Teleport>
 	</Ready>
@@ -48,6 +49,7 @@ import isTouchDevice from 'is-touch-device'
 import Notification from '@/components/misc/Notification.vue'
 import UpdateNotification from '@/components/home/UpdateNotification.vue'
 import KeyboardShortcuts from '@/components/misc/keyboard-shortcuts/index.vue'
+import NightReminder from '@/components/misc/NightReminder.vue'
 
 import AppHeader from '@/components/home/AppHeader.vue'
 import ContentAuth from '@/components/home/ContentAuth.vue'
@@ -61,6 +63,7 @@ import {useAuthStore} from '@/stores/auth'
 import {useBaseStore} from '@/stores/base'
 
 import {useColorScheme} from '@/composables/useColorScheme'
+import {useNightMode} from '@/composables/useNightMode'
 import {useTimeTrackingFavicon} from '@/composables/useTimeTrackingFavicon'
 import {useBodyClass} from '@/composables/useBodyClass'
 import QuickAddOverlay from '@/components/quick-actions/QuickAddOverlay.vue'
@@ -127,6 +130,7 @@ watch(accountDeletionToken, async token => {
 
 setLanguage(authStore.settings.language ?? DEFAULT_LANGUAGE)
 useColorScheme()
+useNightMode()
 useTimeTrackingFavicon()
 </script>
 

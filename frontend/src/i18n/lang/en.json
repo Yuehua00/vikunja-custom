@@ -55,6 +55,45 @@
     "dueTomorrow": "Due tomorrow",
     "dueInDays": "Due in {count} days"
   },
+  "nightMode": {
+    "title": "Late-night mode",
+    "enable": "Dim the interface at night and remind me to stop",
+    "help": "At the start time the page switches to dark with a warm veil, and goes back to your normal look at the end time. Stored in this browser only.",
+    "start": "Start dimming",
+    "end": "Back to normal",
+    "remind": "Remind me to stop",
+    "reminderTitle": "It is getting late",
+    "reminderText": "That is enough for today. Take a break and continue tomorrow.",
+    "writeDiary": "Write diary",
+    "done": "OK, done for today",
+    "snooze": "30 more minutes"
+  },
+  "diary": {
+    "title": "Diary",
+    "today": "Today",
+    "previousDay": "Previous day",
+    "nextDay": "Next day",
+    "mood": "Mood",
+    "moods": {
+      "good": "Good",
+      "ok": "Okay",
+      "low": "Low"
+    },
+    "placeholder": "How was your day?",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "saveFailed": "Could not save the diary, please try again.",
+    "past": "Past entries",
+    "openDay": "Open the diary of {date}",
+    "jar": {
+      "title": "Mood jar",
+      "unit": "entries",
+      "summary": "{count} days written in {month}",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "write": "Write today's entry"
+    }
+  },
   "collect": {
     "title": "Collect",
     "project": "Project",

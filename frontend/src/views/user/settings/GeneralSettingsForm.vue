@@ -254,6 +254,13 @@
 	</Card>
 
 	<Card
+		:title="$t('nightMode.title')"
+		class="general-settings section-block"
+	>
+		<NightModeSettings />
+	</Card>
+
+	<Card
 		v-if="isDesktop"
 		:title="$t('user.settings.sections.desktop')"
 		class="general-settings section-block"
@@ -347,6 +354,7 @@ import {PRO_FEATURE} from '@/constants/proFeatures'
 import {RELATION_KINDS} from '@/types/IRelationKind'
 import {isDesktopApp} from '@/helpers/desktopAuth'
 import ShortcutRecorder from '@/components/misc/ShortcutRecorder.vue'
+import NightModeSettings from './NightModeSettings.vue'
 import Reminders from '@/components/tasks/partials/Reminders.vue'
 import {REMINDER_PERIOD_RELATIVE_TO_TYPES} from '@/types/IReminderPeriodRelativeTo'
 

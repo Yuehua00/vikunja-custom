@@ -90,6 +90,14 @@
 						{{ $t('collect.title') }}
 					</RouterLink>
 				</li>
+				<li>
+					<RouterLink :to="{ name: 'diary'}">
+						<span class="menu-item-icon icon">
+							<Icon icon="pen" />
+						</span>
+						{{ $t('diary.title') }}
+					</RouterLink>
+				</li>
 				<li v-if="timeTrackingEnabled">
 					<RouterLink :to="{ name: 'time-tracking'}">
 						<span class="menu-item-icon icon">

@@ -1,0 +1,12 @@
+// Late-night mode: a warm, dark veil over the whole page so the screen is easier on the eyes.
+// A veil instead of a filter on the page, because a filter would break fixed positioning inside it.
+@media screen {
+	html.night-mode::after {
+		content: '';
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		pointer-events: none;
+		background: rgba(30, 14, 0, .2);
+	}
+}

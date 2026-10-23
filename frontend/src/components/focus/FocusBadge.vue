@@ -288,16 +288,15 @@ function onPointerUp(event: PointerEvent) {
 .focus-float-action {
 	padding: .4rem .95rem;
 	border-radius: 999px;
-	background: var(--grey-100);
-	color: var(--text);
+	background: var(--primary);
+	color: #fff;
 	font-size: .85rem;
 	white-space: nowrap;
 	transition: background $transition;
 
 	&:hover {
-		background: var(--grey-200);
+		background: color-mix(in srgb, var(--primary) 85%, black);
 	}
-
 }
 
 // "Another pomodoro" is a tomato that turns red when the pointer comes near.

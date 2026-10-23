@@ -25,6 +25,7 @@
 		/>
 		<ImportHint v-if="tasksLoaded" />
 		<TodayOverview class="is-max-width-desktop has-text-start mbs-4" />
+		<MoodJar class="is-max-width-desktop has-text-start mbs-4" />
 		<div
 			v-if="projectList.hasProjects"
 			class="is-max-width-desktop has-text-start mbs-4"
@@ -53,6 +54,7 @@ import TodayOverview from '@/components/home/TodayOverview.vue'
 import AddTask from '@/components/tasks/AddTask.vue'
 import ImportHint from '@/components/home/ImportHint.vue'
 import CalendarView from '@/components/calendar/CalendarView.vue'
+import MoodJar from '@/components/home/MoodJar.vue'
 
 import {parseDateOrNull} from '@/helpers/parseDateOrNull'
 import {formatDateSince, formatDisplayDate} from '@/helpers/time/formatDate'
