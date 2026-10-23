@@ -179,40 +179,43 @@
 				{{ project.title }}
 			</RouterLink>
 
-			<BaseButton
-				:class="{'is-favorite': task.is_favorite}"
-				class="favorite"
-				@click.stop="toggleFavorite"
-			>
-				<span class="is-sr-only">{{
-					task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')
-				}}</span>
-				<Icon
-					v-if="task.is_favorite"
-					icon="star"
-				/>
-				<Icon
-					v-else
-					:icon="['far', 'star']"
-				/>
-			</BaseButton>
-			<BaseButton
-				v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
-				v-tooltip="$t('focus.startFocus')"
-				class="focus-task"
-				@click.stop="showFocusCard = true"
-			>
-				<span class="is-sr-only">{{ $t('focus.startFocus') }}</span>
-				<Icon icon="stopwatch" />
-			</BaseButton>
-			<BaseButton
-				v-if="canDelete && !disabled"
-				class="delete-task"
-				@click.stop="showDeleteModal = true"
-			>
-				<span class="is-sr-only">{{ $t('task.detail.actions.delete') }}</span>
-				<Icon icon="trash-alt" />
-			</BaseButton>
+			<!-- Fixed width, so a row missing a button still keeps the progress bars of all rows in one column. -->
+			<div class="task-actions">
+				<BaseButton
+					:class="{'is-favorite': task.is_favorite}"
+					class="favorite"
+					@click.stop="toggleFavorite"
+				>
+					<span class="is-sr-only">{{
+						task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')
+					}}</span>
+					<Icon
+						v-if="task.is_favorite"
+						icon="star"
+					/>
+					<Icon
+						v-else
+						:icon="['far', 'star']"
+					/>
+				</BaseButton>
+				<BaseButton
+					v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
+					v-tooltip="$t('focus.startFocus')"
+					class="focus-task"
+					@click.stop="showFocusCard = true"
+				>
+					<span class="is-sr-only">{{ $t('focus.startFocus') }}</span>
+					<Icon icon="stopwatch" />
+				</BaseButton>
+				<BaseButton
+					v-if="canDelete && !disabled"
+					class="delete-task"
+					@click.stop="showDeleteModal = true"
+				>
+					<span class="is-sr-only">{{ $t('task.detail.actions.delete') }}</span>
+					<Icon icon="trash-alt" />
+				</BaseButton>
+			</div>
 			<slot />
 		</div>
 		<template v-if="typeof task.related_tasks?.subtask !== 'undefined'">
@@ -681,6 +684,14 @@ defineExpose({
 		&:hover {
 			color: var(--grey-900);
 		}
+	}
+
+	// Room for the three buttons (27px each) in every row.
+	.task-actions {
+		display: flex;
+		flex: 0 0 auto;
+		justify-content: flex-end;
+		min-inline-size: calc(27px * 3);
 	}
 
 	.favorite {

@@ -89,27 +89,27 @@ const showLoading = useDelayedLoading(() => props.loading)
 	// Custom styles
 	transition: all $transition;
 	border: 0;
-	text-transform: uppercase;
-	font-size: 0.85rem;
-	font-weight: bold;
+	font-size: 0.92rem;
+	font-weight: 600;
+	letter-spacing: .02em;
 	block-size: auto;
-	min-block-size: $button-height;
-	box-shadow: var(--shadow-sm);
+	min-block-size: 38px;
+	box-shadow: none;
 	line-height: 1;
-	padding-inline: .5rem;
-	gap: .25rem;
+	padding-inline: 1rem;
+	gap: .4rem;
 
 	// Default/Primary variant colors
 	background-color: var(--primary);
 	color: var(--button-text-color);
-	border-radius: $radius;
+	border-radius: 10px;
 
 	[dir="rtl"] & {
 		flex-direction: row-reverse;
 	}
 
 	&:hover {
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-sm);
 		background-color: var(--primary-dark, color-mix(in srgb, var(--primary) 85%, black));
 	}
 
@@ -129,7 +129,8 @@ const showLoading = useDelayedLoading(() => props.loading)
 
 	&[disabled],
 	&[aria-disabled='true'] {
-		opacity: 0.5;
+		opacity: 0.55;
+		filter: saturate(0.6);
 		cursor: not-allowed;
 		pointer-events: none;
 	}
@@ -151,10 +152,12 @@ const showLoading = useDelayedLoading(() => props.loading)
 	// Secondary/Outlined variant
 	&.is-outlined {
 		background-color: var(--scheme-main);
+		border: 1px solid var(--grey-300);
 		color: var(--grey-900);
 
 		&:hover {
-			color: var(--grey-600);
+			background-color: var(--grey-100);
+			color: var(--grey-900);
 		}
 	}
 

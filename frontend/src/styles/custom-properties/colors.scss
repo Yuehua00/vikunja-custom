@@ -177,11 +177,12 @@
 
 
   // Vikunja specific variables
-  --grey-50: hsl(210, 20%, 98%);
-  --grey-100-hsl: 220, 14.3%, 95.9%;
+  // The light surfaces carry a green tint to match the green primary
+  --grey-50: hsl(150, 30%, 97%);
+  --grey-100-hsl: 150, 24%, 93%;
   --grey-100: hsl(var(--grey-100-hsl));
-  --grey-200: hsl(220, 13%, 91%);
-  --grey-300: hsl(216, 12.2%, 83.9%);
+  --grey-200: hsl(150, 18%, 86%);
+  --grey-300: hsl(150, 12%, 79%);
   --grey-400: hsl(217.9, 10.6%, 64.9%);
   --grey-500-hsl: 220, 8.9%, 46.1%;
   --grey-500: hsl(var(--grey-500-hsl));
@@ -242,10 +243,10 @@
   --danger-text-l: 40%;
   --danger-text: hsla(var(--danger-h), var(--danger-s), var(--danger-text-l), var(--danger-a));
 
-  // var(--primary) / $blue is #1973ff
-  --primary-h: 217deg;
-  --primary-s: 98%;
-  --primary-l: 53%;
+  // var(--primary) is a forest green (#2f8f6b); the original blue was #1973ff
+  --primary-h: 157deg;
+  --primary-s: 50%;
+  --primary-l: 37%;
   --primary-a: 1;
   --primary-hsl: var(--primary-h), var(--primary-s), var(--primary-l);
   --primary: hsla(var(--primary-h), var(--primary-s), var(--primary-l), var(--primary-a));
@@ -277,19 +278,20 @@
   &.dark {
     @media screen {
       // Light mode colours reversed for dark mode
-      --grey-900-hsl: 210, 20%, 98%;
+      // Night palette built around #2E5C6E (hsl 197, 41%, 31%): a deep teal-blue scale
+      --grey-900-hsl: 190, 25%, 96%;
       --grey-900: hsl(var(--grey-900-hsl));
-      --grey-800: hsl(220, 14.3%, 95.9%);
-      --grey-700: hsl(220, 13%, 91%);
-      --grey-600: hsl(216, 12.2%, 83.9%);
-      --grey-500-hsl: 217.9, 10.6%, 64.9%;
+      --grey-800: hsl(191, 18%, 92%);
+      --grey-700: hsl(192, 16%, 86%);
+      --grey-600: hsl(193, 14%, 78%);
+      --grey-500-hsl: 195, 12%, 64%;
       --grey-500: hsl(var(--grey-500-hsl));
-      --grey-400: hsl(220, 8.9%, 46.1%);
-      --grey-300: hsl(215, 13.8%, 34.1%);
-      --grey-200: hsl(216.9, 19.1%, 26.7%);
-      --grey-100-hsl: 215, 27.9%, 16.9%;
+      --grey-400: hsl(196, 10%, 46%);
+      --grey-300: hsl(197, 22%, 34%);
+      --grey-200: hsl(197, 32%, 24%);
+      --grey-100-hsl: 197, 40%, 17%;
       --grey-100: hsl(var(--grey-100-hsl));
-      --grey-50-hsl: 220.9, 39.3%, 11%;
+      --grey-50-hsl: 197, 44%, 11%;
       --grey-50: hsl(var(--grey-50-hsl));
 
       // Dark grey looks better than black
@@ -322,14 +324,18 @@
       --logo-text-color: var(--grey-700);
 
       // Slightly different primary color to make sure it has a sufficient contrast ratio
-      --primary-h: 217deg;
-      --primary-s: 98%;
-      --primary-l: 58%;
+      --primary-h: 197deg;
+      --primary-s: 41%;
+      --primary-l: 31%;
+
+      // The primary is too dark to read as text on the dark surfaces, so links use a lighter tint of it
+      --link: hsl(190, 55%, 68%);
+      --link-hover: hsl(190, 55%, 78%);
 
       // Muted text is a light grey on dark backgrounds and already passes; keep it
       --text-muted: var(--grey-500);
       // The lighter dark-mode primary fails white-text contrast on the active view tab, so darken it there
-      --switch-view-active-background: hsl(var(--primary-h), var(--primary-s), 50%);
+      --switch-view-active-background: var(--primary);
 
       // Bright values already pass contrast on dark backgrounds; skip the light-theme darkening
       --danger-text: var(--danger);

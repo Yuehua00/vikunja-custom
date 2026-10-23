@@ -52,10 +52,26 @@
 					{{ $t('focus.endedDone') }}
 				</BaseButton>
 				<BaseButton
-					class="focus-float-action is-primary"
+					v-tooltip="$t('focus.endedAnother')"
+					class="focus-float-tomato"
+					:aria-label="$t('focus.endedAnother')"
 					@click="startAnother"
 				>
-					{{ $t('focus.endedAnother') }}
+					<svg
+						viewBox="0 0 24 24"
+						width="18"
+						height="18"
+						fill="currentColor"
+						aria-hidden="true"
+					>
+						<ellipse
+							cx="12"
+							cy="14.5"
+							rx="8.5"
+							ry="7"
+						/>
+						<path d="M12 7 8 8.6 9.2 6.2 6.2 5.4 9.4 4.4 8.8 2 11.2 3.6 12 1.5 12.8 3.6 15.2 2 14.6 4.4 17.8 5.4 14.8 6.2 16 8.6z" />
+					</svg>
 				</BaseButton>
 			</template>
 		</div>
@@ -282,13 +298,24 @@ function onPointerUp(event: PointerEvent) {
 		background: var(--grey-200);
 	}
 
-	&.is-primary {
-		background: var(--primary);
-		color: var(--white);
+}
 
-		&:hover {
-			background: color-mix(in srgb, var(--primary) 85%, black);
-		}
+// "Another pomodoro" is a tomato that turns red when the pointer comes near.
+.focus-float-tomato {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 2rem;
+	block-size: 2rem;
+	border-radius: 50%;
+	background: var(--grey-100);
+	color: var(--grey-600);
+	transition: color $transition, background $transition;
+
+	&:hover,
+	&:focus-visible {
+		background: var(--danger);
+		color: #fff;
 	}
 }
 

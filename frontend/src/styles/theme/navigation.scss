@@ -26,8 +26,9 @@
       display: flex;
       align-items: center;
 
+      // Hover goes against the theme: a little darker in light mode, a little lighter in dark mode.
       &:hover {
-        background: var(--white);
+        background: color-mix(in srgb, var(--grey-900) 9%, var(--site-background));
       }
     }
 

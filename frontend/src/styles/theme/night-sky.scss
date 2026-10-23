@@ -1,0 +1,73 @@
+// Faint twinkling stars behind the page, night (dark) mode only.
+// Two layers of dots twinkle out of phase. Cards, the sidebar and the header keep their opaque
+// backgrounds, so the stars only show in the gaps and never get in the way of reading.
+@keyframes night-sky-twinkle {
+	from {
+		opacity: .15;
+	}
+
+	to {
+		opacity: .7;
+	}
+}
+
+@media screen {
+	// Bulma paints the html element, which stops the body background from becoming the page background and
+	// would cover the stars. Paint the page on html instead and leave the body transparent.
+	html.dark {
+		background-color: var(--site-background);
+
+		body {
+			background: transparent;
+		}
+	}
+
+	html.dark body {
+		&::before,
+		&::after {
+			content: '';
+			position: fixed;
+			inset: 0;
+			// Below the page content, above the body background.
+			z-index: -1;
+			pointer-events: none;
+			background-repeat: no-repeat;
+			animation: night-sky-twinkle 6s ease-in-out infinite alternate;
+
+			@media (prefers-reduced-motion: reduce) {
+				animation: none;
+				opacity: .35;
+			}
+		}
+
+		&::before {
+			background-image:
+				radial-gradient(circle 1.5px at 8% 12%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 1px at 21% 63%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 2px at 34% 28%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 1px at 47% 81%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 1.5px at 58% 9%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 1px at 66% 47%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 2px at 79% 72%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 1px at 91% 21%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 1.5px at 96% 88%, hsl(175, 60%, 96%), transparent),
+				radial-gradient(circle 1px at 3% 91%, hsl(175, 60%, 96%), transparent);
+		}
+
+		&::after {
+			animation-duration: 9s;
+			animation-delay: -4s;
+			background-image:
+				radial-gradient(circle 1px at 14% 36%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 2px at 27% 7%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 1px at 39% 54%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 1.5px at 52% 93%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 1px at 63% 24%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 2px at 72% 58%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 1px at 84% 5%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 1.5px at 88% 44%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 1px at 12% 77%, hsl(185, 70%, 90%), transparent),
+				radial-gradient(circle 1px at 44% 17%, hsl(185, 70%, 90%), transparent);
+		}
+	}
+}

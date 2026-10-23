@@ -360,7 +360,7 @@ async function toggleTaskDone(task: ITask) {
 
 <style lang="scss" scoped>
 .add-task-relation-button {
-	margin-block-start: -3rem;
+	margin-block-start: -2rem;
 
 	svg {
 		transition: transform $transition;
