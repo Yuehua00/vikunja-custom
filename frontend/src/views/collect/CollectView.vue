@@ -112,7 +112,8 @@ const BULLET_PATTERN = /^(?:[-*•]|\d+[.)])\s+/
 const {t} = useI18n({useScope: 'global'})
 useTitle(() => t('collect.title'))
 
-const {projectsArray} = useProjects()
+// useProjects() is a reactive object, so its lists must be read off it rather than destructured as refs.
+const projectStore = useProjects()
 const {labels} = useLabels()
 const config = useConfigStore()
 const createTask = useCreateTaskMutation()
@@ -153,7 +154,7 @@ function parseLines(value: string): Entry[] {
 
 const entries = computed(() => parseLines(text.value))
 
-const selectableProjects = computed(() => projectsArray.value.filter(project => project.id > 0 && !project.is_archived))
+const selectableProjects = computed(() => projectStore.projectsArray.filter(project => project.id > 0 && !project.is_archived))
 const projectOptions = computed(() => selectableProjects.value.map(project => ({value: project.id, label: project.title})))
 const labelOptions = computed(() => [
 	{value: 0, label: t('collect.noType')},
