@@ -458,6 +458,11 @@ const router = createRouter({
 			component: () => import('@/views/focus/FocusView.vue'),
 		},
 		{
+			path: '/collect',
+			name: 'collect',
+			component: () => import('@/views/collect/CollectView.vue'),
+		},
+		{
 			path: '/admin',
 			component: () => import('@/views/admin/AdminShell.vue'),
 			meta: {

@@ -55,6 +55,18 @@
 		"dueTomorrow": "明天到期",
 		"dueInDays": "{count} 天後到期"
 	},
+	"collect": {
+		"title": "收集",
+		"project": "專案",
+		"type": "類型",
+		"noType": "不指定類型",
+		"placeholder": "貼上多行文字，一行一張卡片。網址會放進描述。",
+		"preview": "將建立 {count} 張卡片",
+		"titleAuto": "建立時會自動抓取網頁標題",
+		"create": "建立 {count} 張卡片",
+		"created": "已建立 {count} 張卡片。",
+		"failed": "有 {count} 行建立失敗，已留在輸入框中。"
+	},
 	"calendar": {
 		"title": "月曆",
 		"today": "今天",

@@ -55,6 +55,18 @@
     "dueTomorrow": "Due tomorrow",
     "dueInDays": "Due in {count} days"
   },
+  "collect": {
+    "title": "Collect",
+    "project": "Project",
+    "type": "Type",
+    "noType": "No type",
+    "placeholder": "Paste several lines, one card per line. A web address goes into the description.",
+    "preview": "{count} card will be created | {count} cards will be created",
+    "titleAuto": "Title is fetched from the page when created",
+    "create": "Create {count} card | Create {count} cards",
+    "created": "Created {count} card. | Created {count} cards.",
+    "failed": "{count} line could not be created and stays in the box. | {count} lines could not be created and stay in the box."
+  },
   "calendar": {
     "title": "Calendar",
     "today": "Today",
