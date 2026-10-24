@@ -1,0 +1,88 @@
+// Print style: the shared look of the whole app (green first, then blue, then a little orange).
+// Page-wide pieces live here: the paper grain over everything, the page title and the section labels.
+// Colors come from the --print-* tokens in custom-properties/colors.scss.
+
+// A fine paper grain laid over the whole app, like a printed page. Dark dots multiplied on the light
+// theme; light dots screened on the dark theme, where dark dots would vanish.
+$print-grain-dark: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .22 0 0 0 0 .3 0 0 0 0 .38 0 0 0 -1.6 1.15'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
+$print-grain-light: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .95 0 0 0 0 .9 0 0 0 0 .82 0 0 0 -1.6 1.15'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
+
+@media screen {
+	#app::after {
+		content: '';
+		position: fixed;
+		inset: 0;
+		// Below the late-night veil (9999), above everything else, and never in the way of the pointer.
+		z-index: 9998;
+		pointer-events: none;
+		background-image: url($print-grain-dark);
+		background-size: 240px 240px;
+		mix-blend-mode: var(--print-grain-blend);
+		opacity: var(--print-grain-opacity);
+	}
+
+	html.dark #app::after {
+		background-image: url($print-grain-light);
+	}
+}
+
+// Every page title: big, heavy, with a thick green rule underneath.
+.page-title,
+.content h1.page-title,
+.content h2.page-title {
+	font-size: 2.6rem;
+	font-weight: 800 !important;
+	line-height: 1.1;
+	color: var(--text-strong);
+	padding-block-end: 1rem;
+	margin-block-end: 1.5rem;
+	border-block-end: 3px solid var(--primary);
+}
+
+// Small spaced-out labels above sections and in the sidebar, in the condensed display face.
+.menu-label,
+.print-label {
+	font-family: $display-font;
+	font-weight: 700;
+	letter-spacing: .16em;
+	font-size: .8rem;
+	color: var(--print-blue);
+	text-transform: uppercase;
+}
+
+// Times, dates and big numbers read better in the condensed face.
+.print-number {
+	font-family: $display-font;
+	font-weight: 700;
+	letter-spacing: .01em;
+}
+
+// Text fields: small corners and a green edge when focused.
+.input,
+.textarea,
+.select select {
+	border-radius: $radius;
+	border-color: var(--grey-200);
+
+	&:focus,
+	&.is-focused,
+	&:active,
+	&.is-active {
+		border-color: var(--primary);
+	}
+}
+
+// Tags and chips: flat with small corners.
+.tag:not(body) {
+	border-radius: $radius;
+	font-weight: 700;
+}
+
+// Tables: a green rule under the header row.
+.table thead th {
+	font-family: $display-font;
+	font-weight: 700;
+	letter-spacing: .1em;
+	color: var(--grey-600);
+	border-block-end: 2px solid var(--primary);
+}

@@ -26,9 +26,9 @@
       display: flex;
       align-items: center;
 
-      // Hover goes against the theme: a little darker in light mode, a little lighter in dark mode.
+      // Print style: hovering a sidebar row lights it up in the pale orange.
       &:hover {
-        background: color-mix(in srgb, var(--grey-900) 9%, var(--site-background));
+        background: var(--print-orange-hover);
       }
     }
 
@@ -54,7 +54,7 @@
     }
 
     .menu-item-icon {
-      color: var(--grey-400);
+      color: var(--print-blue);
     }
 
     .menu-list-dropdown-trigger {
@@ -106,8 +106,12 @@
         overflow: hidden;
         width: 100%;
 
+        // The page you are on is a solid deep green block with white text.
         &.router-link-exact-active {
-          color: var(--primary);
+          color: #ffffff;
+          background: var(--primary);
+          border-radius: $radius;
+          font-weight: 700;
         }
 
         .icon {
@@ -117,7 +121,7 @@
         }
 
         &.router-link-exact-active .icon:not(.handle) {
-          color: var(--primary);
+          color: var(--print-mint);
         }
 
         .handle {

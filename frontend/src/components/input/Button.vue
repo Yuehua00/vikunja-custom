@@ -89,8 +89,8 @@ const showLoading = useDelayedLoading(() => props.loading)
 	// Custom styles
 	transition: all $transition;
 	border: 0;
-	font-size: 0.92rem;
-	font-weight: 600;
+	font-size: 0.9rem;
+	font-weight: 800;
 	letter-spacing: .02em;
 	block-size: auto;
 	min-block-size: 38px;
@@ -102,15 +102,16 @@ const showLoading = useDelayedLoading(() => props.loading)
 	// Default/Primary variant colors
 	background-color: var(--primary);
 	color: var(--button-text-color);
-	border-radius: 10px;
+	// Print style: small corners, flat
+	border-radius: $radius;
 
 	[dir="rtl"] & {
 		flex-direction: row-reverse;
 	}
 
 	&:hover {
-		box-shadow: var(--shadow-sm);
-		background-color: var(--primary-dark, color-mix(in srgb, var(--primary) 85%, black));
+		box-shadow: none;
+		background-color: color-mix(in srgb, var(--primary) 85%, black);
 	}
 
 	&:focus,
@@ -124,7 +125,7 @@ const showLoading = useDelayedLoading(() => props.loading)
 	&:active,
 	&:focus,
 	&:focus:not(:active) {
-		box-shadow: var(--shadow-xs) !important;
+		box-shadow: none !important;
 	}
 
 	&[disabled],
@@ -145,19 +146,20 @@ const showLoading = useDelayedLoading(() => props.loading)
 		color: var(--button-text-color);
 
 		&:hover {
-			background-color: var(--primary-dark, color-mix(in srgb, var(--primary) 85%, black));
+			background-color: color-mix(in srgb, var(--primary) 85%, black);
 		}
 	}
 
 	// Secondary/Outlined variant
+	// Secondary: paper with a thin line; hover lights it up in the pale orange
 	&.is-outlined {
 		background-color: var(--scheme-main);
-		border: 1px solid var(--grey-300);
-		color: var(--grey-900);
+		border: 1.5px solid var(--grey-200);
+		color: var(--text-strong);
 
 		&:hover {
-			background-color: var(--grey-100);
-			color: var(--grey-900);
+			background-color: var(--print-orange-hover);
+			color: var(--text-strong);
 		}
 	}
 
@@ -168,7 +170,7 @@ const showLoading = useDelayedLoading(() => props.loading)
 		box-shadow: none;
 
 		&:hover {
-			background-color: var(--grey-100);
+			background-color: var(--print-orange-hover);
 			box-shadow: none;
 		}
 	}

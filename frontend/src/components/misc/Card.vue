@@ -74,8 +74,9 @@ const showLoading = useDelayedLoading(() => props.loading)
 	background-color: var(--white);
 	border-radius: $radius;
 	margin-block-end: 1rem;
-	border: 1px solid var(--card-border-color);
-	box-shadow: var(--shadow-sm);
+	// Print style: flat paper on the page, no border or drop shadow
+	border: 0;
+	box-shadow: none;
 	color: var(--text);
 	max-inline-size: 100%;
 	position: relative;
@@ -87,21 +88,23 @@ const showLoading = useDelayedLoading(() => props.loading)
 }
 
 .card-header {
-	background-color: transparent;
+	// Print style: a solid deep green bar with a white, spaced-out title
+	background-color: var(--primary);
 	align-items: stretch;
 	display: flex;
 	box-shadow: none;
-	border-inline-end: 1px solid var(--card-border-color);
 	border-radius: $radius $radius 0 0;
 }
 
 .card-header-title {
 	align-items: center;
-	color: var(--text-strong);
+	color: #ffffff;
 	display: flex;
 	flex-grow: 1;
+	font-family: $display-font;
 	font-weight: 700;
-	padding: 0.75rem 1rem;
+	letter-spacing: .14em;
+	padding: 0.7rem 1.25rem;
 
 	&.is-centered {
 		justify-content: center;
@@ -109,6 +112,7 @@ const showLoading = useDelayedLoading(() => props.loading)
 }
 
 .card-header-icon {
+	color: #ffffff;
 	align-items: center;
 	cursor: pointer;
 	display: flex;
@@ -139,8 +143,8 @@ const showLoading = useDelayedLoading(() => props.loading)
 
 .card-footer {
 	align-items: stretch;
-	background-color: var(--grey-50);
-	border-block-start: 0;
+	background-color: transparent;
+	border-block-start: 1px solid var(--grey-200);
 	padding: 20px;
 	display: flex;
 	justify-content: flex-end;

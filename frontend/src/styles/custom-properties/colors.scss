@@ -22,10 +22,10 @@
   --border-hover: #b5b5b5;
   --border-light: #ededed;
   --border-light-hover: #b5b5b5;
-  --text: #4a4a4a;
+  --text: hsl(205, 30%, 20%);
   --text-invert: #fff;
   --text-light: #7a7a7a;
-  --text-strong: #363636;
+  --text-strong: hsl(205, 40%, 14%);
   --code: #da1039;
   --code-background: var(--background, whitesmoke);
   --pre: var(--text, #4a4a4a);
@@ -177,12 +177,12 @@
 
 
   // Vikunja specific variables
-  // The light surfaces carry a green tint to match the green primary
-  --grey-50: hsl(150, 30%, 97%);
-  --grey-100-hsl: 150, 24%, 93%;
+  // Print style: the light surfaces carry a pale blue tint; the white panels sit on it like paper
+  --grey-50: hsl(204, 40%, 98%);
+  --grey-100-hsl: 204, 36%, 95%;
   --grey-100: hsl(var(--grey-100-hsl));
-  --grey-200: hsl(150, 18%, 86%);
-  --grey-300: hsl(150, 12%, 79%);
+  --grey-200: hsl(205, 26%, 87%);
+  --grey-300: hsl(205, 20%, 78%);
   --grey-400: hsl(217.9, 10.6%, 64.9%);
   --grey-500-hsl: 220, 8.9%, 46.1%;
   --grey-500: hsl(var(--grey-500-hsl));
@@ -243,10 +243,10 @@
   --danger-text-l: 40%;
   --danger-text: hsla(var(--danger-h), var(--danger-s), var(--danger-text-l), var(--danger-a));
 
-  // var(--primary) is a forest green (#2f8f6b); the original blue was #1973ff
-  --primary-h: 157deg;
-  --primary-s: 50%;
-  --primary-l: 37%;
+  // var(--primary) is the deep print green (#20503b); the original blue was #1973ff
+  --primary-h: 155deg;
+  --primary-s: 45%;
+  --primary-l: 23%;
   --primary-a: 1;
   --primary-hsl: var(--primary-h), var(--primary-s), var(--primary-l);
   --primary: hsla(var(--primary-h), var(--primary-s), var(--primary-l), var(--primary-a));
@@ -260,12 +260,30 @@
   // END Overrides of Bulma defaults
 
 
+  // Print style tokens (see the design canvas): green first, then blue, then a little orange
+  --print-ink: var(--text-strong);
+  --print-paper: var(--white);
+  --print-line: var(--grey-200);
+  --print-green: var(--primary);
+  --print-green-soft: hsl(150, 32%, 88%);
+  --print-green-tint: hsl(150, 35%, 94%);
+  --print-mint: hsl(150, 58%, 62%);
+  --print-blue: hsl(210, 52%, 38%);
+  --print-blue-mid: hsl(208, 58%, 52%);
+  --print-blue-soft: hsl(206, 55%, 90%);
+  --print-orange: hsl(22, 88%, 58%);
+  --print-orange-text: hsl(22, 85%, 45%);
+  --print-orange-tint: hsl(32, 70%, 96%);
+  --print-orange-hover: hsl(32, 75%, 92%);
+  --print-grain-blend: multiply;
+  --print-grain-opacity: .22;
+
   // Define custom color variable to prevent change in dark mode
   --switch-view-color: hsla(var(--white-h), var(--white-s), var(--white-l), var(--white-a));
   --switch-view-active-background: var(--primary);
 
   // Define custom color variable to allow change in dark mode
-  --card-border-color: var(--grey-200);
+  --card-border-color: transparent;
   --logo-text-color: hsl(180, 1%, 15%);
 
   // Code colors
@@ -278,21 +296,23 @@
   &.dark {
     @media screen {
       // Light mode colours reversed for dark mode
-      // Night palette built around #2E5C6E (hsl 197, 41%, 31%): a deep teal-blue scale
-      --grey-900-hsl: 190, 25%, 96%;
+      // Print style night palette: a deep blue-grey (hsl 206) with warm off-white text
+      --grey-900-hsl: 38, 28%, 92%;
       --grey-900: hsl(var(--grey-900-hsl));
-      --grey-800: hsl(191, 18%, 92%);
-      --grey-700: hsl(192, 16%, 86%);
-      --grey-600: hsl(193, 14%, 78%);
-      --grey-500-hsl: 195, 12%, 64%;
+      --grey-800: hsl(38, 22%, 88%);
+      --grey-700: hsl(38, 14%, 80%);
+      --grey-600: hsl(38, 10%, 72%);
+      --grey-500-hsl: 206, 10%, 62%;
       --grey-500: hsl(var(--grey-500-hsl));
-      --grey-400: hsl(196, 10%, 46%);
-      --grey-300: hsl(197, 22%, 34%);
-      --grey-200: hsl(197, 32%, 24%);
-      --grey-100-hsl: 197, 40%, 17%;
+      --grey-400: hsl(206, 10%, 46%);
+      --grey-300: hsl(206, 16%, 32%);
+      --grey-200: hsl(206, 18%, 24%);
+      --grey-100-hsl: 206, 22%, 18%;
       --grey-100: hsl(var(--grey-100-hsl));
-      --grey-50-hsl: 197, 44%, 11%;
+      --grey-50-hsl: 206, 24%, 15%;
       --grey-50: hsl(var(--grey-50-hsl));
+      // The page is darker than the panels on it, like the light theme
+      --site-background: hsl(206, 28%, 11%);
 
       // Dark grey looks better than black
       --white: var(--grey-50);
@@ -323,14 +343,14 @@
       --card-border-color: hsla(var(--grey-100-hsl), 0.3);
       --logo-text-color: var(--grey-700);
 
-      // Slightly different primary color to make sure it has a sufficient contrast ratio
-      --primary-h: 197deg;
-      --primary-s: 41%;
-      --primary-l: 31%;
+      // The deep green, a little lighter so it still reads on the dark panels
+      --primary-h: 155deg;
+      --primary-s: 40%;
+      --primary-l: 30%;
 
       // The primary is too dark to read as text on the dark surfaces, so links use a lighter tint of it
-      --link: hsl(190, 55%, 68%);
-      --link-hover: hsl(190, 55%, 78%);
+      --link: hsl(150, 50%, 62%);
+      --link-hover: hsl(150, 50%, 72%);
 
       // Muted text is a light grey on dark backgrounds and already passes; keep it
       --text-muted: var(--grey-500);
@@ -339,6 +359,20 @@
 
       // Bright values already pass contrast on dark backgrounds; skip the light-theme darkening
       --danger-text: var(--danger);
+
+      // Print style tokens for the night
+      --print-green-soft: hsl(152, 22%, 22%);
+      --print-green-tint: hsl(152, 20%, 18%);
+      --print-blue: hsl(210, 62%, 72%);
+      --print-blue-mid: hsl(208, 55%, 60%);
+      --print-blue-soft: hsl(208, 28%, 22%);
+      --print-orange: hsl(24, 85%, 60%);
+      --print-orange-text: hsl(28, 90%, 68%);
+      --print-orange-tint: hsl(28, 30%, 17%);
+      --print-orange-hover: hsl(28, 38%, 22%);
+      // Light grain on a dark page; a dark grain would vanish
+      --print-grain-blend: screen;
+      --print-grain-opacity: .14;
 
       --scheme-main-bis: var(--grey-100);
       --scheme-main-ter: var(--grey-100);

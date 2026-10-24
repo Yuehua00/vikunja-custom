@@ -10,8 +10,18 @@
 // are defined here.
 //
 
-// Latin text uses Segoe UI; Chinese falls through to a gothic (sans-serif) face so both scripts match.
-$family-sans-serif: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft JhengHei UI', 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Helvetica, Arial, sans-serif;
+// Print style: Noto Sans TC (loaded from Google Fonts in index.html) for both Latin and Chinese,
+// with the system gothic faces as fallback while it loads or when offline.
+$family-sans-serif: 'Noto Sans TC', 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft JhengHei UI', 'Microsoft JhengHei', 'PingFang TC', Helvetica, Arial, sans-serif;
+
+// Condensed display face for small caps-style section labels, big numbers and times.
+$display-font: 'Oswald', $family-sans-serif;
+
+// Small corners everywhere: the print style is crisp, not rounded.
+$radius-small: 2px;
+$radius: 2px;
+$radius-large: 4px;
+$radius-rounded: 2px;
 
 // the default values get overwritten by the definitions above
 @import "bulma-css-variables/sass/utilities/_all";

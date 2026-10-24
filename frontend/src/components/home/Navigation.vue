@@ -221,6 +221,8 @@ const savedFilterProjects = computed(() => projectList.savedFilterProjects)
 	transform: translateX(-100%);
 	inline-size: var(--sidebar-width);
 	overflow-y: auto;
+	// Print style: a pale green rule between the sidebar and the page
+	border-inline-end: 2px solid var(--print-green-soft);
 
 	[dir="rtl"] & {
 		transform: translateX(100%);
@@ -263,12 +265,18 @@ const savedFilterProjects = computed(() => projectList.savedFilterProjects)
 	li {
 		font-weight: 600;
 		font-family: $vikunja-font;
+		// Inset the rows so the hover and the active block sit off the edges, like the design
+		margin-inline: 1rem;
+		border-radius: $radius;
 	}
 
 	.list-menu-link,
 	li > a {
-		padding-inline-start: 2rem;
-		display: inline-block;
+		padding-inline-start: 1rem;
+		display: flex;
+		align-items: center;
+		inline-size: 100%;
+		block-size: 100%;
 
 		.icon {
 			padding-block-end: .25rem;

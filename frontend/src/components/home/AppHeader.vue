@@ -168,7 +168,7 @@ $user-dropdown-width-mobile: 5rem;
 	// FIXME: notifications should provide a slot for the icon instead, so that we can style it as we want
 	:deep() {
 		.trigger-button {
-			color: var(--grey-400);
+			color: var(--print-blue);
 			font-size: var(--navbar-icon-size);
 		}
 	}
