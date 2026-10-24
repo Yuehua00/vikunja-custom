@@ -364,18 +364,20 @@ function taskStyle(task: Task) {
 	padding: .25rem;
 	gap: .25rem;
 	background: var(--grey-100);
-	border-radius: 12px;
+	border-radius: 2px;
 
 	:deep(.button) {
 		block-size: 2.25rem;
-		border-radius: 9px;
+		border-radius: 2px;
 	}
 }
 
 .calendar-title {
 	margin: 0;
+	font-family: $display-font;
 	font-size: 1.15rem;
-	font-weight: 600;
+	font-weight: 800;
+	letter-spacing: .06em;
 	text-align: center;
 	flex: 1 1 auto;
 }
@@ -402,12 +404,14 @@ function taskStyle(task: Task) {
 }
 
 .calendar-weekday {
-	padding: .25rem .5rem;
+	padding: .4rem .5rem;
+	font-family: $display-font;
 	font-size: .8rem;
-	font-weight: 600;
-	text-align: center;
-	color: var(--grey-800);
-	background: var(--grey-100);
+	font-weight: 700;
+	letter-spacing: .12em;
+	text-align: start;
+	color: var(--grey-600);
+	background: transparent;
 	border-inline-end: 1px solid var(--grey-200);
 	border-block-end: 1px solid var(--grey-200);
 }
@@ -425,8 +429,6 @@ function taskStyle(task: Task) {
 	}
 
 	&.is-outside {
-		background: var(--grey-100);
-
 		.calendar-day-number {
 			color: var(--grey-400);
 		}
@@ -453,10 +455,12 @@ function taskStyle(task: Task) {
 	min-inline-size: 1.5rem;
 	margin-block-end: .25rem;
 	padding-inline: .25rem;
-	font-size: .8rem;
+	font-family: $display-font;
+	font-size: 1rem;
+	font-weight: 700;
 	line-height: 1.5rem;
 	text-align: center;
-	border-radius: 999px;
+	border-radius: 0;
 }
 
 .calendar-mood-dot {
@@ -485,7 +489,7 @@ function taskStyle(task: Task) {
 	color: var(--text);
 	background: var(--grey-100);
 	border-inline-start: 3px solid var(--primary);
-	border-radius: 3px;
+	border-radius: 1px;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
