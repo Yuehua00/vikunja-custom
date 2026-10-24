@@ -37,6 +37,7 @@
 						<h2 class="print-bar-title">
 							TODAY <span>今天</span>
 						</h2>
+						<span class="home-task-count">{{ taskCount }} 件待辦</span>
 					</header>
 					<div class="home-add">
 						<AddTask @tasksAdded="updateTaskKey" />
@@ -49,6 +50,7 @@
 						embedded
 						class="show-tasks"
 						@tasksLoaded="tasksLoaded = true"
+						@summary="taskCount = $event"
 						@clearLabelFilter="handleClearLabelFilter"
 					/>
 				</section>
@@ -117,6 +119,7 @@ const dateLabel = computed(() => {
 	return `${weekday}・${now.getMonth() + 1}.${now.getDate()}`
 })
 
+const taskCount = ref(0)
 const tasksLoaded = ref(false)
 
 const deletionScheduledAt = computed(() => parseDateOrNull(authStore.info?.deletion_scheduled_at))
@@ -150,7 +153,7 @@ function handleClearLabelFilter() {
 
 <style scoped lang="scss">
 .home-page {
-	max-inline-size: 76rem;
+	max-inline-size: 68rem;
 	margin-inline: auto;
 	text-align: start;
 }
@@ -168,7 +171,7 @@ function handleClearLabelFilter() {
 }
 
 .home-title {
-	margin: 0;
+	margin: 0 !important;
 	font-size: 2.6rem;
 	font-weight: 800;
 	line-height: 1.1;
@@ -213,9 +216,7 @@ function handleClearLabelFilter() {
 }
 
 .show-tasks {
-	max-block-size: 32rem;
-	overflow-y: auto;
-	padding: 1rem 1.25rem;
+	padding: 0;
 }
 
 @media (width <= 600px) {

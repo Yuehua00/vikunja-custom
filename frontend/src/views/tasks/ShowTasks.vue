@@ -81,8 +81,50 @@
 			<LlamaCool class="llama-cool" />
 		</template>
 
+		<div
+			v-if="embedded && hasTasks"
+			class="print-task-groups"
+		>
+			<template
+				v-for="group in embeddedGroups"
+				:key="group.title"
+			>
+				<template v-if="group.tasks.length">
+					<div class="print-task-group-title">
+						{{ group.title }}<span>{{ group.tasks.length }} 件</span>
+					</div>
+					<component
+						:is="group.collapsed ? 'details' : 'div'"
+						class="print-task-group"
+					>
+						<summary
+							v-if="group.collapsed"
+							class="print-task-more"
+						>
+							展開查看
+						</summary>
+						<ul class="tasks print-task-list">
+							<li
+								v-for="(task, index) in group.tasks"
+								:key="task.id"
+							>
+								<SingleTaskInProject
+									print-row
+									:hide-print-time="hideRepeatedPrintDate(group.tasks, index)"
+									:show-project="true"
+									:the-task="task"
+									:can-mark-as-done="(projectList.projects[task.project_id]?.max_permission ?? 0) > PERMISSIONS.READ"
+									:can-delete="(projectList.projects[task.project_id]?.max_permission ?? 0) > PERMISSIONS.READ"
+									@taskUpdated="updateTasks"
+								/>
+							</li>
+						</ul>
+					</component>
+				</template>
+			</template>
+		</div>
 		<Card
-			v-if="hasTasks"
+			v-else-if="hasTasks"
 			:padding="false"
 			class="has-overflow"
 			:has-content="false"
@@ -156,6 +198,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
 	'tasksLoaded': [loaded: true],
 	'clearLabelFilter': [],
+	'summary': [count: number],
 }>()
 
 const authStore = useAuthStore()
@@ -172,6 +215,42 @@ const taskQuery = useTasks(
 	{enabled: () => authStore.authenticated && taskScope.value !== null},
 )
 const tasks = taskQuery.tasks
+const embeddedGroups = computed(() => {
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	const tomorrow = new Date(today)
+	tomorrow.setDate(tomorrow.getDate() + 1)
+	const groups = [
+		{title: '已逾期', tasks: [] as typeof tasks.value, collapsed: false},
+		{title: '今天', tasks: [] as typeof tasks.value, collapsed: false},
+		{title: '接下來', tasks: [] as typeof tasks.value, collapsed: true},
+		{title: '未排程', tasks: [] as typeof tasks.value, collapsed: true},
+	]
+	for (const task of tasks.value ?? []) {
+		const date = task.due_date ? new Date(task.due_date) : null
+		const index = !date || date.getFullYear() <= 1 ? 3 : date < today ? 0 : date < tomorrow ? 1 : 2
+		groups[index].tasks.push(task)
+	}
+	for (const group of groups) {
+		group.tasks.sort((a, b) => printDayKey(a).localeCompare(printDayKey(b)))
+	}
+	return groups
+})
+// Keep dates together while retaining the API order (and individual times) within each day.
+function printDayKey(task: (typeof tasks.value)[number]): string {
+	const due = task.due_date ? new Date(task.due_date) : null
+	const date = due && due.getFullYear() > 1 ? due : task.start_date ? new Date(task.start_date) : null
+	if (!date || date.getFullYear() <= 1) return ''
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+function hideRepeatedPrintDate(items: typeof tasks.value, index: number): boolean {
+	if (index === 0) return false
+	const key = printDayKey(items[index])
+	const today = new Date()
+	const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+	return key !== todayKey && key === printDayKey(items[index - 1])
+}
+watch(tasks, items => emit('summary', items?.length ?? 0), {immediate: true})
 const showNothingToDo = ref<boolean>(false)
 
 

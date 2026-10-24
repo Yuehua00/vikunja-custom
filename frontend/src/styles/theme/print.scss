@@ -372,3 +372,324 @@
 	color: #ffffff;
 	margin: 0;
 }
+
+// Homepage composition follows PrintHome; the compact row variant is never applied to project lists.
+#app .home-page {
+	.home-columns {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 18.75rem;
+		gap: 1.5rem;
+	}
+	.home-title {
+		margin: 0;
+		line-height: 1.1;
+	}
+	.home-date {
+		margin: 0 0 .2rem;
+	}
+	.home-task-count {
+		font-size: .75rem;
+		color: #d7e9df;
+	}
+	.print-bar {
+		padding: .8rem 1.25rem;
+	}
+	.home-side h2 {
+		font-size: .85rem;
+		font-weight: 400;
+		line-height: 1.5;
+		margin: 0;
+	}
+	.home-side .print-label {
+		font-size: .9rem;
+		font-weight: 700;
+		letter-spacing: .14em;
+	}
+	.today-overview {
+		border: 0;
+		background: var(--print-paper);
+	}
+	.today-head {
+		margin: 0;
+	}
+	.habit-list {
+		gap: 0;
+	}
+	.habit-row:first-child {
+		border-block-start: 0;
+	}
+	.home-add {
+		padding: .9rem 1.25rem;
+	}
+	.home-add .field, .home-add p.control {
+		margin-block-end: 0;
+	}
+	.home-add .input {
+		border: 0;
+		border-block-end: 2px solid var(--print-blue);
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		padding-inline-start: .4rem;
+	}
+	.home-add .task-icon {
+		display: none;
+	}
+	.home-add .add-task-button {
+		min-block-size: 2.5rem;
+	}
+	.home-add .add-task-button .icon {
+		display: none;
+	}
+	.home-today .card, .home-today .show-tasks {
+		background: transparent;
+	}
+	.print-task-group-title {
+		display: flex;
+		justify-content: space-between;
+		padding: .85rem 1.25rem .3rem;
+		border-block-start: 1px solid var(--grey-200);
+		font-size: .75rem;
+		font-weight: 700;
+		color: var(--link);
+		letter-spacing: .08em;
+	}
+	.print-task-group-title span {
+		font-weight: 400;
+		color: var(--text-muted);
+		letter-spacing: 0;
+	}
+	.print-task-list {
+		padding: 0;
+		list-style: none;
+	}
+	.print-task-list > li {
+		border: 0;
+	}
+	.print-task-list > li + li {
+		border-block-start: 1px solid var(--grey-200);
+	}
+	.print-task-more {
+		padding: .4rem 1.25rem .75rem;
+		font-size: .75rem;
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+	.print-task-row {
+		display: grid;
+		position: relative;
+		grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: .25rem 1rem;
+		padding: .8rem 1.25rem;
+		min-block-size: 4.7rem;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+	}
+	.print-task-row:hover, .print-task-row:focus-within {
+		background: var(--print-orange-tint);
+	}
+	.print-task-row[data-priority-level='urgent'] {
+		box-shadow: inset 3px 0 var(--danger);
+	}
+	.print-row-time {
+		position: relative;
+		font-family: $display-font;
+		font-weight: 700;
+		font-size: 1.35rem;
+		color: var(--print-blue);
+	}
+	.print-row-time .is-overdue {
+		color: var(--text-muted);
+	}
+	.print-row-check {
+		position: absolute;
+		inset: 0;
+		border: 0;
+		background: var(--print-paper);
+		color: var(--link);
+		cursor: pointer;
+		opacity: 0;
+	}
+	.print-task-row:hover .print-row-check, .print-row-check:focus-visible {
+		opacity: 1;
+	}
+	.print-row-main {
+		min-inline-size: 0;
+	}
+	.print-row-title {
+		font-size: .95rem;
+		font-weight: 600;
+		line-height: 1.5;
+		color: var(--text-strong);
+		overflow-wrap: anywhere;
+	}
+	.print-row-meta {
+		margin-block-start: .15rem;
+		font-size: .75rem;
+		color: var(--text-muted);
+	}
+	.print-row-meta a {
+		color: inherit;
+	}
+	.print-row-end {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: .75rem;
+		max-inline-size: 12rem;
+	}
+	.print-row-progress {
+		appearance: none;
+		inline-size: 90px;
+		block-size: 5px;
+		border: 0;
+		background: var(--print-blue-soft);
+	}
+	.print-row-progress::-webkit-progress-bar {
+		background: var(--print-blue-soft);
+	}
+	.print-row-progress::-webkit-progress-value {
+		background: var(--print-blue-mid);
+	}
+	.print-row-progress::-moz-progress-bar {
+		background: var(--print-blue-mid);
+	}
+	.print-row-late {
+		padding: .15rem .4rem;
+		background: var(--print-orange);
+		color: #172a34;
+		font-size: .7rem;
+		font-weight: 700;
+		white-space: nowrap;
+		border-radius: 2px;
+	}
+	.print-row-status {
+		color: var(--text-muted);
+		font-size: .75rem;
+		white-space: nowrap;
+	}
+	.print-row-actions {
+		position: absolute;
+		inset-inline-end: 1.25rem;
+		inset-block-end: .1rem;
+		display: flex;
+		gap: .5rem;
+		opacity: 0;
+		font-size: .7rem;
+	}
+	.print-task-row:hover .print-row-actions, .print-task-row:focus-within .print-row-actions {
+		opacity: 1;
+	}
+	.calendar-view.is-print-header .calendar-toolbar {
+		gap: .5rem;
+		padding: .55rem 1.25rem;
+	}
+	.calendar-nav {
+		display: contents;
+	}
+	.calendar-nav .button:nth-child(1) {
+		order: 1;
+	}
+	.calendar-nav .button:nth-child(2) {
+		display: none;
+	}
+	.calendar-nav .button:nth-child(3) {
+		order: 3;
+	}
+	.calendar-title {
+		order: 2;
+	}
+	.calendar-modes {
+		order: 4;
+	}
+	.calendar-view.is-print-header .calendar-nav .button {
+		border: 0;
+	}
+	.calendar-view.is-print-header .calendar-layout {
+		padding: 1rem 1.25rem 1.25rem;
+	}
+	.calendar-day:not(.is-week) {
+		min-block-size: 76px;
+		padding: .35rem .45rem;
+	}
+}
+
+@media (width <= 1280px) {
+	#app .home-page .home-columns {
+		grid-template-columns: minmax(0, 1fr) 16.25rem;
+	}
+	#app .home-page .print-task-row {
+		grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+		gap: .5rem;
+	}
+	#app .home-page .print-row-end {
+		gap: .4rem;
+	}
+	#app .home-page .print-row-progress {
+		inline-size: 60px;
+	}
+}
+@media (width <= 1000px) {
+	#app .home-page .home-columns {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	#app .home-page .home-side {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (width <= 600px) {
+	#app .home-page .home-side {
+		display: flex;
+	}
+	#app .home-page .print-task-row {
+		grid-template-columns: 3rem minmax(0, 1fr);
+		padding: .8rem 1rem;
+	}
+	#app .home-page .print-row-end {
+		grid-column: 2;
+		justify-content: flex-start;
+		margin-block-start: .2rem;
+	}
+	#app .home-page .print-row-time {
+		font-size: 1.15rem;
+	}
+	#app .home-page .print-row-actions {
+		position: static;
+		opacity: 1;
+		margin-inline-start: auto;
+	}
+	#app .home-page .print-row-check {
+		inset: auto;
+		inset-block-start: 1.8rem;
+		inset-inline-start: 0;
+		opacity: 1;
+	}
+}
+
+#app .home-page .print-row-checkbox-outline {
+	display: inline-block;
+	inline-size: 18px;
+	block-size: 18px;
+	border: 2px solid var(--print-blue);
+	border-radius: 2px;
+}
+
+// AddTask normally hides the text on phones; the print form hides its icon, so retain the text.
+@media (width <= 600px) {
+	#app .home-page .home-add .add-task-button {
+		inline-size: auto;
+		min-inline-size: 3.5rem;
+		padding-inline: .6rem;
+	}
+	#app .home-page .home-add .add-task-button .button-text {
+		display: inline;
+	}
+}
+
+// Date labels may be omitted on following rows; retain a hit area for each completion button.
+#app .home-page .print-row-time {
+	min-block-size: 1.8rem;
+}

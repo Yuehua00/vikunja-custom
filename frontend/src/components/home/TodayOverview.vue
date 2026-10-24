@@ -4,7 +4,7 @@
 		class="today-overview"
 	>
 		<header class="today-head">
-			<h2><span class="print-label">HABITS</span> {{ $t('habits.title') }}</h2>
+			<h2><span class="print-label">HABITS</span> 習慣</h2>
 			<BaseButton
 				class="today-edit"
 				@click="editing = !editing"
@@ -213,7 +213,7 @@ async function saveDraft() {
 
 <style lang="scss" scoped>
 .today-overview {
-	padding: 1rem 1.25rem;
+	padding: 1rem 1.25rem .6rem;
 	background: var(--white);
 	border: 0;
 	border-radius: $radius;

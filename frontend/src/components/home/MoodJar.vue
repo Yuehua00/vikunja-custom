@@ -3,476 +3,188 @@
 		v-cy="'moodJar'"
 		class="mood-jar"
 	>
-		<div class="mood-jar-info">
-			<h2 class="mood-jar-title">
-				<span class="print-label">MOOD JAR</span> {{ $t('diary.jar.title') }}
-			</h2>
-
-			<div class="mood-jar-count">
-				<span class="mood-jar-number">{{ balls.length }}</span>
-				<span class="mood-jar-unit">{{ $t('diary.jar.unit') }}</span>
-			</div>
-			<p class="mood-jar-summary">
-				{{ $t('diary.jar.summary', {month: monthTitle, count: balls.length}) }}
-			</p>
-
-			<ul class="mood-jar-legend">
-				<li
-					v-for="mood in MOODS"
-					:key="mood"
-					:style="{'--mood-color': MOOD_COLORS[mood]}"
-				>
-					<span class="mood-jar-legend-dot" />
-					{{ $t(`diary.moods.${mood}`) }}
-					<strong>{{ moodCounts[mood] }}</strong>
-				</li>
-			</ul>
-
-			<div class="mood-jar-nav">
-				<XButton
-					variant="tertiary"
-					:aria-label="$t('diary.jar.previousMonth')"
-					@click="shiftMonth(-1)"
-				>
-					&lsaquo;
-				</XButton>
-				<span class="mood-jar-month">{{ monthTitle }}</span>
-				<XButton
-					variant="tertiary"
-					:disabled="isCurrentMonth"
-					:aria-label="$t('diary.jar.nextMonth')"
-					@click="shiftMonth(1)"
-				>
-					&rsaquo;
-				</XButton>
-			</div>
-
-			<RouterLink
-				v-if="isCurrentMonth"
-				:to="{name: 'diary'}"
-				class="mood-jar-write"
-			>
-				{{ $t('diary.jar.write') }}
-			</RouterLink>
-		</div>
-
+		<header class="mood-jar-head">
+			<h2><span class="print-label">MOOD JAR</span> 心情罐</h2>
+			<span class="mood-jar-summary">{{ month.month() + 1 }} 月・{{ balls.length }} 顆</span>
+		</header>
+		<p class="mood-jar-prompt">
+			今天過得怎麼樣？
+		</p>
 		<svg
 			class="mood-jar-glass"
-			viewBox="0 90 320 250"
+			viewBox="0 0 220 160"
 			role="group"
-			:aria-label="$t('diary.jar.title')"
+			:aria-label="`這個月有 ${balls.length} 篇日記`"
 		>
 			<path
-				class="mood-jar-body"
-				d="M12 326 H308"
+				d="M16 151 H204"
+				class="mood-jar-floor"
 			/>
-
 			<g
 				v-for="ball in balls"
 				:key="ball.date"
-				:transform="`translate(${ball.x} ${ball.y})`"
+				class="mood-ball"
+				role="link"
+				tabindex="0"
+				:aria-label="$t('diary.openDay', {date: ball.date})"
+				@click="open(ball.date)"
+				@keydown.enter="open(ball.date)"
+				@keydown.space.prevent="open(ball.date)"
 			>
-				<g
-					class="mood-ball"
-					:style="{animationDelay: `${ball.index * 30}ms`}"
-					role="link"
-					tabindex="0"
-					:aria-label="$t('diary.openDay', {date: ball.date})"
-					@click="open(ball.date)"
-					@keydown.enter="open(ball.date)"
-				>
-					<title>{{ $t('diary.openDay', {date: ball.date}) }}</title>
-					<circle
-						:r="RADIUS"
-						:style="{fill: ball.mood ? MOOD_COLORS[ball.mood] : 'var(--grey-300)'}"
-						class="mood-ball-body"
-					/>
-					<ellipse
-						cx="-8"
-						cy="-12"
-						rx="7"
-						ry="3.6"
-						transform="rotate(-30 -8 -12)"
-						class="mood-ball-shine"
-					/>
-
-					<g
-						class="mood-face"
-						fill="none"
-						stroke-linecap="round"
-					>
-						<template v-if="ball.mood === 'good'">
-							<circle
-								cx="-7"
-								cy="-2"
-								r="2.3"
-								class="mood-eye"
-							/>
-							<circle
-								cx="7"
-								cy="-2"
-								r="2.3"
-								class="mood-eye"
-							/>
-							<path
-								d="M-6 6 Q0 12 6 6"
-								class="mood-mouth"
-							/>
-							<ellipse
-								cx="-13"
-								cy="5"
-								rx="3.4"
-								ry="2.2"
-								class="mood-cheek"
-							/>
-							<ellipse
-								cx="13"
-								cy="5"
-								rx="3.4"
-								ry="2.2"
-								class="mood-cheek"
-							/>
-						</template>
-						<template v-else-if="ball.mood === 'ok'">
-							<circle
-								cx="-7"
-								cy="-2"
-								r="2.3"
-								class="mood-eye"
-							/>
-							<circle
-								cx="7"
-								cy="-2"
-								r="2.3"
-								class="mood-eye"
-							/>
-							<path
-								d="M-5 8 L5 8"
-								class="mood-mouth"
-							/>
-							<ellipse
-								cx="-13"
-								cy="5"
-								rx="3.4"
-								ry="2.2"
-								class="mood-cheek"
-							/>
-							<ellipse
-								cx="13"
-								cy="5"
-								rx="3.4"
-								ry="2.2"
-								class="mood-cheek"
-							/>
-						</template>
-						<template v-else-if="ball.mood === 'low'">
-							<path
-								d="M-10 -4 L-4 -2"
-								class="mood-mouth"
-							/>
-							<path
-								d="M10 -4 L4 -2"
-								class="mood-mouth"
-							/>
-							<path
-								d="M-6 10 Q0 4 6 10"
-								class="mood-mouth"
-							/>
-							<path
-								d="M-12 2 Q-14 6 -12 7 Q-10 6 -12 2 Z"
-								class="mood-tear"
-							/>
-						</template>
-						<template v-else>
-							<path
-								d="M-10 -2 Q-7 1 -4 -2"
-								class="mood-mouth"
-							/>
-							<path
-								d="M4 -2 Q7 1 10 -2"
-								class="mood-mouth"
-							/>
-							<path
-								d="M-3 7 L3 7"
-								class="mood-mouth"
-							/>
-						</template>
-					</g>
-				</g>
+				<title>{{ ball.date }} · {{ ball.mood ? $t(`diary.moods.${ball.mood}`) : '未設定心情' }}</title>
+				<circle
+					:cx="ball.x"
+					:cy="ball.y"
+					r="13"
+					:fill="ball.mood ? MOOD_COLORS[ball.mood] : 'var(--grey-300)'"
+				/>
 			</g>
-
-			<rect
-				class="mood-jar-lid"
-				x="36"
-				y="14"
-				width="248"
-				height="30"
-				rx="9"
-			/>
-			<path
-				class="mood-jar-reflection"
-				d="M28 110 L28 270"
-			/>
 		</svg>
+		<p
+			v-if="balls.length === 0"
+			class="mood-jar-empty"
+		>
+			寫下今天，放進第一顆心情。
+		</p>
+		<div class="mood-jar-nav">
+			<button
+				type="button"
+				:aria-label="$t('diary.jar.previousMonth')"
+				@click="shiftMonth(-1)"
+			>
+				‹
+			</button>
+			<span>{{ monthTitle }}</span>
+			<button
+				type="button"
+				:disabled="isCurrentMonth"
+				:aria-label="$t('diary.jar.nextMonth')"
+				@click="shiftMonth(1)"
+			>
+				›
+			</button>
+		</div>
+		<RouterLink
+			:to="{name: 'diary'}"
+			class="mood-jar-write"
+		>
+			寫今天的日記 →
+		</RouterLink>
 	</section>
 </template>
 
 <script setup lang="ts">
 import {computed, ref} from 'vue'
-import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
 import dayjs from 'dayjs'
-
-import XButton from '@/components/input/Button.vue'
-
 import {useDiary} from '@/client/queries/diary'
-import {MOODS, MOOD_COLORS, moodOf, type Mood} from '@/helpers/diary'
+import {MOOD_COLORS, moodOf} from '@/helpers/diary'
 
-// The balls are drawn on a fixed grid, rows from the bottom of the jar up, every second row shifted by a radius.
-const RADIUS = 22
-const FIRST_ROW_SIZE = 6
-const FLOOR = 316
-const LEFT = 28
-const ROW_HEIGHT = RADIUS * Math.sqrt(3)
-
-const {locale} = useI18n({useScope: 'global'})
 const router = useRouter()
 const {entryByDate} = useDiary()
-
 const month = ref(dayjs().startOf('month'))
 const isCurrentMonth = computed(() => !month.value.isBefore(dayjs().startOf('month'), 'month'))
-
-const monthTitle = computed(() => new Intl.DateTimeFormat(locale.value, {year: 'numeric', month: 'long'}).format(month.value.toDate()))
-
+const monthTitle = computed(() => month.value.format('YYYY · MM'))
 function shiftMonth(by: number) {
 	const next = month.value.add(by, 'month')
 	if (!next.isAfter(dayjs(), 'month')) month.value = next
 }
-
+// The six-column staggered pile fits all 31 days. Positions depend only on the entry order.
 function position(index: number) {
 	let row = 0
-	let rest = index
-	while (rest >= (row % 2 === 0 ? FIRST_ROW_SIZE : FIRST_ROW_SIZE - 1)) {
-		rest -= row % 2 === 0 ? FIRST_ROW_SIZE : FIRST_ROW_SIZE - 1
+	while (index >= (row % 2 === 0 ? 6 : 5)) {
+		index -= row % 2 === 0 ? 6 : 5
 		row++
 	}
-	return {
-		x: LEFT + RADIUS + rest * 2 * RADIUS + (row % 2 === 1 ? RADIUS : 0),
-		y: FLOOR - RADIUS - row * ROW_HEIGHT,
-	}
+	return {x: 43 + index * 26 + (row % 2 ? 13 : 0), y: 136 - row * 22.6}
 }
-
-const balls = computed(() => {
-	const prefix = month.value.format('YYYY-MM')
-	return [...entryByDate.value.keys()]
-		.filter(date => date.startsWith(prefix))
-		.sort()
-		.map((date, index) => ({
-			date,
-			index,
-			mood: moodOf(entryByDate.value.get(date)?.labels),
-			...position(index),
-		}))
-})
-
-const moodCounts = computed(() => {
-	const counts: Record<Mood, number> = {good: 0, ok: 0, low: 0}
-	for (const ball of balls.value) {
-		if (ball.mood) counts[ball.mood]++
-	}
-	return counts
-})
-
+const balls = computed(() => [...entryByDate.value.keys()]
+	.filter(date => date.startsWith(month.value.format('YYYY-MM')))
+	.sort()
+	.map((date, index) => ({date, mood: moodOf(entryByDate.value.get(date)?.labels ?? undefined), ...position(index)})))
 function open(date: string) {
 	void router.push({name: 'diary', query: {date}})
 }
 </script>
 
-<style lang="scss" scoped>
-.mood-jar-lid, .mood-jar-reflection {
-	display: none;
-}
+<style scoped lang="scss">
 .mood-jar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: .75rem;
-	padding: 1.25rem;
-	background: var(--white);
-	border: 1px solid var(--grey-200);
+	padding: 1rem 1.25rem 1.1rem;
+	background: var(--print-paper);
 	border-radius: 2px;
 }
-
-.mood-jar-info {
-	flex: 1 1 100%;
+.mood-jar-head {
 	display: flex;
-	flex-direction: column;
-	gap: .6rem;
-}
-
-.mood-jar-title {
-	font-size: 1rem;
-	color: var(--grey-500);
-}
-
-.mood-jar-count {
-	display: none;
 	align-items: baseline;
-	gap: .6rem;
-}
-
-.mood-jar-number {
-	font-size: 4.5rem;
-	font-weight: 700;
-	line-height: 1;
-	font-variant-numeric: tabular-nums;
-}
-
-.mood-jar-unit {
-	font-size: 1rem;
-	color: var(--grey-600);
-}
-
-.mood-jar-summary {
-	color: var(--grey-600);
-}
-
-.mood-jar-legend {
-	display: flex;
-	flex-wrap: wrap;
-	gap: .4rem 1rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	font-size: .75rem;
-}
-
-.mood-jar-legend li {
-	display: inline-flex;
-	align-items: center;
-	gap: .35rem;
-}
-
-.mood-jar-legend-dot {
-	inline-size: .75rem;
-	block-size: .75rem;
-	background: var(--mood-color);
-	border-radius: 50%;
-}
-
-.mood-jar-nav {
-	display: flex;
-	align-items: center;
+	justify-content: space-between;
 	gap: .5rem;
 }
-
-.mood-jar-month {
-	min-inline-size: 7rem;
+.mood-jar-head h2 {
+	margin: 0;
+	white-space: nowrap;
+}
+.mood-jar-summary {
+	font-size: .75rem;
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+.mood-jar-prompt {
+	margin: .9rem 0 0;
 	text-align: center;
-	font-weight: 600;
+	font-size: 1.05rem;
+	font-weight: 700;
 }
-
-.mood-jar-write {
-	align-self: flex-start;
-	color: var(--primary);
-	font-weight: 600;
-}
-
 .mood-jar-glass {
-	margin-inline: auto;
-	flex: 0 1 100%;
+	display: block;
 	inline-size: 100%;
-	max-inline-size: 14rem;
-	block-size: auto;
+	max-inline-size: 220px;
+	margin: .6rem auto 0;
 	overflow: visible;
 }
-
-.mood-jar-body {
-	fill: none;
+.mood-jar-floor {
 	stroke: var(--primary);
-	stroke-width: 6;
+	stroke-width: 4;
 }
-
-.mood-jar-lid {
-	fill: var(--grey-300);
-	stroke: var(--grey-400);
-	stroke-width: 3;
-}
-
-.mood-jar-reflection {
-	fill: none;
-	stroke: #ffffff;
-	stroke-opacity: .55;
-	stroke-width: 5;
-	stroke-linecap: round;
-}
-
 .mood-ball {
 	cursor: pointer;
 	outline: none;
-	animation: mood-drop .6s cubic-bezier(.3, 1.4, .5, 1) backwards;
-	transition: transform .2s ease;
-
-	&:hover,
-	&:focus-visible {
-		transform: translateY(-4px) scale(1.08);
-	}
-
-	&:focus-visible .mood-ball-body {
-		stroke: var(--text);
-		stroke-width: 2;
-	}
 }
-
-@keyframes mood-drop {
-	from {
-		transform: translateY(-240px);
-		opacity: 0;
-	}
-
-	to {
-		transform: translateY(0);
-		opacity: 1;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.mood-ball {
-		animation: none;
-	}
-}
-
-.mood-ball-body {
-	stroke: rgba(0, 0, 0, .14);
-	stroke-width: 1;
-}
-
-.mood-ball-shine {
-	fill: #ffffff;
-	fill-opacity: .4;
-}
-
-.mood-eye {
-	fill: #26332e;
-	fill-opacity: .85;
-	stroke: none;
-}
-
-.mood-mouth {
-	stroke: #26332e;
-	stroke-opacity: .85;
+.mood-ball:hover circle, .mood-ball:focus-visible circle {
+	stroke: var(--text-strong);
 	stroke-width: 2;
 }
-
-.mood-cheek {
-	fill: #f08fa0;
-	fill-opacity: .5;
-	stroke: none;
+.mood-jar-empty {
+	text-align: center;
+	font-size: .75rem;
+	color: var(--text-muted);
 }
-
-.mood-tear {
-	fill: #cfe8ff;
-	stroke: none;
+.mood-jar-nav {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: .75rem;
+	font-family: $display-font;
+	font-size: .8rem;
+	color: var(--text-muted);
+}
+.mood-jar-nav button {
+	border: 0;
+	background: transparent;
+	color: var(--link);
+	cursor: pointer;
+	padding: .2rem .5rem;
+}
+.mood-jar-nav button:disabled {
+	opacity: .3;
+	cursor: default;
+}
+.mood-jar-write {
+	display: block;
+	margin-block-start: .6rem;
+	padding-block-start: .75rem;
+	border-block-start: 1px solid var(--grey-200);
+	text-align: center;
+	font-size: .85rem;
+	font-weight: 700;
 }
 </style>

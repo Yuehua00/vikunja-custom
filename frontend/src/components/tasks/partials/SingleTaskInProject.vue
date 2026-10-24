@@ -5,7 +5,7 @@
 	>
 		<div
 			ref="taskRoot"
-			:class="{'is-loading': isLoading}"
+			:class="{'is-loading': isLoading, 'print-task-row': printRow}"
 			class="task loader-container single-task"
 			tabindex="-1"
 			:data-is-overdue="isOverdue || undefined"
@@ -16,206 +16,289 @@
 			@click="openTaskDetail"
 			@keyup.enter="openTaskDetail"
 		>
-			<span
-				v-tooltip="!canMarkAsDone ? $t('task.readOnlyCheckbox') : ''"
-				class="is-inline-flex is-align-items-center"
-			>
-				<FancyCheckbox
-					:key="checkboxKey"
-					:model-value="task.done ?? false"
-					:disabled="isArchived || disabled || !canMarkAsDone"
-					:aria-label="$t('task.detail.markAsDone', {task: task.title})"
-					@update:modelValue="markAsDone"
-					@click.stop
-				/>
-			</span>
-
-			<ColorBubble
-				v-if="!showProjectSeparately && projectColor !== '' && currentProject?.id !== task.project_id"
-				:color="projectColor"
-				class="mie-1"
-			/>
-
-			<div
-				:class="{ 'done': task.done, 'show-project': showProject && project}"
-				class="tasktext"
-			>
-				<span>
-					<RouterLink
-						v-if="showProject && typeof project !== 'undefined'"
-						v-tooltip="$t('task.detail.belongsToProject', {project: project.title})"
-						:to="{ name: 'project.index', params: { projectId: task.project_id } }"
-						class="task-project mie-1"
-						:class="{'mie-2': task.hex_color !== ''}"
-						@click.stop
+			<template v-if="printRow">
+				<div class="print-row-time">
+					<span
+						v-if="!hidePrintTime"
+						:class="{'is-overdue': printOverdueDays > 0}"
+					>{{ task.done ? '完成' : printTimeLabel }}</span>
+					<button
+						class="print-row-check"
+						type="button"
+						:disabled="isArchived || disabled || !canMarkAsDone"
+						:aria-label="$t('task.detail.markAsDone', {task: task.title})"
+						:aria-pressed="task.done ?? false"
+						@click.stop="markAsDone(!task.done)"
 					>
-						{{ project.title }}
-					</RouterLink>
-
-					<ColorBubble
-						v-if="task.hex_color !== ''"
-						:color="getHexColor(task.hex_color)"
-						class="mie-1"
-					/>
-	
-					<TaskGlanceTooltip :task="task">
-						<RouterLink
-							ref="taskLinkRef"
-							:to="taskDetailRoute"
-							class="task-link"
-						>
-							{{ task.title }}
-						</RouterLink>
-					</TaskGlanceTooltip>
-				</span>
-
-				<span
-					v-if="inProgress"
-					class="status-chip mis-2"
-				>
-					{{ $t('task.status.inProgress') }}
-				</span>
-				<span
-					v-else-if="paused"
-					class="status-chip status-chip--paused mis-2"
-				>
-					{{ $t('task.status.paused') }}
-				</span>
-
-				<Labels
-					v-if="(task.labels?.length ?? 0) > 0"
-					class="labels mis-2 mie-1"
-					:labels="task.labels ?? []"
-				/>
-
-				<AssigneeList
-					v-if="(task.assignees?.length ?? 0) > 0"
-					:assignees="task.assignees ?? []"
-					:avatar-size="25"
-					class="mis-1"
-					:inline="true"
-				/>
-
-				<Popup
-					v-if="task.due_date && +new Date(task.due_date) > 0"
-					placement="bottom-start"
-					:anchor="dueDateTriggerEl"
-					sheet-on-mobile
-					:sheet-title="$t('task.deferDueDate.title')"
-				>
-					<template #trigger="{toggle, isOpen}">
-						<BaseButton
-							ref="dueDateTrigger"
-							v-tooltip="formatDateLong(task.due_date)"
-							class="dueDate"
-							@click.prevent.stop="toggle()"
-						>	
-							<time
-								:datetime="formatISO(task.due_date)"
-								class="is-italic"
-								:aria-expanded="isOpen ? 'true' : 'false'"
-							>
-								– {{ $t('task.detail.due', {at: dueDateFormatted}) }}
-							</time>
-						</BaseButton>
-					</template>
-					<template #content="{isOpen}">
-						<DeferTask
-							v-if="isOpen"
-							:model-value="task"
+						<Icon
+							v-if="task.done"
+							icon="check"
+						/><span
+							v-else
+							class="print-row-checkbox-outline"
 						/>
-					</template>
-				</Popup>
-
-				<span>
-					<span
-						v-if="(task.attachments?.length ?? 0) > 0"
-						class="project-task-icon"
-						role="img"
-						:aria-label="$t('task.attributes.attachment', (task.attachments?.length ?? 0))"
+					</button>
+				</div>
+				<div class="print-row-main">
+					<RouterLink
+						:to="taskDetailRoute"
+						class="print-row-title"
 					>
-						<Icon icon="paperclip" />
-					</span>
+						{{ task.title }}
+					</RouterLink>
+					<div class="print-row-meta">
+						<RouterLink
+							v-if="project"
+							:to="{name: 'project.index', params: {projectId: task.project_id}}"
+							@click.stop
+						>
+							{{ project.title }}
+						</RouterLink>
+						<span v-if="task.done">・已完成</span><span v-else-if="inProgress">・處理中</span><span v-else-if="paused">・暫停中</span>
+					</div>
+				</div>
+				<div class="print-row-end">
+					<progress
+						v-if="!task.done && (task.percent_done ?? 0) > 0"
+						class="print-row-progress"
+						:value="(task.percent_done ?? 0) * 100"
+						max="100"
+						:aria-label="`${Math.round((task.percent_done ?? 0) * 100)}%`"
+					/>
 					<span
-						v-if="!isEditorContentEmpty((task.description ?? ''))"
-						class="project-task-icon is-mirrored-rtl"
-					>
-						<Icon icon="align-left" />
-					</span>
+						v-if="!task.done && printOverdueDays > 0"
+						class="print-row-late"
+					>逾期 {{ printOverdueDays }} 天</span>
 					<span
-						v-if="isRepeating"
-						class="project-task-icon"
-					>
-						<Icon icon="history" />
-					</span>
-					<CommentCount
-						:task="task"
-						class="project-task-icon"
+						v-else-if="!task.done && !(task.percent_done ?? 0)"
+						class="print-row-status"
+					>尚未開始</span>
+					<div class="print-row-actions">
+						<BaseButton
+							:aria-label="task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')"
+							@click.stop="toggleFavorite"
+						>
+							<Icon icon="star" />
+						</BaseButton>
+						<BaseButton
+							v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
+							:aria-label="$t('focus.startFocus')"
+							@click.stop="showFocusCard = true"
+						>
+							<Icon icon="stopwatch" />
+						</BaseButton>
+						<BaseButton
+							v-if="canDelete && !disabled"
+							:aria-label="$t('task.detail.actions.delete')"
+							@click.stop="showDeleteModal = true"
+						>
+							<Icon icon="trash-alt" />
+						</BaseButton>
+					</div>
+				</div>
+			</template>
+			<template v-else>
+				<span
+					v-tooltip="!canMarkAsDone ? $t('task.readOnlyCheckbox') : ''"
+					class="is-inline-flex is-align-items-center"
+				>
+					<FancyCheckbox
+						:key="checkboxKey"
+						:model-value="task.done ?? false"
+						:disabled="isArchived || disabled || !canMarkAsDone"
+						:aria-label="$t('task.detail.markAsDone', {task: task.title})"
+						@update:modelValue="markAsDone"
+						@click.stop
 					/>
 				</span>
 
-				<ChecklistSummary :task="task" />
-			</div>
+				<ColorBubble
+					v-if="!showProjectSeparately && projectColor !== '' && currentProject?.id !== task.project_id"
+					:color="projectColor"
+					class="mie-1"
+				/>
 
-			<ProgressBar
-				v-if="!task.done && (task.percent_done ?? 0) > 0"
-				:value="(task.percent_done ?? 0) * 100"
-				is-small
-			/>
-
-			<ColorBubble
-				v-if="showProjectSeparately && projectColor !== '' && currentProject?.id !== task.project_id"
-				:color="projectColor"
-				class="mie-1"
-			/>
-
-			<RouterLink
-				v-if="showProjectSeparately"
-				v-tooltip="$t('task.detail.belongsToProject', {project: project.title})"
-				:to="{ name: 'project.index', params: { projectId: task.project_id } }"
-				class="task-project"
-				@click.stop
-			>
-				{{ project.title }}
-			</RouterLink>
-
-			<!-- Fixed width, so a row missing a button still keeps the progress bars of all rows in one column. -->
-			<div class="task-actions">
-				<BaseButton
-					:class="{'is-favorite': task.is_favorite}"
-					class="favorite"
-					@click.stop="toggleFavorite"
+				<div
+					:class="{ 'done': task.done, 'show-project': showProject && project}"
+					class="tasktext"
 				>
-					<span class="is-sr-only">{{
-						task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')
-					}}</span>
-					<Icon
-						v-if="task.is_favorite"
-						icon="star"
+					<span>
+						<RouterLink
+							v-if="showProject && typeof project !== 'undefined'"
+							v-tooltip="$t('task.detail.belongsToProject', {project: project.title})"
+							:to="{ name: 'project.index', params: { projectId: task.project_id } }"
+							class="task-project mie-1"
+							:class="{'mie-2': task.hex_color !== ''}"
+							@click.stop
+						>
+							{{ project.title }}
+						</RouterLink>
+
+						<ColorBubble
+							v-if="task.hex_color !== ''"
+							:color="getHexColor(task.hex_color)"
+							class="mie-1"
+						/>
+
+						<TaskGlanceTooltip :task="task">
+							<RouterLink
+								ref="taskLinkRef"
+								:to="taskDetailRoute"
+								class="task-link"
+							>
+								{{ task.title }}
+							</RouterLink>
+						</TaskGlanceTooltip>
+					</span>
+
+					<span
+						v-if="inProgress"
+						class="status-chip mis-2"
+					>
+						{{ $t('task.status.inProgress') }}
+					</span>
+					<span
+						v-else-if="paused"
+						class="status-chip status-chip--paused mis-2"
+					>
+						{{ $t('task.status.paused') }}
+					</span>
+
+					<Labels
+						v-if="(task.labels?.length ?? 0) > 0"
+						class="labels mis-2 mie-1"
+						:labels="task.labels ?? []"
 					/>
-					<Icon
-						v-else
-						:icon="['far', 'star']"
+
+					<AssigneeList
+						v-if="(task.assignees?.length ?? 0) > 0"
+						:assignees="task.assignees ?? []"
+						:avatar-size="25"
+						class="mis-1"
+						:inline="true"
 					/>
-				</BaseButton>
-				<BaseButton
-					v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
-					v-tooltip="$t('focus.startFocus')"
-					class="focus-task"
-					@click.stop="showFocusCard = true"
+
+					<Popup
+						v-if="task.due_date && +new Date(task.due_date) > 0"
+						placement="bottom-start"
+						:anchor="dueDateTriggerEl"
+						sheet-on-mobile
+						:sheet-title="$t('task.deferDueDate.title')"
+					>
+						<template #trigger="{toggle, isOpen}">
+							<BaseButton
+								ref="dueDateTrigger"
+								v-tooltip="formatDateLong(task.due_date)"
+								class="dueDate"
+								@click.prevent.stop="toggle()"
+							>
+								<time
+									:datetime="formatISO(task.due_date)"
+									class="is-italic"
+									:aria-expanded="isOpen ? 'true' : 'false'"
+								>
+									– {{ $t('task.detail.due', {at: dueDateFormatted}) }}
+								</time>
+							</BaseButton>
+						</template>
+						<template #content="{isOpen}">
+							<DeferTask
+								v-if="isOpen"
+								:model-value="task"
+							/>
+						</template>
+					</Popup>
+
+					<span>
+						<span
+							v-if="(task.attachments?.length ?? 0) > 0"
+							class="project-task-icon"
+							role="img"
+							:aria-label="$t('task.attributes.attachment', (task.attachments?.length ?? 0))"
+						>
+							<Icon icon="paperclip" />
+						</span>
+						<span
+							v-if="!isEditorContentEmpty((task.description ?? ''))"
+							class="project-task-icon is-mirrored-rtl"
+						>
+							<Icon icon="align-left" />
+						</span>
+						<span
+							v-if="isRepeating"
+							class="project-task-icon"
+						>
+							<Icon icon="history" />
+						</span>
+						<CommentCount
+							:task="task"
+							class="project-task-icon"
+						/>
+					</span>
+
+					<ChecklistSummary :task="task" />
+				</div>
+
+				<ProgressBar
+					v-if="!task.done && (task.percent_done ?? 0) > 0"
+					:value="(task.percent_done ?? 0) * 100"
+					is-small
+				/>
+
+				<ColorBubble
+					v-if="showProjectSeparately && projectColor !== '' && currentProject?.id !== task.project_id"
+					:color="projectColor"
+					class="mie-1"
+				/>
+
+				<RouterLink
+					v-if="showProjectSeparately"
+					v-tooltip="$t('task.detail.belongsToProject', {project: project.title})"
+					:to="{ name: 'project.index', params: { projectId: task.project_id } }"
+					class="task-project"
+					@click.stop
 				>
-					<span class="is-sr-only">{{ $t('focus.startFocus') }}</span>
-					<Icon icon="stopwatch" />
-				</BaseButton>
-				<BaseButton
-					v-if="canDelete && !disabled"
-					class="delete-task"
-					@click.stop="showDeleteModal = true"
-				>
-					<span class="is-sr-only">{{ $t('task.detail.actions.delete') }}</span>
-					<Icon icon="trash-alt" />
-				</BaseButton>
-			</div>
+					{{ project.title }}
+				</RouterLink>
+
+				<!-- Fixed width, so a row missing a button still keeps the progress bars of all rows in one column. -->
+				<div class="task-actions">
+					<BaseButton
+						:class="{'is-favorite': task.is_favorite}"
+						class="favorite"
+						@click.stop="toggleFavorite"
+					>
+						<span class="is-sr-only">{{
+							task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')
+						}}</span>
+						<Icon
+							v-if="task.is_favorite"
+							icon="star"
+						/>
+						<Icon
+							v-else
+							:icon="['far', 'star']"
+						/>
+					</BaseButton>
+					<BaseButton
+						v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
+						v-tooltip="$t('focus.startFocus')"
+						class="focus-task"
+						@click.stop="showFocusCard = true"
+					>
+						<span class="is-sr-only">{{ $t('focus.startFocus') }}</span>
+						<Icon icon="stopwatch" />
+					</BaseButton>
+					<BaseButton
+						v-if="canDelete && !disabled"
+						class="delete-task"
+						@click.stop="showDeleteModal = true"
+					>
+						<span class="is-sr-only">{{ $t('task.detail.actions.delete') }}</span>
+						<Icon icon="trash-alt" />
+					</BaseButton>
+				</div>
+			</template>
 			<slot />
 		</div>
 		<template v-if="typeof task.related_tasks?.subtask !== 'undefined'">
@@ -309,6 +392,8 @@ import {useRouter} from 'vue-router'
 
 const props = withDefaults(defineProps<{
 	theTask: ITask,
+	printRow?: boolean,
+	hidePrintTime?: boolean,
 	isArchived?: boolean,
 	showProject?: boolean,
 	disabled?: boolean,
@@ -316,6 +401,8 @@ const props = withDefaults(defineProps<{
 	canDelete?: boolean,
 	allTasks?: ITask[],
 }>(), {
+	printRow: false,
+	hidePrintTime: false,
 	isArchived: false,
 	showProject: false,
 	disabled: false,
@@ -404,6 +491,26 @@ let oldTask: ITask
 
 // Changing the key puts the checkbox back to what the task says, after a tick that was not carried out.
 const checkboxKey = ref(0)
+
+// Printed rows use whole calendar days for overdue labels and the scheduled time otherwise.
+const printDate = computed(() => {
+	const due = task.value.due_date ? new Date(task.value.due_date) : null
+	const raw = due && due.getFullYear() > 1 ? task.value.due_date : task.value.start_date
+	const date = raw ? new Date(raw) : null
+	return date && date.getFullYear() > 1 ? date : null
+})
+const printOverdueDays = computed(() => {
+	if (!printDate.value || task.value.done) return 0
+	const start = (date: Date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+	return Math.max(0, Math.round((start(now.value) - start(printDate.value)) / 86_400_000))
+})
+const printTimeLabel = computed(() => {
+	if (!printDate.value) return '未排程'
+	if (printOverdueDays.value === 1) return '昨天'
+	if (printDate.value.toDateString() !== now.value.toDateString()) return `${printDate.value.getMonth() + 1}/${printDate.value.getDate()}`
+	if (printDate.value.getHours() === 0 && printDate.value.getMinutes() === 0) return '全天'
+	return printDate.value.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})
+})
 
 async function markAsDone(checked: boolean, wasReverted: boolean = false) {
 	if (!wasReverted) oldTask = {...task.value}
