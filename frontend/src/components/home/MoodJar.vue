@@ -3,146 +3,74 @@
 		v-cy="'moodJar'"
 		class="mood-jar"
 	>
-		<div class="mood-jar-info">
+		<header class="mood-jar-head">
 			<h2 class="mood-jar-title">
 				{{ $t('diary.jar.title') }}
 			</h2>
-
-			<div class="mood-jar-count">
-				<span class="mood-jar-number">{{ balls.length }}</span>
-				<span class="mood-jar-unit">{{ $t('diary.jar.unit') }}</span>
-			</div>
-			<p class="mood-jar-summary">
-				{{ $t('diary.jar.summary', {month: monthTitle, count: balls.length}) }}
-			</p>
-
-			<ul class="mood-jar-legend">
-				<li
-					v-for="mood in MOODS"
-					:key="mood"
-					:style="{'--mood-color': MOOD_COLORS[mood]}"
-				>
-					<span class="mood-jar-legend-dot" />
-					{{ $t(`diary.moods.${mood}`) }}
-					<strong>{{ moodCounts[mood] }}</strong>
-				</li>
-			</ul>
-
-			<div class="mood-jar-nav">
-				<XButton
-					variant="tertiary"
+			<span class="mood-jar-nav">
+				<button
+					type="button"
+					class="mood-jar-step"
 					:aria-label="$t('diary.jar.previousMonth')"
 					@click="shiftMonth(-1)"
 				>
 					&lsaquo;
-				</XButton>
-				<span class="mood-jar-month">{{ monthTitle }}</span>
-				<XButton
-					variant="tertiary"
+				</button>
+				<span class="mood-jar-month">{{ monthTitle }} · {{ balls.length }}</span>
+				<button
+					type="button"
+					class="mood-jar-step"
 					:disabled="isCurrentMonth"
 					:aria-label="$t('diary.jar.nextMonth')"
 					@click="shiftMonth(1)"
 				>
 					&rsaquo;
-				</XButton>
-			</div>
+				</button>
+			</span>
+		</header>
 
-			<RouterLink
-				v-if="balls.length === 0 && isCurrentMonth"
-				:to="{name: 'diary'}"
-				class="mood-jar-write"
-			>
-				{{ $t('diary.jar.write') }}
-			</RouterLink>
-		</div>
+		<p class="mood-jar-question">
+			{{ $t('diary.placeholder') }}
+		</p>
 
+		<!-- The month's diary days as balls dropped in a heap on a line, each in its mood's color. -->
 		<svg
-			class="mood-jar-glass"
-			viewBox="0 0 320 340"
+			class="mood-jar-pile"
+			:viewBox="`0 ${FLOOR - pileHeight} ${WIDTH} ${pileHeight + 6}`"
 			role="group"
-			:aria-label="$t('diary.jar.title')"
+			:aria-label="$t('diary.jar.summary', {month: monthTitle, count: balls.length})"
 		>
-			<path
-				class="mood-jar-body"
-				d="M44 44 L44 60 Q12 66 12 96 L12 300 Q12 326 38 326 L282 326 Q308 326 308 300 L308 96 Q308 66 276 60 L276 44 Z"
-			/>
-
-			<g
+			<circle
 				v-for="ball in balls"
 				:key="ball.date"
-				:transform="`translate(${ball.x} ${ball.y})`"
+				class="mood-ball"
+				:cx="ball.x"
+				:cy="ball.y"
+				:r="ball.r"
+				:style="{fill: ball.mood ? MOOD_COLORS[ball.mood] : 'var(--grey-300)'}"
+				role="link"
+				tabindex="0"
+				:aria-label="$t('diary.openDay', {date: ball.date})"
+				@click="open(ball.date)"
+				@keydown.enter="open(ball.date)"
 			>
-				<g
-					class="mood-ball"
-					:style="{animationDelay: `${ball.index * 30}ms`}"
-					role="link"
-					tabindex="0"
-					:aria-label="$t('diary.openDay', {date: ball.date})"
-					@click="open(ball.date)"
-					@keydown.enter="open(ball.date)"
-				>
-					<title>{{ $t('diary.openDay', {date: ball.date}) }}</title>
-					<circle
-						:r="RADIUS"
-						:style="{fill: ball.mood ? MOOD_COLORS[ball.mood] : 'var(--grey-300)'}"
-						class="mood-ball-body"
-					/>
-					<ellipse
-						cx="-8"
-						cy="-12"
-						rx="7"
-						ry="3.6"
-						transform="rotate(-30 -8 -12)"
-						class="mood-ball-shine"
-					/>
-
-					<g
-						class="mood-face"
-						fill="none"
-						stroke-linecap="round"
-					>
-						<template v-if="ball.mood === 'good'">
-							<circle cx="-7" cy="-2" r="2.3" class="mood-eye" />
-							<circle cx="7" cy="-2" r="2.3" class="mood-eye" />
-							<path d="M-6 6 Q0 12 6 6" class="mood-mouth" />
-							<ellipse cx="-13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
-							<ellipse cx="13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
-						</template>
-						<template v-else-if="ball.mood === 'ok'">
-							<circle cx="-7" cy="-2" r="2.3" class="mood-eye" />
-							<circle cx="7" cy="-2" r="2.3" class="mood-eye" />
-							<path d="M-5 8 L5 8" class="mood-mouth" />
-							<ellipse cx="-13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
-							<ellipse cx="13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
-						</template>
-						<template v-else-if="ball.mood === 'low'">
-							<path d="M-10 -4 L-4 -2" class="mood-mouth" />
-							<path d="M10 -4 L4 -2" class="mood-mouth" />
-							<path d="M-6 10 Q0 4 6 10" class="mood-mouth" />
-							<path d="M-12 2 Q-14 6 -12 7 Q-10 6 -12 2 Z" class="mood-tear" />
-						</template>
-						<template v-else>
-							<path d="M-10 -2 Q-7 1 -4 -2" class="mood-mouth" />
-							<path d="M4 -2 Q7 1 10 -2" class="mood-mouth" />
-							<path d="M-3 7 L3 7" class="mood-mouth" />
-						</template>
-					</g>
-				</g>
-			</g>
-
-			<rect
-				class="mood-jar-lid"
-				x="36"
-				y="14"
-				width="248"
-				height="30"
-				rx="9"
-			/>
-			<path
-				class="mood-jar-reflection"
-				d="M28 110 L28 270"
+				<title>{{ $t('diary.openDay', {date: ball.date}) }}</title>
+			</circle>
+			<line
+				class="mood-jar-ground"
+				x1="4"
+				:y1="FLOOR + 2"
+				:x2="WIDTH - 4"
+				:y2="FLOOR + 2"
 			/>
 		</svg>
+
+		<RouterLink
+			:to="{name: 'diary'}"
+			class="mood-jar-write"
+		>
+			{{ $t('diary.jar.write') }} →
+		</RouterLink>
 	</section>
 </template>
 
@@ -152,17 +80,45 @@ import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
 import dayjs from 'dayjs'
 
-import XButton from '@/components/input/Button.vue'
-
 import {useDiary} from '@/client/queries/diary'
-import {MOODS, MOOD_COLORS, moodOf, type Mood} from '@/helpers/diary'
+import {MOOD_COLORS, moodOf} from '@/helpers/diary'
 
-// The balls are drawn on a fixed grid, rows from the bottom of the jar up, every second row shifted by a radius.
-const RADIUS = 22
-const FIRST_ROW_SIZE = 6
-const FLOOR = 316
-const LEFT = 28
-const ROW_HEIGHT = RADIUS * Math.sqrt(3)
+// The balls are dropped one by one at a spot picked from the date, and roll down until they rest on the
+// line or on balls already there, so the heap looks tossed in rather than stacked in rows.
+const WIDTH = 300
+const FLOOR = 200
+const MIN_RADIUS = 15
+const MAX_RADIUS = 18
+
+function hash(text: string) {
+	let h = 2166136261
+	for (let i = 0; i < text.length; i++) {
+		h = Math.imul(h ^ text.charCodeAt(i), 16777619)
+	}
+	return (h >>> 0) / 4294967295
+}
+
+type Placed = {x: number, y: number, r: number}
+
+function drop(placed: Placed[], date: string): Placed {
+	const r = MIN_RADIUS + hash(date + 'r') * (MAX_RADIUS - MIN_RADIUS)
+	let best: Placed | null = null
+	// Try a few spots around the chosen one and keep the lowest, like a ball settling into a gap.
+	for (let attempt = 0; attempt < 12; attempt++) {
+		const x = r + hash(`${date}#${attempt}`) * (WIDTH - 2 * r)
+		let y = FLOOR - r
+		for (const other of placed) {
+			const dx = Math.abs(x - other.x)
+			if (dx < r + other.r) {
+				y = Math.min(y, other.y - Math.sqrt((r + other.r) ** 2 - dx ** 2))
+			}
+		}
+		if (best === null || y > best.y) {
+			best = {x, y, r}
+		}
+	}
+	return best as Placed
+}
 
 const {locale} = useI18n({useScope: 'global'})
 const router = useRouter()
@@ -178,39 +134,21 @@ function shiftMonth(by: number) {
 	if (!next.isAfter(dayjs(), 'month')) month.value = next
 }
 
-function position(index: number) {
-	let row = 0
-	let rest = index
-	while (rest >= (row % 2 === 0 ? FIRST_ROW_SIZE : FIRST_ROW_SIZE - 1)) {
-		rest -= row % 2 === 0 ? FIRST_ROW_SIZE : FIRST_ROW_SIZE - 1
-		row++
-	}
-	return {
-		x: LEFT + RADIUS + rest * 2 * RADIUS + (row % 2 === 1 ? RADIUS : 0),
-		y: FLOOR - RADIUS - row * ROW_HEIGHT,
-	}
-}
-
 const balls = computed(() => {
 	const prefix = month.value.format('YYYY-MM')
+	const placed: Placed[] = []
 	return [...entryByDate.value.keys()]
 		.filter(date => date.startsWith(prefix))
 		.sort()
-		.map((date, index) => ({
-			date,
-			index,
-			mood: moodOf(entryByDate.value.get(date)?.labels),
-			...position(index),
-		}))
+		.map(date => {
+			const spot = drop(placed, date)
+			placed.push(spot)
+			return {date, mood: moodOf(entryByDate.value.get(date)?.labels), ...spot}
+		})
 })
 
-const moodCounts = computed(() => {
-	const counts: Record<Mood, number> = {good: 0, ok: 0, low: 0}
-	for (const ball of balls.value) {
-		if (ball.mood) counts[ball.mood]++
-	}
-	return counts
-})
+// Tall enough for the heap, never shorter than a few rows, so the panel keeps its size through the month.
+const pileHeight = computed(() => Math.max(110, ...balls.value.map(ball => FLOOR - ball.y + ball.r + 4)))
 
 function open(date: string) {
 	void router.push({name: 'diary', query: {date}})
@@ -218,186 +156,96 @@ function open(date: string) {
 </script>
 
 <style lang="scss" scoped>
+// Print style mood jar: no jar, just this month's balls in a heap on a line.
 .mood-jar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1.5rem 2rem;
-	padding: 1.5rem 1.75rem;
+	padding: 1rem 1.25rem;
 	background: var(--white);
-	border: 1px solid var(--grey-200);
-	border-radius: 20px;
+	border-radius: $radius;
 }
 
-.mood-jar-info {
-	flex: 1 1 14rem;
+.mood-jar-head {
 	display: flex;
-	flex-direction: column;
-	gap: .6rem;
-}
-
-.mood-jar-title {
-	font-size: 1rem;
-	color: var(--grey-500);
-}
-
-.mood-jar-count {
-	display: flex;
+	justify-content: space-between;
 	align-items: baseline;
-	gap: .6rem;
-}
-
-.mood-jar-number {
-	font-size: 4.5rem;
-	font-weight: 700;
-	line-height: 1;
-	font-variant-numeric: tabular-nums;
-}
-
-.mood-jar-unit {
-	font-size: 1rem;
-	color: var(--grey-600);
-}
-
-.mood-jar-summary {
-	color: var(--grey-600);
-}
-
-.mood-jar-legend {
-	display: flex;
-	flex-wrap: wrap;
-	gap: .4rem 1rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	font-size: .9rem;
-}
-
-.mood-jar-legend li {
-	display: inline-flex;
-	align-items: center;
-	gap: .35rem;
-}
-
-.mood-jar-legend-dot {
-	inline-size: .75rem;
-	block-size: .75rem;
-	background: var(--mood-color);
-	border-radius: 50%;
-}
-
-.mood-jar-nav {
-	display: flex;
-	align-items: center;
 	gap: .5rem;
 }
 
-.mood-jar-month {
-	min-inline-size: 7rem;
+.mood-jar-title {
+	margin: 0;
+}
+
+.mood-jar-nav {
+	display: inline-flex;
+	align-items: center;
+	gap: .2rem;
+	font-size: .8rem;
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+.mood-jar-step {
+	border: 0;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 1rem;
+	padding: 0 .3rem;
+	cursor: pointer;
+
+	&:hover:not(:disabled) {
+		color: var(--print-orange-text);
+	}
+
+	&:disabled {
+		opacity: .35;
+		cursor: default;
+	}
+}
+
+.mood-jar-question {
+	margin: .9rem 0 .4rem;
 	text-align: center;
-	font-weight: 600;
+	font-weight: 700;
+	font-size: 1.05rem;
+	color: var(--text-strong);
 }
 
-.mood-jar-write {
-	align-self: flex-start;
-	color: var(--primary);
-	font-weight: 600;
-}
-
-.mood-jar-glass {
-	flex: 0 1 20rem;
+.mood-jar-pile {
+	display: block;
 	inline-size: 100%;
-	max-inline-size: 20rem;
+	max-inline-size: 240px;
 	block-size: auto;
-	overflow: visible;
-}
-
-.mood-jar-body {
-	fill: color-mix(in srgb, var(--grey-100) 55%, transparent);
-	stroke: var(--grey-400);
-	stroke-width: 3;
-}
-
-.mood-jar-lid {
-	fill: var(--grey-300);
-	stroke: var(--grey-400);
-	stroke-width: 3;
-}
-
-.mood-jar-reflection {
-	fill: none;
-	stroke: #fff;
-	stroke-opacity: .55;
-	stroke-width: 5;
-	stroke-linecap: round;
+	margin-inline: auto;
 }
 
 .mood-ball {
 	cursor: pointer;
-	outline: none;
-	animation: mood-drop .6s cubic-bezier(.3, 1.4, .5, 1) backwards;
-	transition: transform .2s ease;
+	transition: transform $transition;
+	transform-box: fill-box;
+	transform-origin: center;
 
 	&:hover,
 	&:focus-visible {
-		transform: translateY(-4px) scale(1.08);
-	}
-
-	&:focus-visible .mood-ball-body {
-		stroke: var(--text);
-		stroke-width: 2;
+		transform: scale(1.1);
 	}
 }
 
-@keyframes mood-drop {
-	from {
-		transform: translateY(-240px);
-		opacity: 0;
+.mood-jar-ground {
+	stroke: var(--primary);
+	stroke-width: 4;
+}
+
+.mood-jar-write {
+	display: block;
+	margin-block-start: .9rem;
+	padding-block-start: .75rem;
+	border-block-start: 1px solid var(--grey-200);
+	text-align: center;
+	font-weight: 800;
+	font-size: .88rem;
+	color: var(--primary);
+
+	&:hover {
+		color: var(--print-orange-text);
 	}
-
-	to {
-		transform: translateY(0);
-		opacity: 1;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.mood-ball {
-		animation: none;
-	}
-}
-
-.mood-ball-body {
-	stroke: rgba(0, 0, 0, .14);
-	stroke-width: 1;
-}
-
-.mood-ball-shine {
-	fill: #fff;
-	fill-opacity: .4;
-}
-
-.mood-eye {
-	fill: #26332e;
-	fill-opacity: .85;
-	stroke: none;
-}
-
-.mood-mouth {
-	stroke: #26332e;
-	stroke-opacity: .85;
-	stroke-width: 2;
-}
-
-.mood-cheek {
-	fill: #f08fa0;
-	fill-opacity: .5;
-	stroke: none;
-}
-
-.mood-tear {
-	fill: #cfe8ff;
-	stroke: none;
 }
 </style>

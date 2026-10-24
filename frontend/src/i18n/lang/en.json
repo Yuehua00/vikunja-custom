@@ -1,6 +1,7 @@
 {
   "habits": {
     "title": "Today",
+    "heading": "Habits",
     "edit": "Edit habits",
     "finishEditing": "Cancel",
     "nothingToday": "No habit is planned for today. Rest, or pick one of the other habits below.",

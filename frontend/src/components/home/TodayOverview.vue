@@ -4,7 +4,7 @@
 		class="today-overview"
 	>
 		<header class="today-head">
-			<h2>{{ $t('habits.title') }}</h2>
+			<h2>{{ $t('habits.heading') }}</h2>
 			<BaseButton
 				class="today-edit"
 				@click="editing = !editing"
@@ -30,6 +30,7 @@
 					:count="weekCount(habit, logs, today)"
 					:streak="streakWeeks(habit, logs, today)"
 					:project-title="projectTitle(habit)"
+					:week="weekMarks(habit.id)"
 					@toggle="toggle(habit.id, today)"
 				/>
 			</ul>
@@ -48,6 +49,7 @@
 						:count="weekCount(habit, logs, today)"
 						:streak="streakWeeks(habit, logs, today)"
 						:project-title="projectTitle(habit)"
+						:week="weekMarks(habit.id)"
 						@toggle="toggle(habit.id, today)"
 					/>
 				</ul>
@@ -155,6 +157,26 @@ const today = new Date()
 const scheduled = computed(() => habits.value.filter(habit => isScheduled(habit, today)))
 const others = computed(() => habits.value.filter(habit => !isScheduled(habit, today)))
 
+// One mark per day of this week (Monday first) for the little squares under a habit.
+const weekDays = computed(() => {
+	const monday = new Date(today)
+	monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
+	return Array.from({length: 7}, (_, i) => {
+		const day = new Date(monday)
+		day.setDate(monday.getDate() + i)
+		return day
+	})
+})
+
+function weekMarks(habitId: string) {
+	return weekDays.value.map(day => ({
+		label: day.toLocaleDateString(locale.value, {weekday: 'narrow'}),
+		done: isDone(logs.value, habitId, day),
+		isToday: day.toDateString() === today.toDateString(),
+		isFuture: day > today,
+	}))
+}
+
 function projectTitle(habit: Habit) {
 	return habit.project_id ? projectList.projects[habit.project_id]?.title : undefined
 }
@@ -212,9 +234,7 @@ async function saveDraft() {
 .today-overview {
 	padding: 1rem 1.25rem;
 	background: var(--white);
-	border: 1px solid var(--grey-200);
 	border-radius: $radius;
-	box-shadow: var(--shadow-sm);
 }
 
 .today-head {
@@ -228,24 +248,36 @@ async function saveDraft() {
 	}
 }
 
-.today-edit,
+.today-edit {
+	color: var(--primary);
+	font-size: .8rem;
+	font-weight: 800;
+
+	&:hover {
+		color: var(--print-orange-text);
+	}
+}
+
 .habit-add,
 .habit-save,
 .habit-remove {
 	padding: .3rem .85rem;
-	border-radius: 999px;
-	background: var(--grey-100);
+	border-radius: $radius;
+	border: 1.5px solid var(--grey-200);
+	background: var(--white);
 	color: var(--text);
 	font-size: .85rem;
+	font-weight: 700;
 
 	&:hover {
-		background: var(--grey-200);
+		background: var(--print-orange-hover);
 	}
 }
 
 .habit-save {
 	background: var(--primary);
-	color: var(--white);
+	border-color: var(--primary);
+	color: #ffffff;
 
 	&:hover {
 		background: color-mix(in srgb, var(--primary) 85%, black);
@@ -266,7 +298,7 @@ async function saveDraft() {
 .habit-list {
 	display: flex;
 	flex-direction: column;
-	gap: .4rem;
+	gap: 0;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -304,7 +336,7 @@ async function saveDraft() {
 .habit-day {
 	inline-size: 1.9rem;
 	block-size: 1.9rem;
-	border-radius: 50%;
+	border-radius: $radius;
 	border: 1px solid var(--grey-300);
 	background: var(--white);
 	color: var(--text);
