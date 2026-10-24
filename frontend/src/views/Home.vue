@@ -32,33 +32,40 @@
 		</Message>
 		<div class="home-columns">
 			<div class="home-main">
-				<AddTask @tasksAdded="updateTaskKey" />
-				<ImportHint v-if="tasksLoaded" />
-				<section
-					v-if="projectList.hasProjects"
-					class="print-paper"
-				>
+				<section class="print-paper home-today">
 					<header class="print-bar">
 						<h2 class="print-bar-title">
-							{{ $t('calendar.title') }}
+							TODAY <span>今天</span>
 						</h2>
 					</header>
+					<div class="home-add">
+						<AddTask @tasksAdded="updateTaskKey" />
+					</div>
+					<ImportHint v-if="tasksLoaded" />
+					<ShowTasks
+						v-if="projectList.hasProjects"
+						:key="showTasksKey"
+						:label-ids="labelIds"
+						embedded
+						class="show-tasks"
+						@tasksLoaded="tasksLoaded = true"
+						@clearLabelFilter="handleClearLabelFilter"
+					/>
+				</section>
+				<section
+					v-if="projectList.hasProjects"
+					class="print-paper home-calendar-paper"
+				>
 					<div class="home-calendar">
-						<CalendarView />
+						<CalendarView print-header />
 					</div>
 				</section>
-				<ShowTasks
-					v-if="projectList.hasProjects"
-					:key="showTasksKey"
-					:label-ids="labelIds"
-					class="show-tasks"
-					@tasksLoaded="tasksLoaded = true"
-					@clearLabelFilter="handleClearLabelFilter"
-				/>
 			</div>
 			<aside class="home-side">
+				<HomeInsights section="focus" />
 				<TodayOverview class="has-text-start" />
 				<MoodJar class="has-text-start" />
+				<HomeInsights section="next" />
 			</aside>
 		</div>
 	</div>
@@ -74,6 +81,7 @@ import TodayOverview from '@/components/home/TodayOverview.vue'
 import AddTask from '@/components/tasks/AddTask.vue'
 import ImportHint from '@/components/home/ImportHint.vue'
 import CalendarView from '@/components/calendar/CalendarView.vue'
+import HomeInsights from '@/components/home/HomeInsights.vue'
 import MoodJar from '@/components/home/MoodJar.vue'
 
 import {parseDateOrNull} from '@/helpers/parseDateOrNull'
@@ -142,7 +150,7 @@ function handleClearLabelFilter() {
 
 <style scoped lang="scss">
 .home-page {
-	max-inline-size: 68rem;
+	max-inline-size: 76rem;
 	margin-inline: auto;
 	text-align: start;
 }
@@ -180,7 +188,7 @@ function handleClearLabelFilter() {
 }
 
 .home-main {
-	flex: 999 1 540px;
+	flex: 999 1 400px;
 	min-inline-size: 0;
 	display: flex;
 	flex-direction: column;
@@ -188,7 +196,7 @@ function handleClearLabelFilter() {
 }
 
 .home-side {
-	flex: 1 1 300px;
+	flex: 1 1 260px;
 	min-inline-size: 0;
 	display: flex;
 	flex-direction: column;
@@ -196,10 +204,29 @@ function handleClearLabelFilter() {
 }
 
 .home-calendar {
-	padding: 1rem 1.25rem 1.25rem;
+	padding: 0;
+}
+
+.home-add {
+	padding: 1rem 1.25rem;
+	background: var(--print-orange-tint);
 }
 
 .show-tasks {
-	margin-block-start: .5rem;
+	max-block-size: 32rem;
+	overflow-y: auto;
+	padding: 1rem 1.25rem;
+}
+
+@media (width <= 600px) {
+	.home-title {
+	font-size: 2rem;
+}
+	.home-columns {
+	gap: 1rem;
+}
+	.home-main, .home-side {
+	flex-basis: 100%;
+}
 }
 </style>

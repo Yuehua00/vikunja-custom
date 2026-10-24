@@ -2,8 +2,15 @@
 	<div
 		v-cy="'calendarView'"
 		class="calendar-view"
+		:class="{'is-print-header': printHeader}"
 	>
 		<div class="calendar-toolbar">
+			<h2
+				v-if="printHeader"
+				class="print-bar-title calendar-label"
+			>
+				CALENDAR 月曆
+			</h2>
 			<div class="calendar-nav">
 				<XButton
 					variant="secondary"
@@ -53,82 +60,82 @@
 		</div>
 
 		<div class="calendar-layout">
-		<div
-			class="calendar-grid"
-			:class="{'is-loading': isFetching}"
-		>
 			<div
-				v-for="(name, index) in weekdayNames"
-				:key="'weekday-' + index"
-				class="calendar-weekday"
+				class="calendar-grid"
+				:class="{'is-loading': isFetching}"
 			>
-				{{ name }}
-			</div>
-
-			<div
-				v-for="day in days"
-				:key="day.getTime()"
-				class="calendar-day"
-				:class="{
-					'is-today': isToday(day),
-					'is-outside': mode === 'month' && !isSameMonth(day),
-					'is-week': mode === 'week',
-					'is-drop-target': dropTarget === day.getTime(),
-					'has-mood': moodOfDay(day) !== undefined,
-				}"
-				:style="moodStyle(day)"
-				@dragover="onDragOver($event, day)"
-				@dragleave="onDragLeave(day)"
-				@drop="onDrop($event, day)"
-			>
-				<div class="calendar-day-number">
-					{{ day.getDate() }}
-				</div>
-				<RouterLink
-					v-if="moodOfDay(day)"
-					class="calendar-mood-dot"
-					:to="{name: 'diary', query: {date: diaryDateKey(day)}}"
-					:title="$t('diary.openDay', {date: diaryDateKey(day)})"
-				/>
-
-				<ul class="calendar-tasks">
-					<li
-						v-for="entry in visibleTasks(day)"
-						:key="entry.task.id"
-					>
-						<RouterLink
-							:to="{name: 'task.detail', params: {id: entry.task.id}, state: {backdropView: route.fullPath}}"
-							class="calendar-task"
-							:class="{
-								'is-done': entry.task.done,
-								'is-progress': isInProgress(entry.task),
-								'is-paused': isPaused(entry.task),
-								'is-continued': !isSpanStart(entry, day),
-							}"
-							:style="taskStyle(entry.task)"
-							:data-priority-level="priorityLevel(entry.task)"
-							:title="entry.task.title"
-						>
-							{{ entry.task.title }}
-						</RouterLink>
-					</li>
-				</ul>
-
-				<BaseButton
-					v-if="hiddenCount(day) > 0"
-					class="calendar-more"
-					@click="openWeekOf(day)"
+				<div
+					v-for="(name, index) in weekdayNames"
+					:key="'weekday-' + index"
+					class="calendar-weekday"
 				>
-					{{ $t('calendar.more', {count: hiddenCount(day)}) }}
-				</BaseButton>
-			</div>
-		</div>
+					{{ name }}
+				</div>
 
-		<UnscheduledTasks
-			v-if="showUnscheduled && projectId !== null"
-			:project-id="projectId"
-			:view-id="viewId"
-		/>
+				<div
+					v-for="day in days"
+					:key="day.getTime()"
+					class="calendar-day"
+					:class="{
+						'is-today': isToday(day),
+						'is-outside': mode === 'month' && !isSameMonth(day),
+						'is-week': mode === 'week',
+						'is-drop-target': dropTarget === day.getTime(),
+						'has-mood': moodOfDay(day) !== undefined,
+					}"
+					:style="moodStyle(day)"
+					@dragover="onDragOver($event, day)"
+					@dragleave="onDragLeave(day)"
+					@drop="onDrop($event, day)"
+				>
+					<div class="calendar-day-number">
+						{{ day.getDate() }}
+					</div>
+					<RouterLink
+						v-if="moodOfDay(day)"
+						class="calendar-mood-dot"
+						:to="{name: 'diary', query: {date: diaryDateKey(day)}}"
+						:title="$t('diary.openDay', {date: diaryDateKey(day)})"
+					/>
+
+					<ul class="calendar-tasks">
+						<li
+							v-for="entry in visibleTasks(day)"
+							:key="entry.task.id"
+						>
+							<RouterLink
+								:to="{name: 'task.detail', params: {id: entry.task.id}, state: {backdropView: route.fullPath}}"
+								class="calendar-task"
+								:class="{
+									'is-done': entry.task.done,
+									'is-progress': isInProgress(entry.task),
+									'is-paused': isPaused(entry.task),
+									'is-continued': !isSpanStart(entry, day),
+								}"
+								:style="taskStyle(entry.task)"
+								:data-priority-level="priorityLevel(entry.task)"
+								:title="entry.task.title"
+							>
+								{{ entry.task.title }}
+							</RouterLink>
+						</li>
+					</ul>
+
+					<BaseButton
+						v-if="hiddenCount(day) > 0"
+						class="calendar-more"
+						@click="openWeekOf(day)"
+					>
+						{{ $t('calendar.more', {count: hiddenCount(day)}) }}
+					</BaseButton>
+				</div>
+			</div>
+
+			<UnscheduledTasks
+				v-if="showUnscheduled && projectId !== null"
+				:project-id="projectId"
+				:view-id="viewId"
+			/>
 		</div>
 	</div>
 </template>
@@ -165,6 +172,7 @@ import {
 } from './calendarHelpers'
 
 const props = withDefaults(defineProps<{
+	printHeader?: boolean,
 	// null loads the tasks of all projects (used on the home page).
 	projectId?: number | null,
 	viewId?: number,
@@ -174,6 +182,7 @@ const props = withDefaults(defineProps<{
 	projectId: null,
 	viewId: 0,
 	showUnscheduled: false,
+	printHeader: false,
 })
 
 const MAX_TASKS_PER_DAY_IN_MONTH = 3

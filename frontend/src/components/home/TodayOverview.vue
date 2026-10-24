@@ -4,7 +4,7 @@
 		class="today-overview"
 	>
 		<header class="today-head">
-			<h2>{{ $t('habits.title') }}</h2>
+			<h2><span class="print-label">HABITS</span> {{ $t('habits.title') }}</h2>
 			<BaseButton
 				class="today-edit"
 				@click="editing = !editing"
@@ -34,10 +34,13 @@
 				/>
 			</ul>
 
-			<template v-if="others.length > 0">
-				<h3 class="today-sub">
+			<details
+				v-if="others.length > 0"
+				class="other-habits"
+			>
+				<summary class="today-sub">
 					{{ $t('habits.otherHabits') }}
-				</h3>
+				</summary>
 				<ul class="habit-list is-muted">
 					<HabitRow
 						v-for="habit in others"
@@ -51,7 +54,7 @@
 						@toggle="toggle(habit.id, today)"
 					/>
 				</ul>
-			</template>
+			</details>
 		</template>
 
 		<div
@@ -212,9 +215,9 @@ async function saveDraft() {
 .today-overview {
 	padding: 1rem 1.25rem;
 	background: var(--white);
-	border: 1px solid var(--grey-200);
+	border: 0;
 	border-radius: $radius;
-	box-shadow: var(--shadow-sm);
+	box-shadow: none;
 }
 
 .today-head {
@@ -233,7 +236,7 @@ async function saveDraft() {
 .habit-save,
 .habit-remove {
 	padding: .3rem .85rem;
-	border-radius: 999px;
+	border-radius: 2px;
 	background: var(--grey-100);
 	color: var(--text);
 	font-size: .85rem;
@@ -304,7 +307,7 @@ async function saveDraft() {
 .habit-day {
 	inline-size: 1.9rem;
 	block-size: 1.9rem;
-	border-radius: 50%;
+	border-radius: 2px;
 	border: 1px solid var(--grey-300);
 	background: var(--white);
 	color: var(--text);

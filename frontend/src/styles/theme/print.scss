@@ -113,3 +113,262 @@
 	color: var(--grey-600);
 	border-block-end: 2px solid var(--primary);
 }
+
+// Page-specific print treatments share the same palette in light and dark schemes.
+#app {
+	.home-side h2 {
+	font-size: .9rem;
+	font-weight: 500;
+	line-height: 1.5;
+}
+	.home-side .print-label {
+	color: var(--text-strong);
+	margin-inline-end: .35rem;
+}
+	.home-side .today-head {
+	margin-block-end: .75rem;
+}
+	.home-side .today-edit {
+	padding-inline: 0;
+	background: transparent;
+	color: var(--link);
+	font-size: .75rem;
+}
+	.other-habits summary {
+	cursor: pointer;
+	padding-block: .5rem;
+}
+	.home-today .card {
+	box-shadow: none;
+	border: 0;
+}
+	.home-today .tasks {
+	padding: 0 !important;
+}
+	.home-today .tasks > li {
+	border-block-start: 1px solid var(--grey-200);
+}
+	.home-today .tasks .task {
+	padding-block: .9rem;
+	border-radius: 0;
+}
+	.home-today .task .progress {
+	max-inline-size: 7rem;
+}
+	.home-today .show-tasks-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .5rem;
+	font-size: .8rem;
+}
+	.home-today .show-tasks-options .button {
+	font-size: .75rem;
+}
+
+	.calendar-view.is-print-header {
+		.calendar-toolbar {
+	flex-wrap: wrap;
+	gap: .5rem;
+	padding: .65rem 1rem;
+	background: var(--primary);
+	color: #fff;
+	margin: 0;
+	border-radius: 2px 2px 0 0;
+}
+		.calendar-label {
+	flex: 1 1 auto;
+	font-size: .9rem;
+}
+		.calendar-title {
+	color: #fff;
+	font-family: $display-font;
+	font-size: 1.15rem;
+	margin: 0;
+}
+		.calendar-nav, .calendar-modes {
+	gap: .2rem;
+}
+		.calendar-toolbar .button {
+	min-block-size: 1.8rem;
+	padding: .2rem .5rem;
+	font-size: .75rem;
+	background: transparent;
+	color: #fff;
+	border: 1px solid rgb(255 255 255 / .5);
+}
+		.calendar-modes .button.is-primary {
+	background: #fff;
+	color: var(--primary);
+}
+		.calendar-layout {
+	padding: 1rem;
+}
+	}
+
+	.collect-main, .focus-main, .diary-main, .diary-past,
+	.focus-summary, .focus-records, .general-settings {
+		border-radius: 2px; box-shadow: none; background: var(--print-paper);
+	}
+	.collect-main {
+	border-block-start: 4px solid var(--primary);
+}
+	.collect-options {
+	border-block-end: 1px solid var(--grey-200);
+	padding-block-end: 1rem;
+}
+	.collect-field-label, .focus-target-label, .detail-title,
+	.diary-past-title, .diary-month-title {
+		font-family: $display-font; letter-spacing: .1em; font-weight: 700; color: var(--print-blue);
+	}
+	.collect-input {
+	border: 1px solid var(--grey-200);
+	border-radius: 2px;
+	line-height: 1.9;
+}
+	.collect-card {
+	border-radius: 2px;
+	box-shadow: inset 0 0 0 1px var(--grey-200);
+	background: var(--grey-100);
+}
+	.collect-actions {
+	border-block-start: 1px solid var(--grey-200);
+	padding-block-start: 1rem;
+}
+	.diary-date-row {
+	background: var(--primary);
+	color: #fff;
+	padding: 1rem 1.25rem;
+	border-radius: 2px 2px 0 0;
+}
+	.diary-date-row .button {
+	color: #fff;
+	background: transparent;
+	border: 1px solid rgb(255 255 255 / .5);
+}
+	.diary-date input {
+	color: #fff;
+	color-scheme: dark;
+	background: transparent;
+	border: 0;
+	font-family: $display-font;
+	font-weight: 700;
+}
+	.diary-mood {
+	border-radius: 2px;
+}
+	.diary-item {
+	border-radius: 0;
+	border-block-start: 1px solid var(--grey-200);
+}
+	.diary-item-date {
+	font-family: $display-font;
+	font-size: 1.15rem;
+	color: var(--print-blue);
+}
+	.focus-main {
+	border-block-start: 4px solid var(--primary);
+}
+	.focus-dial {
+	color: var(--primary);
+}
+	.focus-mode, .focus-modes, .focus-preset {
+	border-radius: 2px;
+}
+	.focus-target {
+	border-block-end: 1px solid var(--grey-200);
+	padding-block-end: 1rem;
+}
+	.focus-record {
+	border-radius: 0;
+	border-block-start: 1px solid var(--grey-200);
+}
+
+	.project-kanban .bucket {
+	background: var(--print-paper);
+	border-radius: 2px;
+	box-shadow: none;
+}
+	.project-kanban .bucket-header {
+	background: var(--primary);
+	color: #fff;
+	padding: .7rem 1rem;
+	border-radius: 2px 2px 0 0;
+}
+	.project-kanban .bucket-header .title {
+	color: #fff;
+	font-family: $display-font;
+	letter-spacing: .08em;
+}
+	.project-kanban .bucket-header .dropdown-trigger {
+	color: #fff;
+}
+	.project-kanban .task {
+	border-radius: 2px;
+	box-shadow: inset 0 0 0 1px var(--grey-200);
+}
+	.project-kanban .task:hover {
+	outline: 2px solid var(--primary);
+	outline-offset: -2px;
+}
+	.project-table .table {
+	background: var(--print-paper);
+}
+	.project-table .table td {
+	padding: .75rem;
+	border-color: var(--grey-200);
+}
+	.project-table .table tbody tr:hover {
+	background-color: var(--print-orange-tint);
+}
+	.gantt-chart-container {
+	border-radius: 2px;
+	border-block-start: 3px solid var(--primary);
+}
+	.g-gantt-bar {
+	border-radius: 2px;
+}
+	.task-view .details, .task-view .task-description, .task-view .subtask-list {
+	border-radius: 2px;
+	box-shadow: none;
+}
+	.task-view .detail-title {
+	font-size: .8rem;
+}
+	.task-view .task-description {
+	border-block-start: 3px solid var(--primary);
+}
+	.general-settings {
+	border-block-start: 3px solid var(--primary);
+}
+	.table tbody tr:hover {
+	--table-row-hover-background-color: var(--print-orange-tint);
+}
+}
+
+@media (max-width: 600px) {
+	#app .calendar-view.is-print-header {
+		.calendar-label {
+	flex-basis: 100%;
+}
+		.calendar-layout {
+	padding: .5rem;
+}
+		.calendar-day {
+	min-block-size: 4.5rem;
+	padding-inline: .2rem;
+}
+	}
+	#app .home-today .task .progress {
+	max-inline-size: 4rem;
+}
+	.page-title, .content h1.page-title {
+	font-size: 2rem;
+}
+}
+
+#app .print-bar-title {
+	font-size: .95rem;
+	font-weight: 700;
+	color: #ffffff;
+	margin: 0;
+}

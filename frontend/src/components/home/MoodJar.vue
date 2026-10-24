@@ -5,7 +5,7 @@
 	>
 		<div class="mood-jar-info">
 			<h2 class="mood-jar-title">
-				{{ $t('diary.jar.title') }}
+				<span class="print-label">MOOD JAR</span> {{ $t('diary.jar.title') }}
 			</h2>
 
 			<div class="mood-jar-count">
@@ -48,7 +48,7 @@
 			</div>
 
 			<RouterLink
-				v-if="balls.length === 0 && isCurrentMonth"
+				v-if="isCurrentMonth"
 				:to="{name: 'diary'}"
 				class="mood-jar-write"
 			>
@@ -58,13 +58,13 @@
 
 		<svg
 			class="mood-jar-glass"
-			viewBox="0 0 320 340"
+			viewBox="0 90 320 250"
 			role="group"
 			:aria-label="$t('diary.jar.title')"
 		>
 			<path
 				class="mood-jar-body"
-				d="M44 44 L44 60 Q12 66 12 96 L12 300 Q12 326 38 326 L282 326 Q308 326 308 300 L308 96 Q308 66 276 60 L276 44 Z"
+				d="M12 326 H308"
 			/>
 
 			<g
@@ -102,29 +102,100 @@
 						stroke-linecap="round"
 					>
 						<template v-if="ball.mood === 'good'">
-							<circle cx="-7" cy="-2" r="2.3" class="mood-eye" />
-							<circle cx="7" cy="-2" r="2.3" class="mood-eye" />
-							<path d="M-6 6 Q0 12 6 6" class="mood-mouth" />
-							<ellipse cx="-13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
-							<ellipse cx="13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
+							<circle
+								cx="-7"
+								cy="-2"
+								r="2.3"
+								class="mood-eye"
+							/>
+							<circle
+								cx="7"
+								cy="-2"
+								r="2.3"
+								class="mood-eye"
+							/>
+							<path
+								d="M-6 6 Q0 12 6 6"
+								class="mood-mouth"
+							/>
+							<ellipse
+								cx="-13"
+								cy="5"
+								rx="3.4"
+								ry="2.2"
+								class="mood-cheek"
+							/>
+							<ellipse
+								cx="13"
+								cy="5"
+								rx="3.4"
+								ry="2.2"
+								class="mood-cheek"
+							/>
 						</template>
 						<template v-else-if="ball.mood === 'ok'">
-							<circle cx="-7" cy="-2" r="2.3" class="mood-eye" />
-							<circle cx="7" cy="-2" r="2.3" class="mood-eye" />
-							<path d="M-5 8 L5 8" class="mood-mouth" />
-							<ellipse cx="-13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
-							<ellipse cx="13" cy="5" rx="3.4" ry="2.2" class="mood-cheek" />
+							<circle
+								cx="-7"
+								cy="-2"
+								r="2.3"
+								class="mood-eye"
+							/>
+							<circle
+								cx="7"
+								cy="-2"
+								r="2.3"
+								class="mood-eye"
+							/>
+							<path
+								d="M-5 8 L5 8"
+								class="mood-mouth"
+							/>
+							<ellipse
+								cx="-13"
+								cy="5"
+								rx="3.4"
+								ry="2.2"
+								class="mood-cheek"
+							/>
+							<ellipse
+								cx="13"
+								cy="5"
+								rx="3.4"
+								ry="2.2"
+								class="mood-cheek"
+							/>
 						</template>
 						<template v-else-if="ball.mood === 'low'">
-							<path d="M-10 -4 L-4 -2" class="mood-mouth" />
-							<path d="M10 -4 L4 -2" class="mood-mouth" />
-							<path d="M-6 10 Q0 4 6 10" class="mood-mouth" />
-							<path d="M-12 2 Q-14 6 -12 7 Q-10 6 -12 2 Z" class="mood-tear" />
+							<path
+								d="M-10 -4 L-4 -2"
+								class="mood-mouth"
+							/>
+							<path
+								d="M10 -4 L4 -2"
+								class="mood-mouth"
+							/>
+							<path
+								d="M-6 10 Q0 4 6 10"
+								class="mood-mouth"
+							/>
+							<path
+								d="M-12 2 Q-14 6 -12 7 Q-10 6 -12 2 Z"
+								class="mood-tear"
+							/>
 						</template>
 						<template v-else>
-							<path d="M-10 -2 Q-7 1 -4 -2" class="mood-mouth" />
-							<path d="M4 -2 Q7 1 10 -2" class="mood-mouth" />
-							<path d="M-3 7 L3 7" class="mood-mouth" />
+							<path
+								d="M-10 -2 Q-7 1 -4 -2"
+								class="mood-mouth"
+							/>
+							<path
+								d="M4 -2 Q7 1 10 -2"
+								class="mood-mouth"
+							/>
+							<path
+								d="M-3 7 L3 7"
+								class="mood-mouth"
+							/>
 						</template>
 					</g>
 				</g>
@@ -218,20 +289,23 @@ function open(date: string) {
 </script>
 
 <style lang="scss" scoped>
+.mood-jar-lid, .mood-jar-reflection {
+	display: none;
+}
 .mood-jar {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
-	gap: 1.5rem 2rem;
-	padding: 1.5rem 1.75rem;
+	gap: .75rem;
+	padding: 1.25rem;
 	background: var(--white);
 	border: 1px solid var(--grey-200);
-	border-radius: 20px;
+	border-radius: 2px;
 }
 
 .mood-jar-info {
-	flex: 1 1 14rem;
+	flex: 1 1 100%;
 	display: flex;
 	flex-direction: column;
 	gap: .6rem;
@@ -243,7 +317,7 @@ function open(date: string) {
 }
 
 .mood-jar-count {
-	display: flex;
+	display: none;
 	align-items: baseline;
 	gap: .6rem;
 }
@@ -271,7 +345,7 @@ function open(date: string) {
 	margin: 0;
 	padding: 0;
 	list-style: none;
-	font-size: .9rem;
+	font-size: .75rem;
 }
 
 .mood-jar-legend li {
@@ -306,17 +380,18 @@ function open(date: string) {
 }
 
 .mood-jar-glass {
-	flex: 0 1 20rem;
+	margin-inline: auto;
+	flex: 0 1 100%;
 	inline-size: 100%;
-	max-inline-size: 20rem;
+	max-inline-size: 14rem;
 	block-size: auto;
 	overflow: visible;
 }
 
 .mood-jar-body {
-	fill: color-mix(in srgb, var(--grey-100) 55%, transparent);
-	stroke: var(--grey-400);
-	stroke-width: 3;
+	fill: none;
+	stroke: var(--primary);
+	stroke-width: 6;
 }
 
 .mood-jar-lid {
@@ -327,7 +402,7 @@ function open(date: string) {
 
 .mood-jar-reflection {
 	fill: none;
-	stroke: #fff;
+	stroke: #ffffff;
 	stroke-opacity: .55;
 	stroke-width: 5;
 	stroke-linecap: round;
@@ -374,7 +449,7 @@ function open(date: string) {
 }
 
 .mood-ball-shine {
-	fill: #fff;
+	fill: #ffffff;
 	fill-opacity: .4;
 }
 

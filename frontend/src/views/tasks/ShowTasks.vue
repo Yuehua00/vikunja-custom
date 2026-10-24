@@ -3,7 +3,10 @@
 		v-cy="'showTasks'"
 		class="is-max-width-desktop has-text-start"
 	>
-		<h1 class="page-title">
+		<h1
+			v-if="!embedded"
+			class="page-title"
+		>
 			{{ pageTitle }}
 		</h1>
 		<Message
@@ -140,12 +143,14 @@ const props = withDefaults(defineProps<{
 	showNulls?: boolean,
 	showOverdue?: boolean,
 	labelIds?: string[],
+	embedded?: boolean,
 }>(), {
 	showNulls: false,
 	showOverdue: false,
 	dateFrom: undefined,
 	dateTo: undefined,
 	labelIds: undefined,
+	embedded: false,
 })
 
 const emit = defineEmits<{
