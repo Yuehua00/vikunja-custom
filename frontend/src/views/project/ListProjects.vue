@@ -1,42 +1,77 @@
 <template>
 	<div
 		v-cy="'projects-list'"
-		class="content loader-container"
+		class="content loader-container print-projects-overview"
 		:class="{'is-loading': loading}"
 	>
-		<h1 class="page-title">
-			{{ $t('project.projects') }}
-		</h1>
-
-		<header class="project-header">
-			<FancyCheckbox
-				v-model="showArchived"
-				v-cy="'show-archived-check'"
-			>
-				{{ $t('project.showArchived') }}
-			</FancyCheckbox>
-
-			<div class="action-buttons">
-				<XButton
-					:to="{name: 'filters.create'}"
-					icon="filter"
+		<header class="project-header projects-overview-header">
+			<div class="projects-overview-heading">
+				<p class="print-label">
+					PROJECTS・{{ activeProjectCount }} 個進行中
+				</p>
+				<h1 class="projects-overview-title">
+					{{ $t('project.projects') }}
+				</h1>
+			</div>
+			<div class="projects-overview-controls">
+				<FancyCheckbox
+					v-model="showArchived"
+					v-cy="'show-archived-check'"
 				>
-					{{ $t('filters.create.title') }}
-				</XButton>
-				<XButton
-					v-cy="'new-project'"
-					:to="{name: 'project.create'}"
-					icon="plus"
-				>
-					{{ $t('project.create.header') }}
-				</XButton>
+					{{ $t('project.showArchived') }}
+				</FancyCheckbox>
+
+				<div class="action-buttons">
+					<XButton
+						:to="{name: 'filters.create'}"
+						icon="filter"
+						variant="secondary"
+					>
+						{{ $t('filters.create.title') }}
+					</XButton>
+					<XButton
+						v-cy="'new-project'"
+						:to="{name: 'project.create'}"
+						icon="plus"
+					>
+						{{ $t('project.create.header') }}
+					</XButton>
+				</div>
 			</div>
 		</header>
 
-		<ProjectCardGrid
-			:projects="projects"
-			:show-archived="showArchived"
-		/>
+		<section
+			v-if="favoriteProjects.length"
+			aria-labelledby="projects-favorites-heading"
+			class="projects-overview-section"
+		>
+			<h2
+				id="projects-favorites-heading"
+				class="projects-section-title"
+			>
+				<Icon :icon="['far', 'star']" /> 收藏
+			</h2>
+			<ProjectCardGrid
+				:projects="favoriteProjects"
+				:show-archived="showArchived"
+			/>
+		</section>
+		<section
+			aria-labelledby="projects-all-heading"
+			class="projects-overview-section"
+		>
+			<h2
+				id="projects-all-heading"
+				class="projects-section-title"
+			>
+				全部專案
+			</h2>
+			<ProjectCardGrid
+				:projects="allProjects"
+				:show-archived="showArchived"
+				add-project
+			/>
+		</section>
 	</div>
 </template>
 
@@ -56,7 +91,7 @@ import {useDelayedLoading} from '@/composables/useDelayedLoading'
 const {t} = useI18n()
 const projectList = useProjects()
 
-useTitle(() => t('project.title'))
+useTitle(() => t('project.projects'))
 const showArchived = useStorage('showArchived', false)
 
 const loading = useDelayedLoading(() => projectList.isLoading)
@@ -65,6 +100,9 @@ const projects = computed(() => {
 		? projectList.projectsArray
 		: projectList.projectsArray.filter(({is_archived}) => !is_archived)
 })
+const activeProjectCount = computed(() => projectList.projectsArray.filter(project => project.id > 0 && !project.is_archived).length)
+const favoriteProjects = computed(() => projects.value.filter(project => !project.is_archived && (project.id === -1 || project.is_favorite)))
+const allProjects = computed(() => projects.value.filter(project => project.id !== -1))
 </script>
 
 <style lang="scss" scoped>

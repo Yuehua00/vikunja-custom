@@ -10,6 +10,18 @@
 		>
 			<ProjectCard :project="item" />
 		</li>
+		<li
+			v-if="addProject"
+			class="project-grid-item"
+		>
+			<RouterLink
+				:to="{name: 'project.create'}"
+				class="project-add-card"
+			>
+				<Icon icon="plus" />
+				<span>{{ $t('project.create.header') }}</span>
+			</RouterLink>
+		</li>
 	</ul>
 </template>
 
@@ -24,10 +36,12 @@ const props = withDefaults(defineProps<{
 	showArchived?: boolean,
 	itemLimit?: boolean,
 	showEvenNumberOfProjects?: boolean,
+	addProject?: boolean,
 }>(), {
 	showArchived: false,
 	itemLimit: false,
 	showEvenNumberOfProjects: false,
+	addProject: false,
 })
 
 const filteredProjects = computed(() => {

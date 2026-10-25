@@ -1041,3 +1041,289 @@
 		display: inline;
 	}
 }
+
+// Project overview: colored paper cards, real completion rings and the next task.
+#app .print-projects-overview {
+	max-inline-size: 72rem;
+	margin-inline: auto;
+
+	.projects-overview-header {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-end;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 1rem;
+		padding-block: .5rem 1rem;
+		margin-block-end: 1.5rem;
+		border-block-end: 3px solid var(--primary);
+	}
+	.projects-overview-heading .print-label {
+		margin: 0 0 .3rem;
+	}
+	.projects-overview-title {
+		margin: 0;
+		font-size: 2.6rem;
+		font-weight: 800 !important;
+		line-height: 1.1;
+		color: var(--text-strong);
+	}
+	.projects-overview-controls, .action-buttons {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: .5rem;
+		inline-size: auto;
+	}
+	.projects-overview-controls .fancy-checkbox {
+		margin: 0;
+		font-size: .8rem;
+	}
+	.projects-overview-controls .button {
+		min-block-size: 34px;
+		padding-inline: .75rem;
+		font-size: .8rem;
+		border-radius: 2px;
+	}
+	.projects-overview-controls .button .button-text {
+		display: inline;
+	}
+	.projects-overview-section + .projects-overview-section {
+		margin-block-start: 2rem;
+	}
+	.projects-section-title {
+		display: flex;
+		align-items: center;
+		gap: .4rem;
+		margin: 0 0 .85rem;
+		font-family: $display-font;
+		font-size: .9rem;
+		font-weight: 800 !important;
+		letter-spacing: .08em;
+		color: var(--primary);
+	}
+	.project-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-auto-rows: minmax(244px, auto);
+		gap: 1.25rem;
+		padding: 0;
+	}
+	.project-grid-item {
+		min-inline-size: 0;
+		margin: 0;
+	}
+	.project-card {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		flex-wrap: nowrap;
+		min-inline-size: 0;
+		min-block-size: 244px;
+		padding: 1.3rem 1.25rem 1rem;
+		background: transparent;
+		border: 0;
+		border-radius: 2px;
+		box-shadow: none;
+		overflow: visible;
+		isolation: isolate;
+		transition: transform .15s ease;
+	}
+	.project-card:hover {
+		transform: translate(-2px, -2px);
+		box-shadow: none;
+	}
+	.project-card > .project-card-paper {
+		position: absolute;
+		inset: 0;
+		inline-size: 100%;
+		block-size: 100%;
+		z-index: -1;
+		pointer-events: none;
+		fill: color-mix(in srgb, var(--project-accent) 17%, var(--print-paper));
+	}
+	.project-card .project-background {
+		position: absolute;
+		inset: 4px;
+		opacity: .15;
+		clip-path: polygon(4% 1%, 96% 1%, 99% 10%, 99% 90%, 96% 98%, 4% 98%, 1% 90%, 1% 10%);
+		pointer-events: none;
+	}
+	.project-card-heading {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: .35rem;
+		padding-inline-end: 1.5rem;
+	}
+	.project-card .project-title {
+		margin: 0;
+		font-family: $vikunja-font;
+		font-weight: 800 !important;
+		font-size: 1.45rem;
+		line-height: 1.25;
+		max-block-size: none;
+		color: var(--text-strong);
+		text-shadow: none;
+		-webkit-line-clamp: 2;
+	}
+	.project-kind {
+		padding: 2px 6px;
+		font-size: .7rem;
+		line-height: 1.3;
+		color: var(--primary);
+		border: 1px solid currentColor;
+	}
+	.project-card-description {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		margin: .35rem 0 0;
+		font-size: .82rem;
+		line-height: 1.5;
+		color: var(--text-muted);
+	}
+	.project-card-metrics {
+		display: flex;
+		align-items: center;
+		gap: .9rem;
+		margin-block: 1rem;
+	}
+	.project-progress-ring {
+		inline-size: 64px;
+		block-size: 64px;
+		flex-shrink: 0;
+		overflow: visible;
+	}
+	.ring-track {
+		stroke: color-mix(in srgb, var(--project-accent) 12%, var(--print-paper));
+	}
+	.ring-value {
+		stroke: var(--project-accent);
+	}
+	.project-progress-ring text {
+		font-family: $display-font;
+		font-size: 16px;
+		font-weight: 800;
+		fill: var(--text-strong);
+	}
+	.project-completion-count {
+		font-family: $display-font;
+		font-size: 1.05rem;
+		color: var(--text-muted);
+	}
+	.project-completion-count strong {
+		font-size: 2rem;
+		line-height: 1;
+		color: var(--text-strong);
+	}
+	.project-completion-count span {
+		display: block;
+		margin-block-start: .2rem;
+		font-family: $vikunja-font;
+		font-size: .75rem;
+	}
+	.project-filter-summary {
+		margin: auto 0;
+		padding-block: 1.25rem;
+		font-size: .85rem;
+		line-height: 1.6;
+		color: var(--text-muted);
+	}
+	.project-card-next {
+		display: flex;
+		align-items: baseline;
+		gap: .5rem;
+		padding-block-start: .7rem;
+		margin-block-start: auto;
+		border-block-start: 1px solid color-mix(in srgb, var(--project-accent) 25%, transparent);
+		font-size: .78rem;
+		line-height: 1.5;
+		color: var(--text-muted);
+	}
+	.project-next-label {
+		font-family: $display-font;
+		font-weight: 800;
+		letter-spacing: .08em;
+		color: var(--primary);
+		flex-shrink: 0;
+	}
+	.project-next-task {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		min-inline-size: 0;
+		word-break: break-word;
+	}
+	.project-next-date {
+		white-space: nowrap;
+	}
+	.project-card .project-button {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		border-radius: 8px;
+	}
+	.project-card .project-button:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 3px;
+	}
+	.project-card .favorite {
+		position: absolute;
+		inset-block-start: 1.3rem;
+		inset-inline-end: 1.25rem;
+		z-index: 3;
+		opacity: 1;
+		color: var(--text-muted);
+	}
+	.project-card .favorite.is-favorite, .project-card .favorite:hover {
+		color: var(--warning);
+	}
+	.project-add-card {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: .5rem;
+		min-block-size: 244px;
+		padding: 1.25rem;
+		border: 2px dashed var(--grey-300);
+		border-radius: 8px 4px 9px 5px;
+		font-weight: 800;
+		color: var(--primary);
+		text-decoration: none;
+	}
+	.project-add-card:hover {
+		border-color: var(--warning);
+		color: var(--warning-dark);
+		background: color-mix(in srgb, var(--warning) 5%, transparent);
+	}
+}
+
+@media (max-width: 1100px) {
+	#app .print-projects-overview .project-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 700px) {
+	#app .print-projects-overview .project-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	#app .print-projects-overview .projects-overview-controls {
+		inline-size: 100%;
+		justify-content: space-between;
+	}
+	#app .print-projects-overview .project-card, #app .print-projects-overview .project-add-card {
+		min-block-size: 224px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#app .print-projects-overview .project-card {
+		transition: none;
+	}
+	#app .print-projects-overview .project-card:hover {
+		transform: none;
+	}
+}
