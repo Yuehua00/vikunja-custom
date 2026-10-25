@@ -13,7 +13,8 @@
 				<button
 					ref="petButton"
 					class="web-pet"
-					:class="{'is-held': held, 'is-moving': moving, 'is-idle': !moving && !held && !sleeping && pose === 'idle'}"
+					:class="{'is-held': held, 'is-moving': moving, 'is-climbing': motionPhase === 'climb' || wallResting, 'is-cresting': motionPhase === 'crest', 'is-idle': !moving && !held && !sleeping && !wallResting && pose === 'idle'}"
+					:data-motion="motionPhase"
 					:style="{left: `${position.x}px`, top: `${position.y}px`, width: `${size}px`, height: `${size}px`}"
 					aria-label="熊貓，點一下互動，或拖曳到卡片上"
 					:aria-expanded="panel"
@@ -26,7 +27,7 @@
 				>
 					<span
 						class="pet-art"
-						:style="{transform: `scale(${facing * motionScale.x}, ${motionScale.y})`}"
+						:style="{transform: `rotate(${motionTilt}deg) scale(${facing * motionScale.x}, ${motionScale.y})`}"
 					>
 						<svg
 							v-if="motionPhase === 'walk' && !held"
@@ -92,6 +93,9 @@
 						<button @click="explore">
 							去探險
 						</button>
+						<button @click="climbExplore">
+							爬邊邊
+						</button>
 						<button @click="hide">
 							收起熊貓
 						</button>
@@ -106,7 +110,7 @@
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
 import {useAuthStore} from '@/stores/auth'
-import {clampPet, safeLanding, sampleTravel, travelMode, walkingPathClear, type PetMotionPhase, type PetPoint, type PetRect} from './petWorld'
+import {clampPet, planClimb, safeLanding, sampleClimb, sampleTravel, travelMode, walkingPathClear, type PetClimbRoute, type PetMotionPhase, type PetPoint, type PetRect} from './petWorld'
 
 const {BASE_URL} = import.meta.env
 const auth = useAuthStore()
@@ -130,12 +134,20 @@ const held = ref(false)
 const moving = ref(false)
 const motionPhase = ref<PetMotionPhase>('idle')
 const motionScale = ref({x: 1, y: 1})
+const motionTilt = ref(0)
+const wallResting = ref(false)
 const walkFrame = ref(0)
 const walkViewBox = computed(() => {
 	const feet = [446, 446, 443, 412, 412, 411][walkFrame.value]
 	return [(walkFrame.value % 3) * 512, Math.floor(walkFrame.value / 3) * 512 + feet - 320, 512, 330]
 })
-const motionImage = computed(() => held.value || motionPhase.value === 'jump' ? 9 : motionPhase.value === 'crouch' ? 6 : motionPhase.value === 'land' ? 18 : poses[pose.value])
+const motionImage = computed(() => {
+	if (held.value || motionPhase.value === 'jump') return 9
+	if (motionPhase.value === 'climb') return walkFrame.value % 2 ? 13 : 15
+	if (motionPhase.value === 'crest') return walkFrame.value ? 3 : 13
+	if (wallResting.value && pose.value === 'idle') return 15
+	return motionPhase.value === 'crouch' ? 6 : motionPhase.value === 'land' ? 18 : poses[pose.value]
+})
 const panel = ref(false)
 const hidden = ref(false)
 const sleeping = ref(false)
@@ -157,18 +169,28 @@ let dragged = false
 let pausedUntil = 0
 let support: Element | undefined
 let supportOffset = 0
+let wallSide: 'left' | 'right' = 'left'
 let motionDestination: PetPoint | undefined
+let activeClimb: {route: PetClimbRoute; element: Element} | undefined
 
 function persist() {
 	try {localStorage.setItem(storageKey, JSON.stringify({hidden: hidden.value, sleeping: sleeping.value}))} catch { /* Storage can be disabled. */ }
 }
 function stop() {
 	cancelAnimationFrame(frame)
-	if (motionDestination && ['crouch', 'jump', 'land'].includes(motionPhase.value)) position.value = {...motionDestination}
+	if (activeClimb && ['climb', 'crest'].includes(motionPhase.value)) {
+		position.value = {x: activeClimb.route.hang.x, y: motionPhase.value === 'crest' ? activeClimb.route.hang.y : position.value.y}
+		support = activeClimb.element
+		wallSide = activeClimb.route.side
+		supportOffset = position.value.y - support.getBoundingClientRect().top
+		wallResting.value = true
+	} else if (motionDestination && ['crouch', 'jump', 'land'].includes(motionPhase.value)) position.value = {...motionDestination}
+	activeClimb = undefined
 	motionDestination = undefined
 	moving.value = false
 	motionPhase.value = 'idle'
 	motionScale.value = {x: 1, y: 1}
+	motionTilt.value = 0
 	if (pose.value === 'walk') pose.value = 'idle'
 }
 function blocked() {
@@ -176,9 +198,10 @@ function blocked() {
 	return document.hidden || !!document.querySelector('[role="dialog"], dialog[open], .task-detail-view-modal.is-active') ||
 		!!focused?.matches('input, textarea, [contenteditable="true"]')
 }
-function obstacles(): PetRect[] {
+function obstacles(forClimb = false): PetRect[] {
 	return Array.from(document.querySelectorAll('main input, main textarea, main button, main a, main h1, main h2, main [contenteditable="true"], main .project-progress-number, main .project-progress-count, [role="dialog"], .focus-badge'))
 		.filter(element => !element.closest('.web-pet-layer'))
+		.filter(element => !forClimb || !element.matches('h2'))
 		.map(element => element.getBoundingClientRect())
 		.filter(rect => rect.width > 0 && rect.height > 0)
 }
@@ -210,6 +233,7 @@ function travel(destination: PetPoint, element?: Element) {
 	const end = clampPet(destination, viewport.value.width, viewport.value.height, size.value)
 	const mode = travelMode(start, end)
 	if (mode === 'unreachable' || (mode === 'walk' && !walkingPathClear(start, end, size.value, obstacles()))) return
+	wallResting.value = false
 	support = element
 	supportOffset = element ? destination.y - element.getBoundingClientRect().top : 0
 	facing.value = end.x < start.x ? -1 : 1
@@ -230,9 +254,102 @@ function travel(destination: PetPoint, element?: Element) {
 	}
 	frame = requestAnimationFrame(step)
 }
+
+function climbRoutes() {
+	const routes: {route: PetClimbRoute; element: Element}[] = []
+	const perches = candidates().filter(spot => spot.element)
+	const walls = document.querySelectorAll('main .print-paper, main .card')
+	const avoid = obstacles(true)
+	for (const element of walls) {
+		const rect = element.getBoundingClientRect()
+		if (rect.width < size.value * 2 || rect.top > viewport.value.height - size.value || rect.bottom < 64 + size.value) continue
+		const ledges = perches.filter(spot => element === spot.element || element.contains(spot.element!))
+		for (const side of ['left', 'right'] as const) {
+			for (const spot of ledges) {
+				const route = planClimb(position.value, spot.point, rect, side, size.value, viewport.value.width, viewport.value.height, avoid)
+				if (route && safeLanding(route.end, size.value, obstacles())) routes.push({route, element})
+			}
+			for (const dy of [-140, 140]) {
+				const route = planClimb(position.value, {x: position.value.x, y: position.value.y + dy}, rect, side, size.value,
+					viewport.value.width, viewport.value.height, avoid, true)
+				if (route) routes.push({route, element})
+			}
+		}
+	}
+	return routes
+}
+
+function startClimb(option: {route: PetClimbRoute; element: Element}, onComplete?: () => void) {
+	stop()
+	const {route, element} = option
+	activeClimb = option
+	moving.value = true
+	wallResting.value = false
+	pose.value = 'walk'
+	facing.value = route.approach.x < route.start.x ? -1 : 1
+	status.value = '先走到邊邊。'
+	const began = performance.now()
+	function step(now: number) {
+		if (blocked() || !element.isConnected) {stop(); return}
+		const sample = sampleClimb(route, now - began)
+		position.value = sample.point
+		motionPhase.value = sample.phase
+		motionScale.value = {x: sample.scaleX, y: sample.scaleY}
+		motionTilt.value = sample.tilt
+		walkFrame.value = sample.frame
+		if (sample.phase === 'climb' || sample.phase === 'crest') {
+			support = element
+			supportOffset = position.value.y - element.getBoundingClientRect().top
+			facing.value = route.side === 'left' ? -1 : 1
+			status.value = sample.phase === 'crest' ? '再用力一下，翻上去！' : route.hang.y < route.start.y ? '抓緊邊邊，往上爬。' : '抓緊邊邊，往下看看。'
+		}
+		if (sample.phase === 'walk' && now - began >= route.approachDuration) {
+			facing.value = route.end.x < route.crestEnd.x ? -1 : 1
+			status.value = '爬上來了，走到旁邊坐坐。'
+		}
+		if (!sample.done) {frame = requestAnimationFrame(step); return}
+		activeClimb = undefined
+		moving.value = false
+		wallResting.value = route.endOnWall
+		wallSide = route.side
+		support = element
+		supportOffset = route.end.y - element.getBoundingClientRect().top
+		pose.value = 'idle'
+		status.value = route.endOnWall ? '抱著邊邊歇一下。' : '爬上來了！在這裡走走。'
+		onComplete?.()
+	}
+	frame = requestAnimationFrame(step)
+}
+
+function tryClimb() {
+	if (reducedMotion?.matches) return false
+	const options = climbRoutes()
+	const tops = wallResting.value ? options.filter(option => !option.route.endOnWall && option.route.end.y < position.value.y) : []
+	const choices = tops.length ? tops : options
+	choices.sort((a, b) => a.route.approachDuration + a.route.climbDuration - b.route.approachDuration - b.route.climbDuration)
+	if (!choices.length) return false
+	startClimb(choices[0])
+	return true
+}
+
+function climbExplore() {
+	stop()
+	sleeping.value = false
+	panel.value = false
+	pausedUntil = 0
+	persist()
+	if (tryClimb()) return
+	status.value = reducedMotion?.matches ? '減少動畫模式已開啟，先安靜陪你。' : '這裡沒有安全的攀爬路線，換個卡片試試。'
+	bubble.value = status.value
+	clearTimeout(reactionTimer)
+	reactionTimer = setTimeout(() => {bubble.value = ''}, 3500)
+}
+
 function wander() {
-	if (hidden.value || sleeping.value || held.value || panel.value || blocked() || Date.now() < pausedUntil || reducedMotion?.matches) return
+	if (hidden.value || sleeping.value || held.value || moving.value || panel.value || blocked() || Date.now() < pausedUntil || reducedMotion?.matches) return
 	if (support && !support.isConnected) updateGeometry()
+	if ((wallResting.value || Math.random() < 0.35) && tryClimb()) return
+	if (wallResting.value) return
 	const avoid = obstacles()
 	const spots = candidates()
 	for (const dx of [-120, -70, 70, 120]) {
@@ -262,7 +379,20 @@ function updateGeometry() {
 		const rect = support.getBoundingClientRect()
 		if (!support.isConnected || rect.top < 64 + size.value || rect.top > window.innerHeight) {
 			support = undefined
+			wallResting.value = false
 			position.value = clampPet({x: window.innerWidth - size.value - 16, y: window.innerHeight - size.value - 16}, window.innerWidth, window.innerHeight, size.value)
+		} else if (wallResting.value) {
+			const x = wallSide === 'left' ? rect.left - size.value * 0.95 : rect.right - size.value * 0.05
+			const point = {x, y: rect.top + supportOffset}
+			if (x >= 0 && x + size.value <= window.innerWidth && safeLanding(point, size.value, obstacles(true))) {
+				position.value = clampPet(point, window.innerWidth, window.innerHeight, size.value)
+			} else {
+				wallResting.value = false
+				const perch = candidates().find(spot => spot.element)
+				support = perch?.element
+				position.value = perch?.point ?? clampPet({x: window.innerWidth - size.value - 16, y: window.innerHeight - size.value - 16}, window.innerWidth, window.innerHeight, size.value)
+				supportOffset = support ? position.value.y - support.getBoundingClientRect().top : 0
+			}
 		} else position.value = clampPet({x: position.value.x, y: rect.top + supportOffset}, window.innerWidth, window.innerHeight, size.value)
 	}
 }
@@ -285,6 +415,7 @@ function drag(event: PointerEvent) {
 	const dy = event.clientY - dragging.y
 	if (Math.hypot(dx, dy) < 6 && !dragged) return
 	dragged = true
+	wallResting.value = false
 	panel.value = false
 	support = undefined
 	pose.value = 'wave'
@@ -322,6 +453,14 @@ function react(next: Pose, message: string) {
 function rest() {
 	clearTimeout(reactionTimer)
 	stop()
+	if (wallResting.value && !sleeping.value) {
+		const ledge = climbRoutes().find(option => !option.route.endOnWall)
+		if (ledge) {startClimb(ledge, rest); return}
+		status.value = '先抱我回卡片上，再一起休息吧。'
+		bubble.value = status.value
+		reactionTimer = setTimeout(() => {bubble.value = ''}, 3500)
+		return
+	}
 	sleeping.value = !sleeping.value
 	pose.value = sleeping.value ? 'sleep' : 'idle'
 	bubble.value = ''
@@ -415,6 +554,12 @@ onBeforeUnmount(() => {
 	block-size: 100%;
 	overflow: hidden;
 	filter: drop-shadow(0 2px 1px #00000022);
+}
+.web-pet.is-climbing .pet-art {
+	transform-origin: 50% 45%;
+}
+.web-pet.is-cresting .pet-art {
+	transform-origin: center bottom;
 }
 .web-pet.is-idle img {
 	transform-origin: center bottom;
