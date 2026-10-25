@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="loader-container"
+		class="loader-container print-project-page"
 		:class="{
 			'is-loading': isLoadingProject,
 			'is-archived': currentProject.is_archived,
@@ -10,94 +10,104 @@
 			{{ getProjectTitle(currentProject) }}
 		</h1>
 
-		<div class="project-heading d-print-none">
-			<h1 class="page-title project-heading-title">
-				{{ currentProject.title === '' ? $t('misc.loading') : getProjectTitle(currentProject) }}
-			</h1>
-
-			<BaseButton
-				v-if="!isEditorContentEmpty(currentProject.description)"
-				:to="{ name: 'project.info', params: { projectId: currentProject.id } }"
-				class="project-heading-button"
-			>
-				<span class="is-sr-only">{{ $t('project.description') }}</span>
-				<Icon icon="circle-info" />
-			</BaseButton>
-
-			<ProjectSettingsDropdown
-				v-if="canWriteProject && currentProject.id !== -1"
-				:project="currentProject"
-			>
-				<template #trigger="{ toggleOpen, open }">
-					<BaseButton
-						class="project-heading-button"
-						:aria-expanded="open"
-						@click="toggleOpen"
-					>
-						<span class="is-sr-only">{{ $t('project.openSettingsMenu') }}</span>
-						<Icon icon="ellipsis-h" />
-					</BaseButton>
-				</template>
-			</ProjectSettingsDropdown>
-		</div>
-
-		<div
-			ref="switchViewContainerRef"
-			class="switch-view-container d-print-none"
-			:class="{'is-justify-content-flex-end': views.length === 1}"
-		>
-			<!-- Dropdown mode when buttons overflow -->
-			<Dropdown
-				v-if="isOverflowing && views.length > 1"
-				class="switch-view-dropdown"
-			>
-				<template #trigger="{ toggleOpen, open }">
-					<BaseButton
-						class="switch-view switch-view-dropdown-trigger"
-						:aria-expanded="open"
-						@click="toggleOpen"
-					>
-						{{ activeViewTitle }}
-						<Icon
-							icon="chevron-down"
-							class="dropdown-icon"
-						/>
-					</BaseButton>
-				</template>
-				<template #default="{ close }">
-					<div @click="close">
-						<DropdownItem
-							v-for="view in views"
-							:key="view.id"
-							:to="getViewRoute(view)"
-							:class="{'is-active': view.id === viewId}"
-						>
-							{{ getViewTitle(view) }}
-						</DropdownItem>
+		<div class="project-header-layout d-print-none">
+			<div class="project-heading">
+				<div class="project-heading-copy">
+					<p class="print-label project-eyebrow">
+						PROJECT・專案
+					</p>
+					<div class="project-heading-line">
+						<h1 class="page-title project-heading-title">
+							{{ currentProject.title === '' ? $t('misc.loading') : getProjectTitle(currentProject) }}
+						</h1>
+						<slot name="summary" />
 					</div>
-				</template>
-			</Dropdown>
+				</div>
 
-			<!-- Inline buttons, hidden when overflowing but kept in DOM for width measurement -->
-			<div
-				v-if="views.length > 1"
-				ref="switchViewRef"
-				class="switch-view"
-				:class="{'switch-view--hidden': isOverflowing || !overflowChecked}"
-				:aria-hidden="isOverflowing || undefined"
-			>
 				<BaseButton
-					v-for="view in views"
-					:key="view.id"
-					class="switch-view-button"
-					:class="{'is-active': view.id === viewId}"
-					:to="getViewRoute(view)"
-					:tabindex="isOverflowing ? -1 : undefined"
+					v-if="!isEditorContentEmpty(currentProject.description)"
+					:to="{ name: 'project.info', params: { projectId: currentProject.id } }"
+					class="project-heading-button"
 				>
-					{{ getViewTitle(view) }}
+					<span class="is-sr-only">{{ $t('project.description') }}</span>
+					<Icon icon="circle-info" />
 				</BaseButton>
+
+				<ProjectSettingsDropdown
+					v-if="canWriteProject && currentProject.id !== -1"
+					:project="currentProject"
+				>
+					<template #trigger="{ toggleOpen, open }">
+						<BaseButton
+							class="project-heading-button"
+							:aria-expanded="open"
+							@click="toggleOpen"
+						>
+							<span class="is-sr-only">{{ $t('project.openSettingsMenu') }}</span>
+							<Icon icon="ellipsis-h" />
+						</BaseButton>
+					</template>
+				</ProjectSettingsDropdown>
 			</div>
-			<slot name="header" />
+
+			<div
+				ref="switchViewContainerRef"
+				class="switch-view-container d-print-none"
+				:class="{'is-justify-content-flex-end': views.length === 1}"
+			>
+				<!-- Dropdown mode when buttons overflow -->
+				<Dropdown
+					v-if="isOverflowing && views.length > 1"
+					class="switch-view-dropdown"
+				>
+					<template #trigger="{ toggleOpen, open }">
+						<BaseButton
+							class="switch-view switch-view-dropdown-trigger"
+							:aria-expanded="open"
+							@click="toggleOpen"
+						>
+							{{ activeViewTitle }}
+							<Icon
+								icon="chevron-down"
+								class="dropdown-icon"
+							/>
+						</BaseButton>
+					</template>
+					<template #default="{ close }">
+						<div @click="close">
+							<DropdownItem
+								v-for="view in views"
+								:key="view.id"
+								:to="getViewRoute(view)"
+								:class="{'is-active': view.id === viewId}"
+							>
+								{{ getViewTitle(view) }}
+							</DropdownItem>
+						</div>
+					</template>
+				</Dropdown>
+
+				<!-- Inline buttons, hidden when overflowing but kept in DOM for width measurement -->
+				<div
+					v-if="views.length > 1"
+					ref="switchViewRef"
+					class="switch-view"
+					:class="{'switch-view--hidden': isOverflowing || !overflowChecked}"
+					:aria-hidden="isOverflowing || undefined"
+				>
+					<BaseButton
+						v-for="view in views"
+						:key="view.id"
+						class="switch-view-button"
+						:class="{'is-active': view.id === viewId}"
+						:to="getViewRoute(view)"
+						:tabindex="isOverflowing ? -1 : undefined"
+					>
+						{{ getViewTitle(view) }}
+					</BaseButton>
+				</div>
+				<slot name="header" />
+			</div>
 		</div>
 		<CustomTransition name="fade">
 			<Message

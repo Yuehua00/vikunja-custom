@@ -5,6 +5,12 @@
 		:project-id="projectId"
 		:view-id
 	>
+		<template #summary>
+			<template v-if="statsReady">
+				<span class="project-progress-number">{{ projectStats.percent }}%</span>
+				<span class="project-progress-count">{{ projectStats.done }} / {{ projectStats.total }} 完成</span>
+			</template>
+		</template>
 		<template #header>
 			<div class="filter-container">
 				<SortPopup
@@ -28,8 +34,15 @@
 				<Card
 					:padding="false"
 					:has-content="false"
-					class="has-overflow"
+					class="has-overflow print-project-sheet"
 				>
+					<header class="print-bar project-list-bar">
+						<h2 class="print-bar-title">
+							LIST 清單
+						</h2>
+						<span v-if="statsReady">{{ projectStats.total }} 件・{{ projectStats.done }} 件完成</span>
+						<span v-else>目前頁面 {{ allTasks.length }} 件</span>
+					</header>
 					<AddTask
 						v-if="!project?.is_archived && canWrite"
 						ref="addTaskRef"
@@ -72,6 +85,7 @@
 						<template #item="{element: t, index}">
 							<SingleTaskInProject
 								:ref="(el) => setTaskRef(el as InstanceType<typeof SingleTaskInProject> | null, index)"
+								project-row
 								:show-list-color="false"
 								:can-mark-as-done="canWrite || isPseudoProject"
 								:can-delete="canWrite || isPseudoProject"
@@ -101,6 +115,8 @@
 
 
 <script setup lang="ts">
+import {useQuery} from '@tanstack/vue-query'
+import {allTasksQuery} from '@/client/queries/tasks'
 import {useUpdateTaskPositionMutation} from '@/client/queries/taskMutations'
 import {ref, computed, nextTick, onMounted, onBeforeUnmount, watch, toRef} from 'vue'
 import {draggableFor} from '@/components/base/Draggable'
@@ -160,6 +176,17 @@ const {
 		? ['comment_count', 'is_unread']
 		: ['subtasks', 'comment_count', 'is_unread'],
 )
+// Read the entire project for the header; the list itself keeps its existing pagination and filters.
+const statsQuery = useQuery(computed(() => ({
+	...allTasksQuery({project: projectId.value, params: {filter: 'done = true || done = false'}}),
+	enabled: projectId.value > 0,
+})))
+const statsReady = computed(() => projectId.value > 0 && statsQuery.isSuccess.value)
+const projectStats = computed(() => {
+	const items = statsQuery.data.value ?? []
+	const done = items.filter(task => task.done).length
+	return {total: items.length, done, percent: items.length ? Math.round(done / items.length * 100) : 0}
+})
 const showLoading = useDelayedLoading(loading)
 
 const positionMutation = useUpdateTaskPositionMutation()

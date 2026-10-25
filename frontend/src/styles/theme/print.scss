@@ -693,3 +693,351 @@
 #app .home-page .print-row-time {
 	min-block-size: 1.8rem;
 }
+
+// PrintProject: one heading rule, compact view controls, and a four-column task sheet.
+#app .print-project-page {
+	max-inline-size: 68rem;
+	margin-inline: auto;
+	.project-header-layout {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-block: .5rem 1rem;
+		margin-block-end: 1.5rem;
+		border-block-end: 3px solid var(--primary);
+	}
+	.project-heading {
+		flex: 1 1 14rem;
+		min-inline-size: 0;
+		margin: 0;
+		align-items: flex-end;
+	}
+	.project-heading-copy {
+		min-inline-size: 0;
+	}
+	.project-eyebrow {
+		margin: 0 0 .25rem;
+		font-size: .9rem;
+	}
+	.project-heading-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: .35rem .75rem;
+	}
+	.project-heading-title {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		font-size: 2.6rem;
+		font-weight: 800;
+		line-height: 1.1;
+	}
+	.project-progress-number {
+		font-family: $display-font;
+		font-size: 1.4rem;
+		font-weight: 700;
+		color: var(--link);
+	}
+	.project-progress-count {
+		font-size: .75rem;
+		color: var(--text-muted);
+		white-space: nowrap;
+	}
+	.project-heading-button {
+		min-inline-size: 2rem;
+		min-block-size: 2rem;
+		font-size: 1rem;
+		color: var(--link);
+	}
+	.switch-view-container {
+		flex: 0 1 auto;
+		min-inline-size: 0;
+		max-inline-size: 100%;
+		min-block-size: 0;
+		margin: 0;
+		gap: .5rem;
+		flex-wrap: wrap;
+	}
+	.switch-view {
+		padding: 0;
+		border: 1.5px solid var(--primary);
+		box-shadow: none;
+		border-radius: 2px;
+		font-size: .8rem;
+	}
+	.switch-view-button {
+		margin: 0;
+		padding: .4rem .7rem;
+		border-radius: 0;
+		color: var(--link);
+		font-weight: 700;
+	}
+	.switch-view-button + .switch-view-button {
+		border-inline-start: 1px solid var(--primary);
+	}
+	.switch-view-button.is-active, .switch-view-button:hover {
+		background: var(--primary);
+		color: #ffffff;
+		box-shadow: none;
+	}
+	.switch-view-dropdown-trigger {
+		padding: .4rem .75rem;
+		background: var(--primary);
+		color: #ffffff;
+	}
+	.filter-container {
+		gap: .5rem;
+	}
+	.filter-container .button {
+		min-block-size: 2rem;
+		padding: .35rem .65rem;
+		border: 1px solid var(--grey-200);
+		background: transparent;
+		color: var(--link);
+		font-size: .8rem;
+		box-shadow: none;
+	}
+}
+#app .project-list {
+	.print-project-sheet {
+		background: var(--print-paper);
+		border: 0;
+		border-radius: 2px;
+		box-shadow: none;
+	}
+	.project-list-bar {
+		padding: .8rem 1.25rem;
+	}
+	.project-list-bar > span {
+		color: #d7e9df;
+		font-size: .75rem;
+	}
+	.list-view__add-task {
+		padding: .9rem 1.25rem;
+		background: var(--print-green-tint);
+	}
+	.list-view__add-task .field, .list-view__add-task .control {
+		margin-block-end: 0;
+	}
+	.list-view__add-task .input {
+		border: 0;
+		border-block-end: 2px solid var(--print-blue);
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		padding-inline-start: .4rem;
+	}
+	.list-view__add-task .task-icon {
+		display: none;
+	}
+	.list-view__add-task .add-task-button {
+		min-block-size: 2.5rem;
+	}
+	.tasks {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.project-print-row {
+		position: relative;
+		display: grid;
+		grid-template-columns: 28px minmax(0, 1fr) 10rem 5.5rem;
+		align-items: center;
+		gap: .25rem 1rem;
+		min-block-size: 4.5rem;
+		padding: .75rem 1.25rem;
+		border: 0;
+		border-block-start: 1px solid var(--grey-200);
+		border-radius: 0;
+		background: transparent;
+	}
+	.project-print-row:hover, .project-print-row:focus-within {
+		background: var(--print-orange-tint);
+	}
+	.project-print-row.project-row-important {
+		background: var(--print-orange-tint);
+	}
+	.project-print-row[data-priority-level] {
+		box-shadow: inset 3px 0 var(--priority-color);
+	}
+	.project-print-row[data-done] {
+		color: var(--text-muted);
+	}
+	.project-print-row[data-done] .project-row-title {
+		color: var(--text-muted);
+	}
+	.project-row-main {
+		min-inline-size: 0;
+	}
+	.project-row-title {
+		font-weight: 600;
+		font-size: .95rem;
+		line-height: 1.5;
+		color: var(--text-strong);
+		overflow-wrap: anywhere;
+	}
+	.project-row-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: .15rem;
+		margin-block-start: .2rem;
+		font-size: .75rem;
+		color: var(--text-muted);
+	}
+	.project-row-meta svg {
+		margin-inline-start: .3rem;
+		font-size: .7rem;
+	}
+	.project-row-state {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: .35rem;
+		min-inline-size: 0;
+	}
+	.project-state-chip {
+		padding: .15rem .45rem;
+		border-radius: 2px;
+		font-size: .7rem;
+		font-weight: 700;
+		white-space: nowrap;
+		background: var(--grey-100);
+		color: var(--text-muted);
+	}
+	.project-state-chip.is-doing {
+		background: color-mix(in srgb, var(--status-doing) 25%, var(--print-paper));
+		color: var(--text);
+	}
+	.project-state-chip.is-paused {
+		background: var(--print-blue-soft);
+		color: var(--print-blue);
+	}
+	.project-state-chip.is-done {
+		background: var(--print-green-soft);
+		color: var(--link);
+	}
+	.project-state-chip.is-important {
+		background: var(--print-orange-tint);
+		color: var(--print-orange-text);
+		box-shadow: inset 0 0 0 1px var(--print-orange);
+	}
+	.project-row-progress {
+		appearance: none;
+		inline-size: 100%;
+		block-size: 4px;
+		border: 0;
+		background: var(--print-blue-soft);
+	}
+	.project-row-progress::-webkit-progress-bar {
+		background: var(--print-blue-soft);
+	}
+	.project-row-progress::-webkit-progress-value {
+		background: var(--print-blue-mid);
+	}
+	.project-row-progress::-moz-progress-bar {
+		background: var(--print-blue-mid);
+	}
+	.project-row-due {
+		min-inline-size: 0;
+		text-align: end;
+		font-family: $display-font;
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: var(--print-blue);
+	}
+	.project-row-due time {
+		white-space: nowrap;
+	}
+	.project-no-date {
+		color: var(--text-muted);
+	}
+	.project-overdue {
+		display: inline-block;
+		padding: .15rem .4rem;
+		border-radius: 2px;
+		background: var(--print-orange);
+		color: #172a34;
+		font-family: $family-sans-serif;
+		font-size: .7rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.project-row-actions {
+		position: absolute;
+		inset-inline-end: 1.25rem;
+		inset-block-end: .15rem;
+		display: flex;
+		gap: .5rem;
+		opacity: 0;
+		font-size: .75rem;
+	}
+	.project-row-actions .is-favorite {
+		color: var(--print-orange-text);
+	}
+	.project-print-row:hover .project-row-actions, .project-print-row:focus-within .project-row-actions {
+		opacity: 1;
+	}
+	.project-print-row .handle {
+		position: absolute;
+		inset-inline-start: .25rem;
+		inset-block-start: 50%;
+		transform: translateY(-50%);
+		font-size: .7rem;
+	}
+	.subtask-nested {
+		margin-inline-start: 2rem;
+		border-inline-start: 2px solid var(--print-blue-soft);
+	}
+}
+@media (width <= 1100px) {
+	#app .project-list .project-print-row {
+		grid-template-columns: 28px minmax(0, 1fr) 8rem 5rem;
+		gap: .25rem .6rem;
+	}
+}
+@media (width <= 700px) {
+	#app .print-project-page .project-heading-title {
+		font-size: 2rem;
+	}
+	#app .print-project-page .switch-view-container {
+		flex-basis: 100%;
+		flex-direction: row;
+		justify-content: flex-start;
+	}
+	#app .project-list .project-print-row {
+		grid-template-columns: 24px minmax(0, 1fr) auto;
+		gap: .35rem .5rem;
+		padding: .8rem 1rem;
+	}
+	#app .project-list .project-row-main {
+		grid-column: 2;
+	}
+	#app .project-list .project-row-due {
+		grid-column: 3;
+		grid-row: 1;
+		font-size: .9rem;
+	}
+	#app .project-list .project-row-state {
+		grid-column: 2 / -1;
+		padding-inline-end: 4.5rem;
+	}
+	#app .project-list .project-row-actions {
+		opacity: 1;
+		inset-inline-end: 1rem;
+		inset-block-end: .6rem;
+	}
+	#app .project-list .subtask-nested {
+		margin-inline-start: 1rem;
+	}
+	#app .project-list .list-view__add-task .add-task-button {
+		inline-size: auto;
+		min-inline-size: 3.5rem;
+	}
+	#app .project-list .list-view__add-task .add-task-button .button-text {
+		display: inline;
+	}
+}

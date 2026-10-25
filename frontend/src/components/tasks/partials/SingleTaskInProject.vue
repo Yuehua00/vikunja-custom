@@ -5,7 +5,7 @@
 	>
 		<div
 			ref="taskRoot"
-			:class="{'is-loading': isLoading, 'print-task-row': printRow}"
+			:class="{'is-loading': isLoading, 'print-task-row': printRow, 'project-print-row': projectRow, 'project-row-important': projectRow && (task.importance ?? 0) >= 4}"
 			class="task loader-container single-task"
 			tabindex="-1"
 			:data-is-overdue="isOverdue || undefined"
@@ -79,6 +79,116 @@
 							@click.stop="toggleFavorite"
 						>
 							<Icon icon="star" />
+						</BaseButton>
+						<BaseButton
+							v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
+							:aria-label="$t('focus.startFocus')"
+							@click.stop="showFocusCard = true"
+						>
+							<Icon icon="stopwatch" />
+						</BaseButton>
+						<BaseButton
+							v-if="canDelete && !disabled"
+							:aria-label="$t('task.detail.actions.delete')"
+							@click.stop="showDeleteModal = true"
+						>
+							<Icon icon="trash-alt" />
+						</BaseButton>
+					</div>
+				</div>
+			</template>
+			<template v-else-if="projectRow">
+				<div
+					class="project-row-check"
+					@click.stop
+				>
+					<FancyCheckbox
+						:key="checkboxKey"
+						:model-value="task.done ?? false"
+						:disabled="isArchived || disabled || !canMarkAsDone"
+						:aria-label="$t('task.detail.markAsDone', {task: task.title})"
+						@update:modelValue="markAsDone"
+					/>
+				</div>
+				<div class="project-row-main">
+					<TaskGlanceTooltip :task="task">
+						<RouterLink
+							:to="taskDetailRoute"
+							class="project-row-title"
+						>
+							{{ task.title }}
+						</RouterLink>
+					</TaskGlanceTooltip>
+					<div class="project-row-meta">
+						<span>{{ task.identifier || `#${task.index || task.id}` }}</span>
+						<span v-if="(task.related_tasks?.subtask?.length ?? 0) > 0">・{{ task.related_tasks?.subtask?.length }} 個子任務</span>
+						<span v-if="(task.comment_count ?? 0) > 0">・{{ task.comment_count }} 則評論</span>
+						<Icon
+							v-if="!isEditorContentEmpty(task.description ?? '')"
+							icon="align-left"
+							:title="$t('task.attributes.description')"
+						/>
+					</div>
+				</div>
+				<div class="project-row-state">
+					<span
+						v-if="task.done"
+						class="project-state-chip is-done"
+					>已完成</span>
+					<span
+						v-else-if="paused"
+						class="project-state-chip is-paused"
+					>暫停中</span>
+					<span
+						v-else-if="inProgress"
+						class="project-state-chip is-doing"
+					>處理中</span>
+					<span
+						v-else
+						class="project-state-chip is-todo"
+					>未開始</span>
+					<span
+						v-if="(task.importance ?? 0) >= 4"
+						class="project-state-chip is-important"
+						:title="`重要度 ${task.importance} / 5`"
+					>重要</span>
+					<span
+						v-if="priorityLevel === 'urgent'"
+						class="project-state-chip is-important"
+					>緊急</span>
+					<Labels
+						v-if="(task.labels?.length ?? 0) > 0"
+						:labels="task.labels ?? []"
+					/>
+					<progress
+						v-if="!task.done && (task.percent_done ?? 0) > 0"
+						class="project-row-progress"
+						:value="(task.percent_done ?? 0) * 100"
+						max="100"
+						:aria-label="`${Math.round((task.percent_done ?? 0) * 100)}%`"
+					/>
+				</div>
+				<div class="project-row-due">
+					<span
+						v-if="!task.done && printOverdueDays > 0"
+						class="project-overdue"
+					>逾期 {{ printOverdueDays }} 天</span>
+					<time
+						v-else-if="printDate"
+						:datetime="printDate.toISOString()"
+						:title="formatDateLong(printDate.toISOString())"
+					>{{ projectDateLabel }}</time>
+					<span
+						v-else
+						class="project-no-date"
+					>—</span>
+					<div class="project-row-actions">
+						<BaseButton
+							:class="{'is-favorite': task.is_favorite}"
+							:aria-label="task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')"
+							@click.stop="toggleFavorite"
+						>
+							<Icon :icon="task.is_favorite ? 'star' : ['far', 'star']" />
 						</BaseButton>
 						<BaseButton
 							v-if="!task.done && !disabled && !authStore.isLinkShareAuth"
@@ -310,6 +420,8 @@
 						:disabled="disabled"
 						:can-mark-as-done="canMarkAsDone"
 						:all-tasks="allTasks"
+						:project-row="projectRow"
+						:can-delete="canDelete"
 						class="subtask-nested"
 					/>
 				</template>
@@ -393,6 +505,7 @@ import {useRouter} from 'vue-router'
 const props = withDefaults(defineProps<{
 	theTask: ITask,
 	printRow?: boolean,
+	projectRow?: boolean,
 	hidePrintTime?: boolean,
 	isArchived?: boolean,
 	showProject?: boolean,
@@ -402,6 +515,7 @@ const props = withDefaults(defineProps<{
 	allTasks?: ITask[],
 }>(), {
 	printRow: false,
+	projectRow: false,
 	hidePrintTime: false,
 	isArchived: false,
 	showProject: false,
@@ -510,6 +624,15 @@ const printTimeLabel = computed(() => {
 	if (printDate.value.toDateString() !== now.value.toDateString()) return `${printDate.value.getMonth() + 1}/${printDate.value.getDate()}`
 	if (printDate.value.getHours() === 0 && printDate.value.getMinutes() === 0) return '全天'
 	return printDate.value.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})
+})
+
+const projectDateLabel = computed(() => {
+	const date = printDate.value
+	if (!date) return ''
+	if (date.toDateString() === now.value.toDateString()) {
+		return date.getHours() || date.getMinutes() ? `今天 ${date.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}` : '今天'
+	}
+	return `${date.getMonth() + 1}/${String(date.getDate()).padStart(2, '0')}`
 })
 
 async function markAsDone(checked: boolean, wasReverted: boolean = false) {
