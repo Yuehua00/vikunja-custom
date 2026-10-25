@@ -19,6 +19,7 @@
 			<template v-if="showAuthLayout">
 				<AppHeader />
 				<ContentAuth />
+				<WebPet :key="authStore.info?.id" />
 			</template>
 			<ContentLinkShare v-else-if="authStore.authLinkShare" />
 			<NoAuthWrapper
@@ -53,6 +54,7 @@ import NightReminder from '@/components/misc/NightReminder.vue'
 
 import AppHeader from '@/components/home/AppHeader.vue'
 import ContentAuth from '@/components/home/ContentAuth.vue'
+import WebPet from '@/components/pet/WebPet.vue'
 import ContentLinkShare from '@/components/home/ContentLinkShare.vue'
 import NoAuthWrapper from '@/components/misc/NoAuthWrapper.vue'
 import Ready from '@/components/misc/Ready.vue'
