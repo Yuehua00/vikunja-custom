@@ -1327,3 +1327,175 @@
 		transform: none;
 	}
 }
+
+// Project timeline and list: paper sheets with aligned names, dates, and status.
+#app .project-gantt {
+	.print-gantt-sheet {
+		background: var(--print-paper);
+		border: 0;
+		border-radius: 2px;
+		box-shadow: none;
+		overflow: hidden;
+	}
+	.print-gantt-bar {
+		gap: .75rem;
+		flex-wrap: wrap;
+		padding: .75rem 1.25rem;
+	}
+	.print-gantt-navigation {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: .5rem;
+		font-size: .8rem;
+	}
+	.print-gantt-navigation button {
+		min-block-size: 30px;
+		padding: .25rem .55rem;
+		border: 1px solid #ffffff80;
+		border-radius: 2px;
+		background: transparent;
+		color: #fff;
+		font: inherit;
+		cursor: pointer;
+	}
+	.print-gantt-navigation button:hover, .print-gantt-navigation button[aria-pressed='true'] {
+		background: #fff;
+		color: var(--print-green);
+	}
+	.print-gantt-navigation button:focus-visible {
+		outline: 2px solid var(--print-orange);
+		outline-offset: -2px;
+	}
+	.print-gantt-scale {
+		display: flex;
+		gap: 2px;
+	}
+	.gantt-options {
+		gap: .5rem 1rem;
+		flex-wrap: wrap;
+		margin: 0;
+		padding: .75rem 1.25rem;
+		align-items: flex-end;
+		justify-content: flex-start;
+	}
+	.gantt-options .field {
+		inline-size: auto;
+		min-inline-size: 12rem;
+		max-inline-size: 100%;
+		margin: 0;
+	}
+	.gantt-options .fancy-checkbox {
+		margin: 0 0 .5rem;
+	}
+	.print-gantt-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: .5rem 1.25rem;
+		padding: .7rem 1.25rem;
+		border-block: 1px solid var(--grey-200);
+		font-size: .75rem;
+		color: var(--text-muted);
+	}
+	.print-gantt-legend span {
+		display: inline-flex;
+		align-items: center;
+		gap: .4rem;
+	}
+	.print-gantt-legend i {
+		inline-size: 18px;
+		block-size: 10px;
+		background: var(--print-blue-soft);
+	}
+	.print-gantt-legend .is-done { background: var(--print-green); }
+	.print-gantt-legend .is-doing { background: linear-gradient(90deg, var(--print-blue) 50%, var(--print-blue-soft) 50%); }
+	.print-gantt-legend .is-todo { background: transparent; box-shadow: inset 0 0 0 1.5px var(--print-blue-mid); }
+	.print-gantt-legend .is-paused { background: repeating-linear-gradient(135deg, var(--print-blue-soft) 0 3px, var(--print-blue-mid) 3px 5px); }
+	.print-gantt-legend .is-today { inline-size: 3px; background: var(--print-orange); }
+	.gantt-container { min-inline-size: 0; inline-size: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
+	.gantt-chart-wrapper {
+		display: flex;
+		align-items: stretch;
+		min-inline-size: 100%;
+	}
+	.print-gantt-time-area { position: relative; flex: 1 0 auto; }
+	.gantt-timeline { background: var(--print-paper); }
+	.gantt-timeline-months { block-size: 32px; }
+	.gantt-timeline-months .timeunit-month {
+		padding: .4rem .3rem;
+		font-family: $display-font;
+		font-size: .8rem;
+		background: var(--print-blue-soft);
+		white-space: nowrap;
+		overflow: hidden;
+	}
+	.gantt-timeline-months .is-current-week { background: var(--print-green-soft); color: var(--print-green); }
+	.gantt-timeline-days { block-size: 56px; }
+	.gantt-timeline-days .timeunit-wrapper { block-size: 56px; padding: .35rem 0; font-size: 1rem; }
+	.gantt-timeline-days .weekday { font-size: .65rem; }
+	.gantt-timeline-days .timeunit-wrapper.today { background: var(--print-orange); color: #172a34; border-radius: 0; }
+	.gantt-timeline-days .is-weekend { background: var(--print-blue-soft); }
+	.print-gantt-day-bands {
+		position: absolute;
+		inset-block-start: 89px;
+		display: flex;
+		pointer-events: none;
+	}
+	.print-gantt-day-bands .is-weekend { background: color-mix(in srgb, var(--print-blue-soft) 50%, transparent); }
+	.print-gantt-day-bands .is-today { box-shadow: inset 2px 0 var(--print-orange); background: var(--print-orange-tint); }
+	.gantt-bar-text { font-size: .75rem; font-weight: 600; }
+	.gantt-progress-fill { pointer-events: none; }
+	.print-gantt-empty { padding: 1.25rem; font-size: .85rem; color: var(--text-muted); max-inline-size: 24rem; }
+	.gantt-chart-container > form { padding: 1rem 1.25rem; }
+}
+
+#app .project-list {
+	.print-list-columns {
+		display: grid;
+		grid-template-columns: 28px minmax(0, 1fr) 10rem 5.5rem;
+		gap: 1rem;
+		padding: .55rem 1.25rem;
+		background: var(--print-blue-soft);
+		font-family: $display-font;
+		font-size: .75rem;
+		font-weight: 700;
+		letter-spacing: .06em;
+		color: var(--text-muted);
+	}
+	.print-list-columns span:last-child { text-align: end; }
+	.project-row-progress { inline-size: 5rem; }
+	.project-row-title { font-weight: 700; }
+	.project-row-actions { padding: .1rem .2rem; background: var(--print-paper); border-radius: 2px; }
+}
+@media (width <= 1100px) {
+	#app .project-list .print-list-columns { grid-template-columns: 28px minmax(0, 1fr) 8rem 5rem; gap: .6rem; }
+}
+@media (width <= 700px) {
+	#app .project-gantt {
+		.print-gantt-bar { padding: .75rem 1rem; }
+		.print-gantt-navigation { gap: .35rem; }
+		.gantt-options { align-items: stretch; padding: .75rem 1rem; }
+		.gantt-options .field { min-inline-size: 0; inline-size: 100%; }
+		.print-gantt-legend { padding: .65rem 1rem; gap: .5rem .75rem; }
+	}
+	#app .project-list .print-list-columns { display: none; }
+}
+
+// Keep every project view visible below the project heading, wrapping on narrow screens.
+#app .print-project-page {
+	.project-header-layout { flex-direction: column; align-items: flex-start; gap: .75rem; }
+	.project-heading { flex: 0 1 auto; }
+	.switch-view-container { inline-size: 100%; flex: 0 1 auto; flex-direction: row; justify-content: flex-start; align-items: center; }
+	.switch-view { display: flex; flex-wrap: wrap; gap: .25rem; border: 0; background: transparent; max-inline-size: 100%; }
+	.switch-view-button { border: 1px solid var(--primary); border-radius: 2px; }
+	.switch-view-button + .switch-view-button { border-inline-start: 1px solid var(--primary); }
+}
+
+#app .print-project-page .switch-view-container .filter-container {
+	flex-basis: 100%;
+	justify-content: flex-start;
+}
+#app .project-gantt .gantt-container {
+	min-block-size: 20rem;
+	overflow-anchor: none;
+}

@@ -8,6 +8,27 @@
 		:aria-label="$t('project.gantt.taskBarsForRow', { rowId })"
 		:data-row-id="rowId"
 	>
+		<defs>
+			<pattern
+				:id="`paused-${rowId}`"
+				width="8"
+				height="8"
+				patternUnits="userSpaceOnUse"
+				patternTransform="rotate(45)"
+			>
+				<rect
+					width="8"
+					height="8"
+					fill="var(--print-blue-soft)"
+				/>
+				<rect
+					width="3"
+					height="8"
+					fill="var(--print-blue-mid)"
+					opacity=".35"
+				/>
+			</pattern>
+		</defs>
 		<GanttBarPrimitive
 			v-for="bar in bars"
 			:key="bar.id"
@@ -113,6 +134,19 @@
 				/>
 			</g>
 
+			<rect
+				v-if="!bar.meta?.isDone && !bar.meta?.isPaused && barProgress(bar) > 0 && !isDateless(bar)"
+				:x="getBarX(bar)"
+				y="4"
+				:width="getBarWidth(bar) * barProgress(bar)"
+				height="32"
+				rx="2"
+				fill="var(--print-blue)"
+				opacity=".35"
+				class="gantt-progress-fill"
+				aria-hidden="true"
+			/>
+
 			<!-- Left resize handle (hidden for endOnly bars) -->
 			<rect
 				v-if="bar.meta?.dateType !== 'endOnly'"
@@ -213,6 +247,7 @@ import dayjs from 'dayjs'
 import {useI18n} from 'vue-i18n'
 
 import type {GanttBarModel} from '@/composables/useGanttBar'
+import type {TaskResponse} from '@/client/queries/tasks'
 import {getTextColor, LIGHT} from '@/helpers/color/getTextColor'
 import {MILLISECONDS_A_DAY} from '@/constants/date'
 import {roundToNaturalDayBoundary} from '@/helpers/time/roundToNaturalDayBoundary'
@@ -410,6 +445,11 @@ function getPriorityFill(bar: GanttBarModel) {
 }
 
 function getBarFill(bar: GanttBarModel) {
+	if (!bar.meta?.color && !isDateless(bar)) {
+		if (bar.meta?.isDone) return 'var(--print-green)'
+		if (bar.meta?.isPaused) return 'var(--print-blue-soft)'
+		return bar.meta?.isInProgress ? 'var(--print-blue-soft)' : 'var(--print-paper)'
+	}
 	// Partial dates still have "actual" dates on one side — use the task color
 	if (isPartialDate(bar)) {
 		if (bar.meta?.color) {
@@ -429,6 +469,7 @@ function getBarFill(bar: GanttBarModel) {
 }
 
 function getBarFillAttr(bar: GanttBarModel): string {
+	if (bar.meta?.isPaused && !bar.meta.color && !isDateless(bar)) return `url(#paused-${props.rowId})`
 	if (isPartialDate(bar)) {
 		return `url(#gradient-${bar.id})`
 	}
@@ -439,17 +480,23 @@ function getBarStroke(bar: GanttBarModel) {
 	if (isDateless(bar)) {
 		return 'var(--grey-300)' // Gray for dashed border
 	}
-	return 'none'
+	return bar.meta?.color || bar.meta?.isDone ? 'none' : 'var(--print-blue-mid)'
 }
 
 function getBarStrokeWidth(bar: GanttBarModel) {
 	if (isDateless(bar)) {
 		return '2'
 	}
-	return '0'
+	return bar.meta?.color || bar.meta?.isDone ? '0' : '1.5'
+}
+
+function barProgress(bar: GanttBarModel) {
+	const task = bar.meta?.task as TaskResponse | undefined
+	return Math.max(0, Math.min(1, task?.percent_done ?? 0))
 }
 
 function getBarTextColor(bar: GanttBarModel) {
+	if (!bar.meta?.color && !bar.meta?.isDone) return 'var(--text-strong)'
 	if (isDateless(bar)) {
 		return 'var(--grey-800)'
 	}
@@ -457,6 +504,7 @@ function getBarTextColor(bar: GanttBarModel) {
 	if (bar.meta?.color) {
 		return getTextColor(bar.meta.color)
 	}
+	if (bar.meta?.isDone) return LIGHT
 
 	if (getPriorityFill(bar) && bar.meta?.priorityLevel !== 'urgent') {
 		return 'var(--grey-800)'

@@ -60,6 +60,16 @@
 						</ButtonLink>
 					</Nothing>
 
+					<div
+						v-if="tasks.length"
+						class="print-list-columns"
+						aria-hidden="true"
+					>
+						<span />
+						<span>TASK 任務</span>
+						<span>STATUS 狀態</span>
+						<span>DUE 到期</span>
+					</div>
 					<draggable
 						v-if="tasks && tasks.length > 0"
 						v-model="tasks"

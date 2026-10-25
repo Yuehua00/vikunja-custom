@@ -1,95 +1,121 @@
 <template>
 	<Loading
-		v-if="(isLoading && !ganttBars.length) || dayjsLanguageLoading"
+		v-if="(isLoading && !ganttBars.length && !hasRenderedTimeline) || dayjsLanguageLoading"
 		class="gantt-container"
 	/>
 	<div
 		v-else
 		ref="ganttContainer"
 		class="gantt-container"
+		tabindex="0"
 		role="application"
 		:aria-label="$t('project.gantt.chartLabel')"
+		@scroll="handleTimelineScroll"
+		@wheel="handleTimelineWheel"
+		@touchstart.passive="handleTimelineTouchStart"
+		@touchend.passive="handleTimelineTouchEnd"
 	>
 		<div class="gantt-chart-wrapper">
-			<GanttTimelineHeader
-				:timeline-data="timelineData"
-				:day-width-pixels="dayWidthPixels"
-			/>
+			<div class="print-gantt-time-area">
+				<GanttTimelineHeader
+					:timeline-data="timelineData"
+					:day-width-pixels="dayWidthPixels"
+				/>
+				<div
+					class="print-gantt-day-bands"
+					aria-hidden="true"
+					:style="{height: `${totalHeight}px`}"
+				>
+					<div
+						v-for="date in timelineData"
+						:key="date.toISOString()"
+						:style="{width: `${dayWidthPixels}px`}"
+						:class="{'is-weekend': [0, 6].includes(date.getDay()), 'is-today': dayjs(date).isSame(now, 'day')}"
+					/>
+				</div>
 
-			<GanttVerticalGridLines
-				:timeline-data="timelineData"
-				:total-width="totalWidth"
-				:height="ganttRows.length * 40"
-				:day-width-pixels="dayWidthPixels"
-			/>
+				<GanttVerticalGridLines
+					:timeline-data="timelineData"
+					:total-width="totalWidth"
+					:height="ganttRows.length * 40"
+					:day-width-pixels="dayWidthPixels"
+				/>
 
-			<GanttChartBody
-				ref="ganttChartBodyRef"
-				:rows="ganttRows"
-				:cells-by-row="cellsByRow"
-				@update:focused="handleFocusChange"
-				@enterPressed="handleEnterPressed"
-			>
-				<template #default="{ focusedRow, focusedCell }">
-					<div class="gantt-rows-container">
-						<!-- Group background bands for parent-child visual grouping -->
-						<div
-							v-for="(band, bandIndex) in parentGroupBands"
-							:key="`band-${bandIndex}`"
-							class="gantt-group-band"
-							:style="{
-								top: `${band.startIndex * ROW_HEIGHT}px`,
-								height: `${(band.endIndex - band.startIndex + 1) * ROW_HEIGHT}px`,
-								left: `${band.left}px`,
-								width: `${band.width}px`,
-							}"
-						/>
-						<div class="gantt-rows">
-							<GanttRow
-								v-for="(rowId, index) in ganttRows"
-								:id="rowId"
-								:key="rowId"
-								:index="index"
-							>
-								<div class="gantt-row-content">
-									<GanttRowBars
-										:bars="ganttBars[index] ?? []"
-										:total-width="totalWidth"
-										:date-from-date="dateFromDate"
-										:date-to-date="dateToDate"
-										:day-width-pixels="dayWidthPixels"
-										:is-dragging="isDragging"
-										:is-resizing="isResizing"
-										:drag-state="dragState"
-										:focused-row="focusedRow ?? null"
-										:focused-cell="focusedCell"
-										:row-id="rowId"
-										:is-parent="ganttBars[index]?.[0]?.meta?.isParent ?? false"
-										:is-collapsed="collapsedTaskIds.has(Number(ganttBars[index]?.[0]?.id))"
-										@barPointerDown="handleBarPointerDown"
-										@startResize="startResize"
-										@updateTask="updateGanttTask"
-										@toggleCollapse="toggleCollapse(Number(ganttBars[index]?.[0]?.id))"
-									/>
-								</div>
-							</GanttRow>
+				<GanttChartBody
+					ref="ganttChartBodyRef"
+					:rows="ganttRows"
+					:cells-by-row="cellsByRow"
+					@update:focused="handleFocusChange"
+					@enterPressed="handleEnterPressed"
+				>
+					<template #default="{ focusedRow, focusedCell }">
+						<div class="gantt-rows-container">
+							<!-- Group background bands for parent-child visual grouping -->
+							<div
+								v-for="(band, bandIndex) in parentGroupBands"
+								:key="`band-${bandIndex}`"
+								class="gantt-group-band"
+								:style="{
+									top: `${band.startIndex * ROW_HEIGHT}px`,
+									height: `${(band.endIndex - band.startIndex + 1) * ROW_HEIGHT}px`,
+									left: `${band.left}px`,
+									width: `${band.width}px`,
+								}"
+							/>
+							<div class="gantt-rows">
+								<GanttRow
+									v-for="(rowId, index) in ganttRows"
+									:id="rowId"
+									:key="rowId"
+									:index="index"
+								>
+									<div class="gantt-row-content">
+										<GanttRowBars
+											:bars="ganttBars[index] ?? []"
+											:total-width="totalWidth"
+											:date-from-date="dateFromDate"
+											:date-to-date="dateToDate"
+											:day-width-pixels="dayWidthPixels"
+											:is-dragging="isDragging"
+											:is-resizing="isResizing"
+											:drag-state="dragState"
+											:focused-row="focusedRow ?? null"
+											:focused-cell="focusedCell"
+											:row-id="rowId"
+											:is-parent="ganttBars[index]?.[0]?.meta?.isParent ?? false"
+											:is-collapsed="collapsedTaskIds.has(Number(ganttBars[index]?.[0]?.id))"
+											@barPointerDown="handleBarPointerDown"
+											@startResize="startResize"
+											@updateTask="updateGanttTask"
+											@toggleCollapse="toggleCollapse(Number(ganttBars[index]?.[0]?.id))"
+										/>
+									</div>
+								</GanttRow>
+							</div>
+							<GanttRelationArrows
+								v-if="relationArrows.length > 0"
+								:arrows="relationArrows"
+								:width="totalWidth"
+								:height="totalHeight"
+								:row-height="ROW_HEIGHT"
+							/>
 						</div>
-						<GanttRelationArrows
-							v-if="relationArrows.length > 0"
-							:arrows="relationArrows"
-							:width="totalWidth"
-							:height="totalHeight"
-							:row-height="ROW_HEIGHT"
-						/>
-					</div>
-				</template>
-			</GanttChartBody>
+					</template>
+				</GanttChartBody>
+				<p
+					v-if="!ganttRows.length"
+					class="print-gantt-empty"
+				>
+					這個日期區間沒有任務。可切換區間，或勾選顯示未排日期任務。
+				</p>
+			</div>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
 import {parseDateOrNull} from '@/helpers/parseDateOrNull'
+import {useGlobalNow} from '@/composables/useGlobalNow'
 import {computed, ref, watch, toRefs, nextTick, onMounted, onBeforeUnmount, onUnmounted} from 'vue'
 import {useRouter} from 'vue-router'
 import dayjs from 'dayjs'
@@ -130,7 +156,61 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:task', task: ITaskPartialWithId): void
+  (e: 'shiftRange', direction: -1 | 1): void
 }>()
+
+const hasRenderedTimeline = ref(false)
+let previousScrollLeft = 0
+let restoringScroll = false
+let pendingRangeShift: {scrollLeft: number; start: Date} | null = null
+let timelineTouch: {x: number; y: number} | null = null
+
+function handleTimelineTouchStart(event: TouchEvent) {
+	const target = event.target as Element | null
+	const touch = event.touches[0]
+	timelineTouch = touch && !target?.closest('[role="slider"], .gantt-collapse-toggle')
+		? {x: touch.clientX, y: touch.clientY} : null
+}
+
+function handleTimelineTouchEnd(event: TouchEvent) {
+	const start = timelineTouch
+	timelineTouch = null
+	const touch = event.changedTouches[0]
+	const node = ganttContainer.value
+	if (!start || !touch || !node) return
+	const delta = start.x - touch.clientX
+	if (Math.abs(delta) < 40 || Math.abs(delta) <= Math.abs(start.y - touch.clientY)) return
+	if (delta < 0 && node.scrollLeft <= 1) requestRangeShift(-1)
+	else if (delta > 0 && node.scrollWidth - node.clientWidth - node.scrollLeft <= 1) requestRangeShift(1)
+}
+
+function requestRangeShift(direction: -1 | 1) {
+	const node = ganttContainer.value
+	if (!node || pendingRangeShift || restoringScroll || props.isLoading || isDragging.value || isResizing.value) return
+	pendingRangeShift = {scrollLeft: node.scrollLeft, start: new Date(dateFromDate.value)}
+	emit('shiftRange', direction)
+}
+
+function handleTimelineScroll() {
+	const node = ganttContainer.value
+	if (!node || restoringScroll || pendingRangeShift) return
+	const direction = Math.sign(node.scrollLeft - previousScrollLeft)
+	previousScrollLeft = node.scrollLeft
+	if (direction < 0 && node.scrollLeft <= 60) requestRangeShift(-1)
+	else if (direction > 0 && node.scrollWidth - node.clientWidth - node.scrollLeft <= 60) requestRangeShift(1)
+}
+
+function handleTimelineWheel(event: WheelEvent) {
+	const node = ganttContainer.value
+	if (!node) return
+	const delta = event.deltaX || (event.shiftKey ? event.deltaY : 0)
+	if (!delta) return
+	const atEdge = delta < 0 ? node.scrollLeft <= 1 : node.scrollWidth - node.clientWidth - node.scrollLeft <= 1
+	if (atEdge) {
+		event.preventDefault()
+		requestRangeShift(delta < 0 ? -1 : 1)
+	}
+}
 
 // Wide enough for the larger day and weekday labels of the timeline header.
 const DAY_WIDTH_PIXELS_MIN = 40
@@ -144,6 +224,7 @@ const ganttContainer = ref<HTMLElement | null>(null)
 const ganttChartBodyRef = ref<InstanceType<typeof GanttChartBody> | null>(null)
 const router = useRouter()
 const authStore = useAuthStore()
+const {now} = useGlobalNow()
 
 const isDragging = ref(false)
 const isResizing = ref(false)
@@ -330,14 +411,11 @@ function updateDayWidthPixels() {
 	const marginRight = parseFloat(styles.marginRight) || 0
 
 	// max width without overflow
-	const maxWidth = rect.width - marginLeft - marginRight
+	const maxWidth = Math.max(0, rect.width - marginLeft - marginRight)
 
-	const dayCount = Math.ceil(
-		(dateToDate.value.valueOf() - dateFromDate.value.valueOf()) / MILLISECONDS_A_DAY,
-	)
-
+	// Keep the pixel scale stable as the loaded date window moves.
 	dayWidthPixels.value = Math.max(
-		maxWidth / dayCount,
+		maxWidth / 14,
 		DAY_WIDTH_PIXELS_MIN,
 	)
 }
@@ -351,6 +429,7 @@ watch(ganttContainer, el => {
 	if (!el) {
 		return
 	}
+	hasRenderedTimeline.value = true
 
 	updateDayWidthPixels()
 	resizeObserver = new ResizeObserver(updateDayWidthPixels)
@@ -367,8 +446,18 @@ onBeforeUnmount(() => {
 watch(
 	[dateFromDate, dateToDate],
 	async () => {
+		const shift = pendingRangeShift
+		restoringScroll = true
 		await nextTick()
 		updateDayWidthPixels()
+		const node = ganttContainer.value
+		if (node) {
+			const offset = shift ? dayjs(shift.start).diff(dayjs(dateFromDate.value), 'day') * dayWidthPixels.value : 0
+			node.scrollLeft = shift ? Math.max(0, shift.scrollLeft + offset) : 0
+			previousScrollLeft = node.scrollLeft
+		}
+		pendingRangeShift = null
+		requestAnimationFrame(() => { restoringScroll = false })
 	},
 	{flush: 'post'},
 )

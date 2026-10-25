@@ -191,10 +191,11 @@ const {locale} = useI18n()
 const route = useRoute()
 const authStore = useAuthStore()
 
-// The mood of a day's diary entry tints its cell.
+// Diary moods decorate the home calendar, but not a project's task calendar.
 const {moodByDate} = useDiary()
 
 function moodOfDay(day: Date) {
+	if (props.projectId !== null) return undefined
 	return moodByDate.value.get(diaryDateKey(day))
 }
 

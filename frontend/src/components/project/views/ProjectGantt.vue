@@ -5,18 +5,76 @@
 		:project-id
 		:view-id
 	>
+		<template #summary>
+			<template v-if="statsQuery.isSuccess.value">
+				<span class="project-progress-number">{{ projectStats.percent }}%</span>
+				<span class="project-progress-count">{{ projectStats.done }} / {{ projectStats.total }} 完成</span>
+			</template>
+		</template>
 		<template #default>
-			<Card :has-content="false">
+			<Card
+				:has-content="false"
+				:padding="false"
+				class="print-gantt-sheet"
+			>
+				<header class="print-bar print-gantt-bar">
+					<h2 class="print-bar-title">
+						GANTT 甘特圖
+					</h2>
+					<div class="print-gantt-navigation">
+						<button
+							type="button"
+							aria-label="上一個區間"
+							@click="shiftRange(-1)"
+						>
+							‹
+						</button>
+						<span>{{ rangeLabel }}</span>
+						<button
+							type="button"
+							aria-label="下一個區間"
+							@click="shiftRange(1)"
+						>
+							›
+						</button>
+						<button
+							type="button"
+							@click="showToday"
+						>
+							跳到今天
+						</button>
+						<div
+							class="print-gantt-scale"
+							role="group"
+							aria-label="時間軸範圍"
+						>
+							<button
+								type="button"
+								:aria-pressed="rangeDays === 14"
+								@click="setRange(14)"
+							>
+								兩週
+							</button>
+							<button
+								type="button"
+								:aria-pressed="rangeDays === 28"
+								@click="setRange(28)"
+							>
+								四週
+							</button>
+						</div>
+					</div>
+				</header>
 				<div class="gantt-options">
 					<FormField
 						id="range"
-						:label="$t('misc.dateRange')"
+						label="日期區間"
 					>
 						<template #default="{ id }">
 							<DateRangeInput
 								:id="id"
 								v-model="dateRange"
-								:placeholder="$t('misc.dateRange')"
+								placeholder="日期區間"
 							/>
 						</template>
 					</FormField>
@@ -27,10 +85,10 @@
 						<span
 							class="label"
 							aria-hidden="true"
-						>Reset</span>
+						>重設區間</span>
 						<div class="control">
 							<XButton @click="setDefaultFilters">
-								Reset
+								重設
 							</XButton>
 						</div>
 					</div>
@@ -41,14 +99,17 @@
 						{{ $t('task.show.noDates') }}
 					</FancyCheckbox>
 				</div>
-			</Card>
-
-			<div class="gantt-chart-container">
-				<Card
-					:has-content="false"
-					:padding="false"
-					class="has-overflow"
+				<div
+					class="print-gantt-legend"
+					aria-label="任務狀態圖例"
 				>
+					<span><i class="is-done" />已完成</span>
+					<span><i class="is-doing" />處理中・深色表示進度</span>
+					<span><i class="is-todo" />未開始</span>
+					<span><i class="is-paused" />暫停中</span>
+					<span><i class="is-today" />今天</span>
+				</div>
+				<div class="gantt-chart-container">
 					<GanttChart
 						:filters="filters"
 						:tasks="tasks"
@@ -56,19 +117,23 @@
 						:default-task-start-date="defaultTaskStartDate"
 						:default-task-end-date="defaultTaskEndDate"
 						@update:task="updateTask"
+						@shiftRange="extendTimeline"
 					/>
 					<TaskForm
 						v-if="canWrite"
 						@createTask="addGanttTask"
 					/>
-				</Card>
-			</div>
+				</div>
+			</Card>
 		</template>
 	</ProjectWrapper>
 </template>
 
 <script setup lang="ts">
 import {computed, toRefs} from 'vue'
+import {useQuery} from '@tanstack/vue-query'
+import {allTasksQuery} from '@/client/queries/tasks'
+import dayjs from 'dayjs'
 import type {RouteLocationNormalized} from 'vue-router'
 
 import {useCurrentProject} from '@/composables/useCurrentProject'
@@ -101,6 +166,15 @@ const canWrite = computed(() =>
 )
 
 const {route, projectId, viewId} = toRefs(props)
+const statsQuery = useQuery(computed(() => ({
+	...allTasksQuery({project: projectId.value, params: {filter: 'done = true || done = false'}}),
+	enabled: projectId.value > 0,
+})))
+const projectStats = computed(() => {
+	const items = statsQuery.data.value ?? []
+	const done = items.filter(task => task.done).length
+	return {total: items.length, done, percent: items.length ? Math.round(done / items.length * 100) : 0}
+})
 const {
 	filters,
 	hasDefaultFilters,
@@ -112,6 +186,36 @@ const {
 } = useGanttFilters(route, projectId, viewId)
 
 const DEFAULT_DATE_RANGE_DAYS = 7
+
+const rangeDays = computed(() => dayjs(filters.value.dateTo).startOf('day').diff(dayjs(filters.value.dateFrom).startOf('day'), 'day') + 1)
+const rangeLabel = computed(() => `${dayjs(filters.value.dateFrom).format('YYYY/M/D')} – ${dayjs(filters.value.dateTo).format('M/D')}`)
+function setRange(days: number, start = dayjs(filters.value.dateFrom)) {
+	Object.assign(filters.value, {
+		dateFrom: start.startOf('day').toISOString(),
+		dateTo: start.add(days - 1, 'day').endOf('day').toISOString(),
+	})
+}
+function shiftRange(direction: number) {
+	setRange(rangeDays.value, dayjs(filters.value.dateFrom).add(direction * rangeDays.value, 'day'))
+}
+function showToday() {
+	setRange(rangeDays.value, dayjs().subtract(3, 'day'))
+}
+
+// Move a bounded calendar window instead of growing the DOM for every scroll.
+function extendTimeline(direction: -1 | 1) {
+	const chunk = 28
+	const maxDays = 84
+	let start = dayjs(filters.value.dateFrom).startOf('day')
+	let end = dayjs(filters.value.dateTo).endOf('day')
+	if (direction < 0) start = start.subtract(chunk, 'day')
+	else end = end.add(chunk, 'day')
+	if (end.startOf('day').diff(start, 'day') + 1 > maxDays) {
+		if (direction < 0) end = start.add(maxDays - 1, 'day').endOf('day')
+		else start = end.startOf('day').subtract(maxDays - 1, 'day')
+	}
+	Object.assign(filters.value, {dateFrom: start.toISOString(), dateTo: end.toISOString()})
+}
 
 const today = new Date()
 const defaultTaskStartDate: DateISO = new Date(today.setHours(0, 0, 0, 0)).toISOString()

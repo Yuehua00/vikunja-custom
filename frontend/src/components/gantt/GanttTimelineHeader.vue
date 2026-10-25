@@ -4,20 +4,20 @@
 		role="columnheader"
 		:aria-label="$t('project.gantt.timelineHeader')"
 	>
-		<!-- Upper timeunit for months -->
+		<!-- Calendar weeks follow the user's first-day-of-week setting. -->
 		<div
 			class="gantt-timeline-months"
 			role="row"
-			:aria-label="$t('project.gantt.monthsRow')"
+			aria-label="每週區間"
 		>
 			<div
-				v-for="monthGroup in monthGroups"
+				v-for="monthGroup in weekGroups"
 				:key="monthGroup.key"
 				class="timeunit-month"
-				:class="{'is-other-month': hasCurrentMonth && monthGroup.key !== currentMonthKey}"
+				:class="{'is-current-week': monthGroup.current}"
 				:style="{ width: `${monthGroup.width}px` }"
 				role="columnheader"
-				:aria-label="$t('project.gantt.monthLabel', {month: monthGroup.label})"
+				:aria-label="monthGroup.label"
 			>
 				{{ monthGroup.label }}
 			</div>
@@ -36,6 +36,7 @@
 				:class="{
 					'is-week-start': date.getDay() === weekStart,
 					'is-month-start': date.getDate() === 1,
+					'is-weekend': [0, 6].includes(date.getDay()),
 					'is-other-month': hasCurrentMonth && monthKeyOf(date) !== currentMonthKey,
 				}"
 				:style="{ width: `${dayWidthPixels}px` }"
@@ -91,30 +92,21 @@ const dateIsToday = computed(() => {
 	return (date: Date) => date.toDateString() === todayStr
 })
 
-const monthGroups = computed(() => {
-	const groups = props.timelineData.reduce(
-		(groups, date) => {
-			const month = date.getMonth()
-			const year = date.getFullYear()
-			// Same format as currentMonthKey, so the groups can be compared with it.
-			const key = `${year}-${month}`
 
-			const lastGroup = groups[groups.length - 1]
-			if (lastGroup?.key === key) {
-				lastGroup.width += props.dayWidthPixels
-			} else {
-				groups.push({
-					key,
-					label: dayjs(date).format('MMMM YYYY'),
-					width: props.dayWidthPixels,
-				})
-			}
-
-			return groups
-		},
-		[] as Array<{key: string; label: string; width: number}>,
-	)
-
+const weekGroups = computed(() => {
+	const groups: {key: string; label: string; width: number; current: boolean}[] = []
+	const currentWeek = dayjs(today.value).subtract((today.value.getDay() - weekStart.value + 7) % 7, 'day').startOf('day')
+	props.timelineData.forEach(date => {
+		const start = dayjs(date).subtract((date.getDay() - weekStart.value + 7) % 7, 'day').startOf('day')
+		const key = start.format('YYYY-MM-DD')
+		const last = groups[groups.length - 1]
+		if (last?.key === key) {
+			last.width += props.dayWidthPixels
+		} else {
+			const current = start.isSame(currentWeek, 'day')
+			groups.push({key, label: `${current ? '本週・' : ''}${start.format('M/D')} – ${start.add(6, 'day').format('M/D')}`, width: props.dayWidthPixels, current})
+		}
+	})
 	return groups
 })
 </script>
