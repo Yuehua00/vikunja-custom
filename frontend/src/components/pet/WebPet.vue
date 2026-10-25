@@ -13,7 +13,7 @@
 				<button
 					ref="petButton"
 					class="web-pet"
-					:class="{'is-held': held, 'is-moving': moving}"
+					:class="{'is-held': held, 'is-moving': moving, 'is-idle': !moving && !held && !sleeping && pose === 'idle'}"
 					:style="{left: `${position.x}px`, top: `${position.y}px`, width: `${size}px`, height: `${size}px`}"
 					aria-label="熊貓，點一下互動，或拖曳到卡片上"
 					:aria-expanded="panel"
@@ -24,12 +24,40 @@
 					@lostpointercapture="cancelDrag"
 					@click="openPanel"
 				>
-					<img
-						:src="`${BASE_URL}pet/panda/${held ? 9 : poses[pose]}.png`"
-						alt=""
-						draggable="false"
-						:style="{transform: `scaleX(${facing})`}"
+					<span
+						class="pet-art"
+						:style="{transform: `scale(${facing * motionScale.x}, ${motionScale.y})`}"
 					>
+						<svg
+							v-if="motionPhase === 'walk' && !held"
+							:viewBox="walkViewBox.join(' ')"
+							preserveAspectRatio="xMidYMax meet"
+							aria-hidden="true"
+						>
+							<defs>
+								<clipPath id="panda-walk-frame">
+									<rect
+										:x="walkViewBox[0]"
+										:y="walkViewBox[1]"
+										width="512"
+										height="330"
+									/>
+								</clipPath>
+							</defs>
+							<image
+								:href="`${BASE_URL}pet/panda/walk-cycle.png`"
+								width="1536"
+								height="1024"
+								clip-path="url(#panda-walk-frame)"
+							/>
+						</svg>
+						<img
+							v-else
+							:src="`${BASE_URL}pet/panda/${motionImage}.png`"
+							alt=""
+							draggable="false"
+						>
+					</span>
 					<span
 						v-if="bubble"
 						class="pet-bubble"
@@ -78,7 +106,7 @@
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
 import {useAuthStore} from '@/stores/auth'
-import {clampPet, safeLanding, type PetPoint, type PetRect} from './petWorld'
+import {clampPet, safeLanding, sampleTravel, travelMode, walkingPathClear, type PetMotionPhase, type PetPoint, type PetRect} from './petWorld'
 
 const {BASE_URL} = import.meta.env
 const auth = useAuthStore()
@@ -87,7 +115,7 @@ const poses = {
 	idle: 5,
 	wave: 1,
 	eat: 2,
-	walk: 12,
+	walk: 18,
 	sleep: 7,
 	peek: 15,
 	roll: 4,
@@ -100,6 +128,14 @@ const viewport = ref({width: 0, height: 0})
 const facing = ref(1)
 const held = ref(false)
 const moving = ref(false)
+const motionPhase = ref<PetMotionPhase>('idle')
+const motionScale = ref({x: 1, y: 1})
+const walkFrame = ref(0)
+const walkViewBox = computed(() => {
+	const feet = [446, 446, 443, 412, 412, 411][walkFrame.value]
+	return [(walkFrame.value % 3) * 512, Math.floor(walkFrame.value / 3) * 512 + feet - 320, 512, 330]
+})
+const motionImage = computed(() => held.value || motionPhase.value === 'jump' ? 9 : motionPhase.value === 'crouch' ? 6 : motionPhase.value === 'land' ? 18 : poses[pose.value])
 const panel = ref(false)
 const hidden = ref(false)
 const sleeping = ref(false)
@@ -121,13 +157,19 @@ let dragged = false
 let pausedUntil = 0
 let support: Element | undefined
 let supportOffset = 0
+let motionDestination: PetPoint | undefined
 
 function persist() {
 	try {localStorage.setItem(storageKey, JSON.stringify({hidden: hidden.value, sleeping: sleeping.value}))} catch { /* Storage can be disabled. */ }
 }
 function stop() {
 	cancelAnimationFrame(frame)
+	if (motionDestination && ['crouch', 'jump', 'land'].includes(motionPhase.value)) position.value = {...motionDestination}
+	motionDestination = undefined
 	moving.value = false
+	motionPhase.value = 'idle'
+	motionScale.value = {x: 1, y: 1}
+	if (pose.value === 'walk') pose.value = 'idle'
 }
 function blocked() {
 	const focused = document.activeElement
@@ -164,30 +206,50 @@ function candidates() {
 }
 function travel(destination: PetPoint, element?: Element) {
 	stop()
-	support = element
-	supportOffset = element ? destination.y - element.getBoundingClientRect().top : 0
 	const start = {...position.value}
 	const end = clampPet(destination, viewport.value.width, viewport.value.height, size.value)
+	const mode = travelMode(start, end)
+	if (mode === 'unreachable' || (mode === 'walk' && !walkingPathClear(start, end, size.value, obstacles()))) return
+	support = element
+	supportOffset = element ? destination.y - element.getBoundingClientRect().top : 0
 	facing.value = end.x < start.x ? -1 : 1
 	if (reducedMotion?.matches) {position.value = end; pose.value = 'idle'; return}
+	motionDestination = end
 	moving.value = true
 	pose.value = 'walk'
-	const duration = Math.min(1800, Math.max(750, Math.hypot(end.x - start.x, end.y - start.y) * 3))
 	const began = performance.now()
 	function step(now: number) {
-		const t = Math.min(1, (now - began) / duration)
-		const eased = t * t * (3 - 2 * t)
-		position.value = {x: start.x + (end.x - start.x) * eased, y: start.y + (end.y - start.y) * eased - Math.sin(Math.PI * t) * 48}
-		if (t < 1) frame = requestAnimationFrame(step)
-		else {moving.value = false; pose.value = element ? 'idle' : 'peek'; status.value = element ? '這裡坐起來剛剛好。' : '偷偷看看你在做什麼。'}
+		if (document.hidden || blocked()) {stop(); return}
+		const sample = sampleTravel(start, end, mode, now - began)
+		position.value = sample.point
+		motionPhase.value = sample.phase
+		motionScale.value = {x: sample.scaleX, y: sample.scaleY}
+		walkFrame.value = sample.frame
+		if (!sample.done) frame = requestAnimationFrame(step)
+		else {motionDestination = undefined; moving.value = false; pose.value = 'idle'; status.value = element ? '這裡坐起來剛剛好。' : '一步一步慢慢走。'}
 	}
 	frame = requestAnimationFrame(step)
 }
 function wander() {
 	if (hidden.value || sleeping.value || held.value || panel.value || blocked() || Date.now() < pausedUntil || reducedMotion?.matches) return
-	const spots = candidates().filter(spot => Math.hypot(spot.point.x - position.value.x, spot.point.y - position.value.y) > 48)
-	const perches = spots.filter(spot => spot.element)
-	const choices = perches.length ? perches : spots
+	if (support && !support.isConnected) updateGeometry()
+	const avoid = obstacles()
+	const spots = candidates()
+	for (const dx of [-120, -70, 70, 120]) {
+		const point = clampPet({x: position.value.x + dx, y: position.value.y}, viewport.value.width, viewport.value.height, size.value)
+		if (support) {
+			const rect = support.getBoundingClientRect()
+			if (point.x < rect.left + 8 || point.x + size.value > rect.right - 8) continue
+		}
+		spots.push({point, element: support})
+	}
+	const reachable = spots.filter(spot => {
+		const mode = travelMode(position.value, spot.point)
+		return Math.hypot(spot.point.x - position.value.x, spot.point.y - position.value.y) > 40 && mode !== 'unreachable' &&
+			safeLanding(spot.point, size.value, avoid) && (mode !== 'walk' || walkingPathClear(position.value, spot.point, size.value, avoid))
+	})
+	const walks = reachable.filter(spot => travelMode(position.value, spot.point) === 'walk')
+	const choices = walks.length && Math.random() < 0.8 ? walks : reachable
 	if (choices.length) {const spot = choices[Math.floor(Math.random() * choices.length)]; travel(spot.point, spot.element)}
 	else pose.value = 'idle'
 }
@@ -277,6 +339,8 @@ function keydown(event: KeyboardEvent) {if (event.key === 'Escape') panel.value 
 function visibility() {if (document.hidden) stop()}
 
 onMounted(() => {
+	const walkAtlas = new Image()
+	walkAtlas.src = `${BASE_URL}pet/panda/walk-cycle.png`
 	try {
 		const saved = JSON.parse(localStorage.getItem(storageKey) ?? '{}')
 		hidden.value = saved.hidden === true
@@ -285,6 +349,12 @@ onMounted(() => {
 	reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 	updateGeometry()
 	position.value = clampPet({x: window.innerWidth - size.value - 24, y: window.innerHeight - size.value - 20}, window.innerWidth, window.innerHeight, size.value)
+	const perch = candidates().find(spot => spot.element)
+	if (perch) {
+		position.value = perch.point
+		support = perch.element
+		supportOffset = perch.point.y - perch.element!.getBoundingClientRect().top
+	}
 	pose.value = sleeping.value ? 'sleep' : 'idle'
 	timer = setInterval(wander, 9000)
 	window.addEventListener('resize', queueGeometry)
@@ -332,6 +402,28 @@ onBeforeUnmount(() => {
 	object-fit: contain;
 	object-position: center bottom;
 	}
+.pet-art {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	transform-origin: center bottom;
+	pointer-events: none;
+}
+.pet-art svg {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	overflow: hidden;
+	filter: drop-shadow(0 2px 1px #00000022);
+}
+.web-pet.is-idle img {
+	transform-origin: center bottom;
+	animation: pet-breathe 2.8s ease-in-out infinite;
+}
+@keyframes pet-breathe {
+	0%, 100% { scale: 1; }
+	50% { scale: 1.015 0.985; }
+}
 .web-pet:focus-visible {
 	outline: 2px solid var(--primary);
 	outline-offset: 4px;
@@ -340,7 +432,7 @@ onBeforeUnmount(() => {
 .web-pet.is-held {
 	cursor: grabbing;
 	}
-.web-pet.is-held img {
+.web-pet.is-held .pet-art {
 	rotate: -8deg;
 	}
 .pet-bubble {
@@ -415,8 +507,9 @@ onBeforeUnmount(() => {
 	border-radius: 16px;
 	}
 @media (prefers-reduced-motion: reduce) {
-	.web-pet img {
-	rotate: none;
+	.web-pet img, .web-pet .pet-art {
+		rotate: none;
+		animation: none;
 	}
 }
 </style>
