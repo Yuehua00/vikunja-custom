@@ -1,5 +1,8 @@
 <template>
-	<div class="heading">
+	<div class="heading print-task-heading">
+		<p class="print-task-eyebrow">
+			TASK・任務詳情
+		</p>
 		<div class="tw:flex tw:items-center md:tw:items-stretch tw:flex-col tw:gap-1 task-properties">
 			<div class="tw:flex tw:items-center tw:gap-2">
 				<ColorBubble
@@ -94,7 +97,7 @@ const copy = useCopyToClipboard()
 const {t} = useI18n({useScope: 'global'})
 
 async function copyUrl() {
-	const route = router.resolve({name: 'task.detail', query: {taskId: props.task.id}})
+	const route = router.resolve({name: 'task.detail', params: {id: props.task.id}})
 	const absoluteURL = new URL(route.href, window.location.href).href
 
 	await copy(absoluteURL)

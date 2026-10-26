@@ -673,14 +673,13 @@ function openTask(bar: GanttBarModel) {
 	})
 }
 
-// Double-click and drag detection
-let lastClickTime = 0
+// Open on pointer release unless the gesture became a drag.
 let dragStarted = false
 
-const DOUBLE_CLICK_THRESHOLD_MS = 500
 const DRAG_THRESHOLD_PIXELS = 5
 
 function handleBarPointerDown(bar: GanttBarModel, event: PointerEvent) {
+	if (event.button !== 0) return
 	event.preventDefault()
 	
 	const barIndex = ganttBars.value.findIndex(barGroup => barGroup.some(b => b.id === bar.id))
@@ -688,16 +687,6 @@ function handleBarPointerDown(bar: GanttBarModel, event: PointerEvent) {
 		focusTaskBar(ganttRows.value[barIndex])
 	}
 	
-	const currentTime = Date.now()
-	const timeDiff = currentTime - lastClickTime
-	
-	if (timeDiff < DOUBLE_CLICK_THRESHOLD_MS) {	
-		openTask(bar)
-		lastClickTime = 0
-		return
-	}
-	
-	lastClickTime = currentTime
 	dragStarted = false
 	
 	const startX = event.clientX
@@ -712,18 +701,21 @@ function handleBarPointerDown(bar: GanttBarModel, event: PointerEvent) {
 			dragStarted = true
 			document.removeEventListener('pointermove', handleMove)
 			document.removeEventListener('pointerup', handleStop)
+			document.removeEventListener('pointercancel', handleStop)
 			startDrag(bar, event)
 		}
 	}
 	
-	const handleStop = () => {
+	const handleStop = (release: PointerEvent) => {
 		document.removeEventListener('pointermove', handleMove)
 		document.removeEventListener('pointerup', handleStop)
-		// If no drag was started, this was just a click (do nothing)
+		document.removeEventListener('pointercancel', handleStop)
+		if (release.type === 'pointerup' && !dragStarted) openTask(bar)
 	}
 	
 	document.addEventListener('pointermove', handleMove)
 	document.addEventListener('pointerup', handleStop)
+	document.addEventListener('pointercancel', handleStop)
 }
 
 function setCursor(cursor: string, barElement?: Element | null) {

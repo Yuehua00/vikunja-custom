@@ -1606,3 +1606,58 @@
 	--progress-value-background-color: var(--print-blue-mid);
 	--progress-bar-background-color: var(--print-blue-soft);
 }
+
+// Task detail follows PrintTask: a paper drawer with a green rule and compact action panels.
+.task-detail-view-modal.drawer .modal-content {
+	inline-size: min(600px, 100%);
+	border-inline-start: 3px solid var(--print-green);
+	background: var(--site-background);
+}
+.task-detail-view-modal.drawer .close {
+	background: var(--print-paper);
+	border: 1px solid var(--grey-300);
+	border-radius: 2px;
+	inline-size: 2.5rem;
+	block-size: 2.5rem;
+}
+.print-task-detail {
+	color: var(--text-strong);
+	.print-task-heading { display: flex; flex-wrap: wrap; gap: .4rem; align-items: flex-start; border-block-end: 3px solid var(--print-green); padding: 0 2.5rem 1rem 0; }
+	.print-task-eyebrow { flex-basis: 100%; margin: 0; font-family: $display-font; font-size: .8rem; font-weight: 700; letter-spacing: .14em; color: var(--print-blue); }
+	.print-task-heading .task-properties { flex-direction: row; align-items: center; }
+	.print-task-heading .task-id { font-family: $display-font; font-size: .9rem; color: var(--print-blue); }
+	.print-task-heading h1.title.input { flex-basis: 100%; margin: 0; padding: .3rem 0; font-size: 1.8rem; line-height: 1.4; font-weight: 900 !important; border-color: transparent; background: transparent; }
+	.subtitle { font-size: .8rem; padding-block: .65rem; margin: 0; }
+	.task-layout { gap: 1.2rem; margin: 0; align-items: flex-start; }
+	.task-layout > .column { padding: 0; min-inline-size: 0; }
+	.detail-content > .details, .detail-content > .content, .detail-content > .comments { background: var(--print-paper); border: 1px solid var(--grey-200); padding: 1rem; margin-block-end: 1rem; }
+	.detail-content > .columns.details { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-inline: 0; padding: 0; }
+	.detail-content > .columns.details > .column { inline-size: auto; padding: .65rem; min-inline-size: 0; border-block-end: 1px solid var(--grey-200); }
+	.task-section-title { font-family: $display-font; font-weight: 700; color: var(--print-green); border-block-end: 2px solid var(--print-green); padding-block-end: .5rem; font-size: 1rem; }
+	.detail-title { font-size: .75rem; color: var(--text-muted); }
+	.action-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+	.action-buttons > .button { margin: 0; min-block-size: 2.6rem; border: 1px solid var(--print-green); border-radius: 2px; background: var(--print-paper); color: var(--link); font-size: .8rem; justify-content: center; }
+	.action-buttons .button--mark-done { background: var(--print-green); color: #fff; }
+	.action-buttons .button.button--mark-done.is-pending { background-color: var(--print-green); color: #fff; }
+	.action-buttons > p, .print-task-progress-panel, .print-task-actions { grid-column: 1 / -1; }
+	.print-task-progress-panel { background: var(--print-paper); padding: 1rem; border: 1px solid var(--grey-200); }
+	.print-task-progress-panel h2 { font-family: $display-font; font-size: .85rem; font-weight: 700; margin: 0 0 .7rem; color: var(--text-strong); letter-spacing: .08em; }
+	.print-task-progress-steps { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 3px; }
+	.print-task-progress-steps button { block-size: 2rem; padding: 0; border: 0; border-radius: 1px; font-family: $display-font; font-size: .8rem; color: var(--print-blue); background: var(--print-blue-soft); cursor: pointer; }
+	.print-task-progress-steps .is-filled { background: var(--print-blue-mid); color: #fff; }
+	.print-task-progress-steps .is-current { background: var(--print-blue); color: #fff; box-shadow: inset 0 0 0 2px var(--print-orange); }
+	.print-task-actions { background: var(--print-paper); border: 1px solid var(--grey-200); }
+	.print-task-actions summary { padding: .8rem 1rem; cursor: pointer; font-family: $display-font; font-weight: 700; color: var(--link); }
+	.print-task-action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .3rem; padding: 0 .6rem .6rem; }
+	.print-task-action-grid .button { justify-content: flex-start; background: transparent; border: 0; padding: .5rem; white-space: normal; font-size: .8rem; margin: 0; }
+	.print-task-action-grid .button:hover { background: var(--print-orange-tint); }
+	.print-task-action-grid .action-heading { grid-column: 1 / -1; margin: .5rem; font-size: .7rem; color: var(--text-muted); }
+}
+.is-modal .print-task-detail .task-layout { display: flex; flex-direction: column; }
+.is-modal .print-task-detail .task-layout > .column { inline-size: 100%; }
+.is-modal .print-task-detail .action-buttons { order: -1; }
+@media screen and (max-width: 600px) {
+	.print-task-detail .task-layout { display: flex; flex-direction: column; }
+	.print-task-detail .task-layout > .column { inline-size: 100%; }
+	.print-task-detail .action-buttons { order: -1; }
+}

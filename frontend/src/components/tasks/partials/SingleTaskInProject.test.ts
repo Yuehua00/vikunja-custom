@@ -30,7 +30,7 @@ function deferred() {
 	return {promise, resolve}
 }
 
-function mountRow() {
+function mountRow(props: {printRow?: boolean, projectRow?: boolean} = {}) {
 	const router = createRouter({
 		history: createMemoryHistory(),
 		routes: [
@@ -39,7 +39,7 @@ function mountRow() {
 		],
 	})
 	return shallowMount(SingleTaskInProject, {
-		props: {theTask},
+		props: {theTask, ...props},
 		global: {
 			plugins: [createPinia(), router, [VueQueryPlugin, {queryClient: new QueryClient({defaultOptions: {queries: {retry: false}}})}]],
 			directives: {tooltip: {}},
@@ -52,6 +52,22 @@ describe('SingleTaskInProject', () => {
 	beforeEach(() => {
 		setActivePinia(createPinia())
 		sdk.patchTasksRead.mockReset()
+	})
+
+	it.each([{printRow: true}, {projectRow: true}, {}])('opens task detail from row space in layout %j', async props => {
+		const wrapper = mountRow(props)
+		const push = vi.spyOn(wrapper.vm.$router, 'push')
+		await wrapper.get('.single-task').trigger('click')
+		expect(push).toHaveBeenCalledWith(expect.objectContaining({
+			name: 'task.detail', params: {id: 7}, state: expect.objectContaining({backdropView: expect.any(String)}),
+		}))
+	})
+
+	it('does not open task detail when clicking the completion button', async () => {
+		const wrapper = mountRow({printRow: true})
+		const push = vi.spyOn(wrapper.vm.$router, 'push')
+		await wrapper.get('.print-row-check').trigger('click')
+		expect(push).not.toHaveBeenCalled()
 	})
 
 	it('shows the row as loading while marking it undone is in flight', async () => {

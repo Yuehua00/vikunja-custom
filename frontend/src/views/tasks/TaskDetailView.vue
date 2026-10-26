@@ -10,7 +10,7 @@
 		<!-- Removing everything until the task is loaded to prevent empty initialization of other components -->
 		<div
 			v-if="visible"
-			class="task-view"
+			class="task-view print-task-detail"
 		>
 			<BaseButton
 				v-if="!isModal"
@@ -481,6 +481,14 @@
 						>
 							{{ task.done ? $t('task.detail.undone') : $t('task.detail.done') }}
 						</XButton>
+						<XButton
+							v-if="!task.done && !authStore.isLinkShareAuth"
+							variant="secondary"
+							icon="stopwatch"
+							@click="showFocusCard = true"
+						>
+							{{ $t('focus.startFocus') }}
+						</XButton>
 						<TaskSubscription
 							entity="task"
 							:entity-id="task.id"
@@ -507,149 +515,175 @@
 							{{ task.paused ? $t('task.detail.actions.resume') : $t('task.detail.actions.pause') }}
 						</XButton>
 
-						<span class="action-heading">{{ $t('task.detail.organization') }}</span>
+						<section class="print-task-progress-panel">
+							<h2>PROGRESS 進度</h2>
+							<div
+								class="print-task-progress-steps"
+								role="group"
+								:aria-label="$t('task.attributes.percentDone')"
+							>
+								<button
+									v-for="step in 11"
+									:key="step"
+									type="button"
+									:class="{'is-filled': (step - 1) / 10 < (task.percent_done ?? 0), 'is-current': (step - 1) / 10 === (task.percent_done ?? 0)}"
+									:aria-label="`${(step - 1) * 10}%`"
+									:aria-pressed="(step - 1) / 10 === (task.percent_done ?? 0)"
+									:disabled="taskBusy"
+									@click="setPercentDone((step - 1) / 10)"
+								>
+									{{ (step - 1) * 10 }}
+								</button>
+							</div>
+						</section>
+						<details class="print-task-actions">
+							<summary>ACTIONS 操作</summary>
+							<div class="print-task-action-grid">
+								<span class="action-heading">{{ $t('task.detail.organization') }}</span>
 						
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.labels"
-							variant="secondary"
-							icon="tags"
-							@click="setFieldActive('labels')"
-						>
-							{{ $t('task.detail.actions.label') }}
-						</XButton>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.priority"
-							variant="secondary"
-							icon="exclamation-circle"
-							@click="setFieldActive('priority')"
-						>
-							{{ $t('task.detail.actions.priority') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							icon="percent"
-							@click="setFieldActive('percentDone')"
-						>
-							{{ $t('task.detail.actions.percentDone') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							icon="star"
-							@click="setFieldActive('importance')"
-						>
-							{{ $t('task.detail.actions.importance') }}
-						</XButton>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.color"
-							variant="secondary"
-							icon="fill-drip"
-							:icon-color="color"
-							@click="setFieldActive('color')"
-						>
-							{{ $t('task.detail.actions.color') }}
-						</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.labels"
+									variant="secondary"
+									icon="tags"
+									@click="setFieldActive('labels')"
+								>
+									{{ $t('task.detail.actions.label') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.priority"
+									variant="secondary"
+									icon="exclamation-circle"
+									@click="setFieldActive('priority')"
+								>
+									{{ $t('task.detail.actions.priority') }}
+								</XButton>
+								<XButton
+									variant="secondary"
+									icon="percent"
+									@click="setFieldActive('percentDone')"
+								>
+									{{ $t('task.detail.actions.percentDone') }}
+								</XButton>
+								<XButton
+									variant="secondary"
+									icon="star"
+									@click="setFieldActive('importance')"
+								>
+									{{ $t('task.detail.actions.importance') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.color"
+									variant="secondary"
+									icon="fill-drip"
+									:icon-color="color"
+									@click="setFieldActive('color')"
+								>
+									{{ $t('task.detail.actions.color') }}
+								</XButton>
 						
-						<span class="action-heading">{{ $t('task.detail.management') }}</span>
+								<span class="action-heading">{{ $t('task.detail.management') }}</span>
 
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.assignees"
-							v-cy="'taskDetail.assign'"
-							variant="secondary"
-							icon="users"
-							@click="setFieldActive('assignees')"
-						>
-							{{ $t('task.detail.actions.assign') }}
-						</XButton>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.attachments"
-							variant="secondary"
-							icon="paperclip"
-							@click="openAttachments()"
-						>
-							{{ $t('task.detail.actions.attachments') }}
-						</XButton>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.relatedTasks"
-							variant="secondary"
-							icon="sitemap"
-							@click="setRelatedTasksActive()"
-						>
-							{{ $t('task.detail.actions.relatedTasks') }}
-						</XButton>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.moveProject"
-							variant="secondary"
-							icon="list"
-							@click="setFieldActive('moveProject')"
-						>
-							{{ $t('task.detail.actions.moveProject') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							icon="copy"
-							@click="duplicateCurrentTask"
-						>
-							{{ $t('task.detail.actions.duplicate') }}
-						</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.assignees"
+									v-cy="'taskDetail.assign'"
+									variant="secondary"
+									icon="users"
+									@click="setFieldActive('assignees')"
+								>
+									{{ $t('task.detail.actions.assign') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.attachments"
+									variant="secondary"
+									icon="paperclip"
+									@click="openAttachments()"
+								>
+									{{ $t('task.detail.actions.attachments') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.relatedTasks"
+									variant="secondary"
+									icon="sitemap"
+									@click="setRelatedTasksActive()"
+								>
+									{{ $t('task.detail.actions.relatedTasks') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.moveProject"
+									variant="secondary"
+									icon="list"
+									@click="setFieldActive('moveProject')"
+								>
+									{{ $t('task.detail.actions.moveProject') }}
+								</XButton>
+								<XButton
+									variant="secondary"
+									icon="copy"
+									@click="duplicateCurrentTask"
+								>
+									{{ $t('task.detail.actions.duplicate') }}
+								</XButton>
 
-						<span class="action-heading">{{ $t('task.detail.dateAndTime') }}</span>
+								<span class="action-heading">{{ $t('task.detail.dateAndTime') }}</span>
 
-						<XButton
-							v-if="timeTrackingEnabled"
-							v-cy="'taskTrackTimeAction'"
-							variant="secondary"
-							:icon="['far', 'clock']"
-							@click="setFieldActive('timeTracking')"
-						>
-							{{ $t('task.detail.actions.timeTracking') }}
-						</XButton>
+								<XButton
+									v-if="timeTrackingEnabled"
+									v-cy="'taskTrackTimeAction'"
+									variant="secondary"
+									:icon="['far', 'clock']"
+									@click="setFieldActive('timeTracking')"
+								>
+									{{ $t('task.detail.actions.timeTracking') }}
+								</XButton>
 
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.dueDate"
-							variant="secondary"
-							icon="calendar"
-							@click="setFieldActive('dueDate')"
-						>
-							{{ $t('task.detail.actions.dueDate') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							icon="play"
-							@click="setFieldActive('startDate')"
-						>
-							{{ $t('task.detail.actions.startDate') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							icon="stop"
-							@click="setFieldActive('endDate')"
-						>
-							{{ $t('task.detail.actions.endDate') }}
-						</XButton>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.reminder"
-							variant="secondary"
-							:icon="['far', 'clock']"
-							@click="setFieldActive('reminders')"
-						>
-							{{ $t('task.detail.actions.reminders') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							icon="history"
-							@click="setFieldActive('repeatAfter')"
-						>
-							{{ $t('task.detail.actions.repeatAfter') }}
-						</XButton>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.delete"
-							icon="trash-alt"
-							:shadow="false"
-							class="is-danger is-outlined has-no-border"
-							@click="showDeleteModal = true"
-						>
-							{{ $t('task.detail.actions.delete') }}
-						</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.dueDate"
+									variant="secondary"
+									icon="calendar"
+									@click="setFieldActive('dueDate')"
+								>
+									{{ $t('task.detail.actions.dueDate') }}
+								</XButton>
+								<XButton
+									variant="secondary"
+									icon="play"
+									@click="setFieldActive('startDate')"
+								>
+									{{ $t('task.detail.actions.startDate') }}
+								</XButton>
+								<XButton
+									variant="secondary"
+									icon="stop"
+									@click="setFieldActive('endDate')"
+								>
+									{{ $t('task.detail.actions.endDate') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.reminder"
+									variant="secondary"
+									:icon="['far', 'clock']"
+									@click="setFieldActive('reminders')"
+								>
+									{{ $t('task.detail.actions.reminders') }}
+								</XButton>
+								<XButton
+									variant="secondary"
+									icon="history"
+									@click="setFieldActive('repeatAfter')"
+								>
+									{{ $t('task.detail.actions.repeatAfter') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.delete"
+									icon="trash-alt"
+									:shadow="false"
+									class="is-danger is-outlined has-no-border"
+									@click="showDeleteModal = true"
+								>
+									{{ $t('task.detail.actions.delete') }}
+								</XButton>
+							</div>
+						</details>
 					</template>
 
 					<!-- Created / Updated [by] -->
@@ -673,6 +707,13 @@
 			<Icon icon="chevron-down" />
 		</BaseButton>
 
+		<FocusStartCard
+			v-if="showFocusCard"
+			:task-id="task.id!"
+			:task-title="task.title ?? ''"
+			:project-id="task.project_id"
+			@close="showFocusCard = false"
+		/>
 		<Modal
 			:enabled="showDeleteModal"
 			@close="showDeleteModal = false"
@@ -733,6 +774,7 @@ import PercentDoneSelect from '@/components/tasks/partials/PercentDoneSelect.vue
 import PrioritySelect from '@/components/tasks/partials/PrioritySelect.vue'
 import RelatedTasks from '@/components/tasks/partials/RelatedTasks.vue'
 import SubtaskList from '@/components/tasks/partials/SubtaskList.vue'
+import FocusStartCard from '@/components/focus/FocusStartCard.vue'
 import ImportanceStars from '@/components/tasks/partials/ImportanceStars.vue'
 import Reminders from '@/components/tasks/partials/Reminders.vue'
 import RepeatAfter from '@/components/tasks/partials/RepeatAfter.vue'
@@ -1220,6 +1262,7 @@ useTaskDetailShortcuts({
 })
 
 const showDeleteModal = ref(false)
+const showFocusCard = ref(false)
 
 async function deleteTask() {
 	await deleteTaskMutation.mutateAsync(task.value.id!)
@@ -1384,10 +1427,16 @@ function setRelatedTasksActive() {
 }
 
 .is-modal .task-layout {
-	display: block;
+	display: flex;
+	flex-direction: column;
 
 	> .column {
 		inline-size: 100%;
+	}
+
+	> .action-buttons {
+		position: static;
+		order: -1;
 	}
 }
 
@@ -1556,8 +1605,8 @@ h2 .button {
 
 			// bright brand green with fixed dark text passes contrast in both themes
 			&.is-pending {
-				background-color: var(--success);
-				color: hsl(215, 27.9%, 16.9%);
+					background-color: var(--print-green);
+					color: #fff;
 
 				&:hover,
 				&:focus {
@@ -1572,114 +1621,6 @@ h2 .button {
 .is-modal .heading {
 	@media screen and (min-width: $tablet) {
 		padding-inline-end: 3.5rem;
-	}
-}
-
-// Drawer look: id above the title, a grouped property card, uniform section titles,
-// rounded cards and a compact wrapping action bar below the content.
-.is-modal {
-	.task-view {
-		padding: 1.25rem 1.5rem 2rem;
-	}
-
-	:deep(.heading) {
-		flex-direction: column;
-		align-items: flex-start;
-
-		.title.input {
-			font-weight: 700;
-		}
-
-		.title.task-id {
-			font-size: .8rem;
-			font-weight: 500;
-		}
-	}
-
-	.subtitle {
-		font-size: .85rem;
-		margin-block-end: .75rem;
-	}
-
-	.task-section-title,
-	.detail-title {
-		font-size: .8rem;
-		font-weight: 700;
-		letter-spacing: .04em;
-		color: var(--grey-500);
-	}
-
-	// Property fields as rows: name on the start side, editable value next to it.
-	.detail-content > .columns.details {
-		display: block;
-		margin: 0 0 1.25rem;
-		padding: .25rem 1rem;
-		background: var(--white);
-		border: 1px solid var(--grey-200);
-		border-radius: 14px;
-
-		&:not(:has(> .column)) {
-			display: none;
-		}
-
-		> .column {
-			display: grid;
-			grid-template-columns: 7rem minmax(0, 1fr);
-			align-items: center;
-			gap: .25rem 1rem;
-			inline-size: 100%;
-			padding: .5rem 0;
-			border-block-end: 1px solid var(--grey-100);
-
-			&:last-child {
-				border-block-end: 0;
-			}
-
-			> :nth-child(n + 3) {
-				grid-column: 2;
-			}
-		}
-
-		.detail-title {
-			margin: 0;
-			font-weight: 500;
-			letter-spacing: 0;
-		}
-	}
-
-	// Other sections as rounded cards. The description keeps its own editor frame, reactions stay bare.
-	.detail-content > .details:not(.columns, .description, .d-print-none),
-	.detail-content > .attachments,
-	.detail-content > .time-tracking {
-		margin-block-end: 1.25rem;
-		padding: 1rem 1.1rem;
-		background: var(--white);
-		border: 1px solid var(--grey-200);
-		border-radius: 14px;
-	}
-
-	.action-buttons {
-		position: static;
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: .5rem;
-		margin-block-start: 1rem;
-		padding: 1rem 0 0;
-		border-block-start: 1px solid var(--grey-200);
-
-		.button {
-			inline-size: auto;
-			margin: 0;
-			padding-inline: .75rem;
-			font-size: .85rem;
-		}
-
-		// each group of actions starts on its own row
-		.action-heading {
-			flex-basis: 100%;
-			margin: .5rem 0 0;
-		}
 	}
 }
 

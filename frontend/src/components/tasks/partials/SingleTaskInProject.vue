@@ -733,7 +733,7 @@ function openTaskDetail(event: MouseEvent | KeyboardEvent) {
 		}
 	}
 
-	taskLinkRef.value?.$el.click()
+	void router.push(taskDetailRoute.value)
 }
 
 defineExpose({
