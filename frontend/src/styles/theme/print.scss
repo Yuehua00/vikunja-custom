@@ -677,6 +677,10 @@
 	border-radius: 2px;
 }
 
+#app .home-page .print-task-row:is(:hover, :focus-within) .print-row-check {
+	background: var(--print-orange-tint);
+}
+
 // AddTask normally hides the text on phones; the print form hides its icon, so retain the text.
 @media (width <= 600px) {
 	#app .home-page .home-add .add-task-button {
@@ -1632,19 +1636,22 @@
   inline-size: min(600px, 100%);
   border-inline-start: 3px solid var(--print-green);
   background: var(--site-background);
-  &::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background-image: url('/images/grain-dark.svg'); background-size: 240px 240px; opacity: var(--print-grain-opacity); mix-blend-mode: var(--print-grain-blend); }
 }
-.task-detail-view-modal.drawer .close { background: var(--print-paper); border: 1px solid var(--grey-300); border-radius: 2px; inline-size: 40px; block-size: 40px; inset-block-start: 1.4rem; inset-inline-end: 1.5rem; }
+.task-detail-view-modal .print-task-detail { position: relative; }
+.task-detail-view-modal .print-task-detail::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background-image: url('/images/grain-dark.svg'); background-size: 240px 240px; opacity: var(--print-grain-opacity); mix-blend-mode: var(--print-grain-blend); }
+html.dark .task-detail-view-modal .print-task-detail::after { background-image: url('/images/grain-light.svg'); }
+.task-detail-view-modal.drawer:has(.print-task-header-tools .print-task-close) > .modal-container > .close { display: none; }
+.task-detail-view-modal.drawer .task-view-container .print-task-detail .print-task-heading { padding-inline-end: 0; }
 .task-view-container .print-task-detail {
   padding: 1.4rem 1.5rem;
   color: var(--text-strong);
-  .print-task-heading { position: relative; display: block; border-block-end: 3px solid var(--print-green); padding: 0 0 1rem; }
-  .print-task-eyebrow { margin: 0 8rem .3rem 0; min-block-size: 1.5rem; font-family: $display-font; font-size: .85rem; font-weight: 700; letter-spacing: .1em; color: var(--print-blue); }
+  .print-task-heading { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4rem .75rem; align-items: start; border-block-end: 3px solid var(--print-green); padding: 0 0 1rem; }
+  .print-task-eyebrow { margin: 0; align-self: center; min-block-size: 1.5rem; font-family: $display-font; font-size: .85rem; font-weight: 700; letter-spacing: .1em; color: var(--print-blue); }
   .print-task-eyebrow button { font: inherit; color: inherit; }
-  .print-task-header-tools { position: absolute; inset-block-start: 0; inset-inline-end: 3rem; display: flex; gap: .5rem; }
-  .print-task-header-tools > a, .print-task-header-tools > button { display: inline-flex; align-items: center; justify-content: center; inline-size: 40px; block-size: 40px; border: 1px solid var(--grey-300); border-radius: 2px; background: var(--print-paper); color: var(--text-strong); }
+  .print-task-header-tools { display: flex; align-items: center; gap: .5rem; grid-column: 2; grid-row: 1; }
+  .print-task-header-tools > a, .print-task-header-tools > button { display: inline-flex; align-items: center; justify-content: center; flex: none; padding: 0; inline-size: 40px; block-size: 40px; border: 1px solid var(--grey-300); border-radius: 2px; background: var(--print-paper); color: var(--text-strong); }
   .print-task-header-tools svg { inline-size: 17px; block-size: 17px; }
-  .print-task-title-line { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; padding-block-start: .4rem; }
+  .print-task-title-line { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; padding-block-start: .4rem; grid-column: 1 / -1; }
   .print-task-heading h1.title.input { flex: 0 1 auto; inline-size: auto; min-inline-size: 0; max-inline-size: 100%; margin: 0; padding: .2rem 0; font-size: 2.3rem; line-height: 1.15; font-weight: 800 !important; border-color: transparent; background: transparent; }
   .print-task-heading-chips { display: flex; flex-wrap: wrap; gap: .3rem; }
   .print-task-label-chip, .print-task-state-chip { padding: .1rem .45rem; border-radius: 2px; font-size: .72rem; font-weight: 700; color: var(--print-blue); background: var(--print-blue-soft); }
@@ -1667,7 +1674,10 @@
   .print-task-notes-heading h2 { margin: 0; font: inherit; color: inherit; }
   .print-task-notes-heading button { border: 1px solid #ffffff80; border-radius: 2px; padding: .2rem .65rem; color: #fff; background: transparent; cursor: pointer; font-size: .75rem; }
   .description .task-section-title { display: none; }
-  .subtask-list .task-section-title, .comments-container .task-section-title { background: var(--print-green); color: #fff; font-family: $display-font; font-size: .85rem; font-weight: 700; margin: -1rem -1rem .8rem; padding: .55rem 1rem; }
+  .comments-container .task-section-title { background: var(--print-green); color: #fff; font-family: $display-font; font-size: .85rem; font-weight: 700; margin: -1rem -1rem .8rem; padding: .55rem 1rem; }
+  .subtask-list .subtask-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin: -1rem -1rem .8rem; padding: .55rem 1rem; background: var(--print-green); color: #fff; }
+  .subtask-list .subtask-header .task-section-title { flex: 1; margin: 0; padding: 0; color: inherit; background: transparent; font-family: $display-font; font-size: .85rem; font-weight: 700; }
+  .subtask-list .subtask-header .subtask-summary { color: #e4f0e9; font-size: .75rem; }
   .subtask-list .task-section-title::before { content: 'SUBTASKS '; }
   .comments-container .task-section-title::before { content: 'COMMENTS '; }
   .task-section-title .icon { display: none; }
@@ -1705,4 +1715,139 @@
   .task-view-container .print-task-detail .task-layout > .column { inline-size: 100%; }
   .task-view-container .print-task-detail .action-buttons { order: -1; }
   .task-view-container .print-task-detail .print-task-attributes dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+// PrintUpcoming, PrintCollect, PrintDiary and PrintLogin reference layouts.
+.print-page-kicker { margin: 0 0 .3rem; font-family: $display-font; font-size: .9rem; font-weight: 700; letter-spacing: .16em; color: var(--print-blue); }
+.print-sheet { background: var(--print-paper); border-radius: 2px; overflow: hidden; }
+.print-section-bar, .print-plain-heading { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .9rem 1.25rem; }
+.print-section-bar { background: var(--print-green); color: #fff; }
+.print-section-bar h2, .print-plain-heading h2 { margin: 0; font-family: $display-font; font-size: 1rem; font-weight: 700; letter-spacing: .08em; color: inherit; }
+.print-section-bar > span, .print-plain-heading > span { font-size: .75rem; }
+.print-plain-heading { color: var(--text-strong); }
+.print-empty { margin: 0; padding: 1rem 1.25rem; font-size: .85rem; color: var(--text-muted); }
+#app .print-upcoming-page {
+  max-inline-size: 72rem;
+  .show-tasks-options { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; margin-block-end: 1.2rem; }
+  .print-upcoming-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 1.5rem; align-items: start; }
+  .print-upcoming-aside { display: grid; gap: 1.25rem; min-inline-size: 0; }
+  .upcoming-day { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); border-block-start: 1px solid var(--grey-200); }
+  .upcoming-date { display: flex; align-items: center; flex-direction: column; padding: 1rem .4rem; color: var(--print-blue); background: var(--print-blue-soft); }
+  .upcoming-date b { font-family: $display-font; font-size: 2.1rem; line-height: 1.15; }
+  .upcoming-date span { font-family: $display-font; font-size: .75rem; font-weight: 700; letter-spacing: .1em; }
+  .upcoming-date small { font-size: .65rem; margin-block-start: .3rem; }
+  .is-today .upcoming-date { color: #fff; background: var(--print-green); }
+  .is-overdue .upcoming-date { color: var(--text-strong); background: var(--print-orange-tint); border-inline-start: 3px solid var(--print-orange); }
+  .upcoming-day-tasks { min-inline-size: 0; }
+  .print-task-row { grid-template-columns: 28px minmax(0, 1fr) auto; padding: .8rem 1rem; gap: .6rem; border-block-start: 1px solid var(--grey-200); }
+  .print-row-time { inline-size: 28px; }
+  .print-row-check { opacity: 1; position: static; inline-size: 24px; block-size: 24px; border: 3px solid var(--print-blue-soft); border-radius: 50%; background: transparent; }
+  .print-row-checkbox-outline { display: none; }
+  .print-row-title { font-size: .95rem; }
+  .print-row-meta { font-size: .72rem; }
+  .print-row-progress { inline-size: 50px; }
+  .upcoming-load { display: flex; align-items: flex-end; justify-content: space-around; padding: 1rem; min-block-size: 145px; gap: .4rem; }
+  .upcoming-load > div { display: flex; flex: 1; flex-direction: column; align-items: center; gap: .4rem; }
+  .upcoming-load b { font-family: $display-font; color: var(--print-blue); font-size: .85rem; }
+  .upcoming-load i { display: block; inline-size: 70%; background: var(--print-blue-mid); }
+  .upcoming-load span { font-size: .7rem; color: var(--text-muted); }
+}
+#app .print-collect-page {
+  max-inline-size: 72rem;
+  .print-collect-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 1.5rem; align-items: start; }
+  .collect-main { padding: 0; gap: 0; border: 0; border-radius: 2px; background: var(--print-paper); }
+  .collect-options { padding: 1rem 1.25rem; gap: 1rem; border-block-end: 1px solid var(--grey-200); }
+  .collect-field { flex: 1; align-items: stretch; flex-direction: column; gap: .3rem; min-inline-size: 130px; }
+  .collect-field-label { font-family: $display-font; font-size: .7rem; letter-spacing: .08em; color: var(--text-muted); }
+  .collect-input { inline-size: calc(100% - 2.5rem); min-block-size: 20rem; margin: 1rem 1.25rem 0; padding: 0 .25rem; border: 0; border-radius: 0; line-height: 1.9rem; resize: vertical; box-shadow: none; color: var(--text-strong); background: repeating-linear-gradient(transparent 0, transparent calc(1.9rem - 1px), var(--grey-200) calc(1.9rem - 1px), var(--grey-200) 1.9rem); }
+  .collect-hint { margin: 0; padding: 1rem 1.25rem; color: var(--text-muted); font-size: .8rem; line-height: 1.7; }
+  .collect-preview { margin: 0; }
+  .collect-cards { display: grid; grid-template-columns: 1fr; list-style: none; margin: 0; padding: 0 1rem 1rem; gap: .75rem; }
+  .collect-card { position: relative; padding: .9rem 1rem .9rem 2.7rem; background: var(--print-paper); border: 1px solid var(--grey-200); border-radius: 2px 7px 3px 6px; box-shadow: 0 2px 0 var(--print-blue-soft); }
+  .collect-card-number { position: absolute; inset-inline-start: .7rem; inset-block-start: .9rem; font-family: $display-font; font-size: .85rem; color: var(--print-blue); }
+  .collect-card-title { display: block; font-weight: 600; font-size: .95rem; overflow-wrap: anywhere; }
+  .collect-card-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .6rem; color: var(--text-muted); font-size: .75rem; }
+  .collect-label { background: var(--print-blue-soft); color: var(--print-blue); padding: .05rem .4rem; border-radius: 2px; }
+  .collect-card-url { display: block; font-size: .75rem; color: var(--print-blue); margin-block-start: .4rem; overflow-wrap: anywhere; }
+  .collect-actions { display: flex; justify-content: space-between; gap: .5rem; padding: 1rem; border-block-start: 1px solid var(--grey-200); }
+}
+#app .print-diary-page {
+  max-inline-size: 72rem; margin-inline: auto; padding: 0;
+  .print-diary-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); gap: 1.5rem; align-items: start; }
+  .print-diary-writing, .print-diary-aside { display: grid; gap: 1.25rem; min-inline-size: 0; }
+  .diary-main { padding: 0; gap: 0; border: 0; border-radius: 2px; background: var(--print-paper); }
+  .diary-date-row { padding: 1rem 1.25rem; color: #fff; background: var(--print-green); border-radius: 2px 2px 0 0; }
+  .diary-date { gap: .9rem; }
+  .diary-date b { font-family: $display-font; font-size: 4rem; line-height: .9; }
+  .diary-date span { font-family: $display-font; font-size: .9rem; letter-spacing: .1em; }
+  .diary-date small { display: block; margin-block-start: .4rem; font-family: $vikunja-font; font-size: .75rem; letter-spacing: 0; }
+  .diary-date-row .button { color: #fff; background: transparent; border: 1px solid #ffffff60; min-block-size: 30px; padding: .2rem .6rem; }
+  .diary-question { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: 1rem 1.25rem; border-block-end: 1px solid var(--grey-200); }
+  .diary-question small { display: block; font-family: $display-font; font-size: .65rem; letter-spacing: .12em; color: var(--print-blue); }
+  .diary-question p { margin: .25rem 0 0; font-size: .85rem; }
+  .diary-question button { flex: none; color: var(--link); background: transparent; border: 1px solid var(--grey-300); padding: .35rem .5rem; border-radius: 2px; cursor: pointer; font-size: .75rem; }
+  .diary-moods { padding: .8rem 1.25rem; gap: .7rem; }
+  .diary-moods-label { margin-inline-end: auto; font-size: .75rem; }
+  .diary-mood { display: flex; flex-direction: column; gap: .15rem; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--mood-color); font-size: .6rem; }
+  .diary-mood svg { inline-size: 38px; block-size: 38px; }
+  .diary-mood.is-active { background: transparent; }
+  .diary-mood.is-active circle { fill: var(--mood-color); }
+  .diary-mood.is-active path { stroke: #fff; }
+  .diary-editor { margin: 0 1.25rem; border: 1px solid var(--grey-200); border-radius: 2px; padding: .75rem; min-block-size: 260px; }
+  .diary-status { padding: .7rem 1.25rem; margin: 0; color: var(--text-muted); font-size: .75rem; }
+  .diary-trace dl { margin: 0; }
+  .diary-trace dl > div { display: grid; grid-template-columns: 6rem minmax(0, 1fr); padding: .85rem 1.1rem; border-block-start: 1px solid var(--grey-200); }
+  .diary-trace dt { color: var(--print-blue); font-family: $display-font; font-size: .7rem; font-weight: 700; }
+  .diary-trace dd { margin: 0; font-size: .8rem; }
+  .diary-trace dd b { font-family: $display-font; font-size: 1.6rem; color: var(--print-green); }
+  .diary-trace dd ul { padding-inline-start: 1rem; margin: .5rem 0 0; }
+  .diary-trace dd span { display: block; padding-block: .15rem; color: var(--text-muted); }
+  .diary-trace dd .is-done { color: var(--link); }
+  .diary-trace > .button { margin: .7rem 1rem 1rem; inline-size: calc(100% - 2rem); font-size: .8rem; }
+  .diary-past { margin: 0; }
+  .diary-month-title { margin: 0; padding: .65rem 1.1rem; font-family: $display-font; font-size: .8rem; color: var(--print-blue); border-block-start: 1px solid var(--grey-200); }
+  .diary-list { list-style: none; margin: 0; padding: 0; }
+  .diary-item { display: flex; align-items: center; gap: .5rem; inline-size: 100%; padding: .8rem 1rem; border: 0; border-block-start: 1px solid var(--grey-200); background: transparent; text-align: start; border-radius: 0; }
+  .diary-item.is-current { background: var(--print-green-soft); }
+  .diary-item-date { font-family: $display-font; font-size: 1.2rem; color: var(--print-blue); }
+  .diary-item-text { min-inline-size: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .8rem; }
+  .diary-item small { color: var(--text-muted); font-family: $display-font; font-size: .65rem; }
+}
+.no-auth-wrapper.print-login-shell {
+  background: var(--site-background); padding: 0; min-block-size: 100dvh; display: block;
+  .noauth-container { display: grid; grid-template-columns: 1fr 1fr; inline-size: 100%; max-inline-size: none; min-block-size: 100dvh; background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+  .image { display: flex; inline-size: auto; padding: 3rem 3.5rem; background: var(--print-green); color: #fff; justify-content: flex-start; position: relative; overflow: hidden; }
+  .image::before { display: none; }
+  .print-login-brand { font-family: $display-font; font-size: 1rem; font-weight: 700; letter-spacing: .2em; color: var(--print-green-soft); }
+  .print-login-poster-title { margin: 3.5rem 0 0; font-family: $display-font; font-size: clamp(3.5rem, 6vw, 5.2rem); font-weight: 700; line-height: .95; letter-spacing: -.01em; text-transform: uppercase; color: #fff; }
+  .print-login-poster-title em { font-style: normal; color: var(--print-orange); }
+  .print-login-tagline { font-size: 1.15rem; font-weight: 500; color: var(--print-green-soft); margin-block-start: 1.2rem; }
+  main.content { inline-size: auto; max-inline-size: none; margin: 0; padding: 3rem; justify-content: center; align-items: center; }
+  main.content > div { inline-size: 100%; max-inline-size: 400px; }
+  .title { font-size: 2.6rem; font-weight: 900; color: var(--text-strong); border-block-end: 3px solid var(--print-green); margin: 0 0 2rem; padding-block-end: 1rem; }
+  .print-login-api { margin-block: -1rem 1rem; font-size: .75rem; color: var(--text-muted); }
+  .print-login-api summary { cursor: pointer; }
+  .label { font-family: $display-font; font-size: .75rem; font-weight: 600; letter-spacing: .1em; color: var(--text-muted); }
+  .input { block-size: 2.8rem; border: 0; border-block-end: 2px solid var(--print-blue); border-radius: 0; background: transparent; box-shadow: none; color: var(--text-strong); }
+  .input:focus { border-block-end-color: var(--print-green); background: var(--print-orange-tint); }
+  .print-login-remember { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-block: .5rem 1.6rem; font-size: .85rem; }
+  .print-login-remember .field { margin: 0; }
+  #loginform > .button { inline-size: 100%; min-block-size: 50px; justify-content: center; background: var(--print-green); border-radius: 2px; font-size: 1rem; font-weight: 800; color: #fff; }
+  #loginform > p { margin-block-start: 1.75rem; border-block-start: 1px solid var(--grey-200); padding-block-start: 1.25rem; text-align: center; font-size: .9rem; }
+  .legal { margin-block-start: 2rem; }
+}
+@media screen and (max-width: 800px) {
+  #app .print-upcoming-page .print-upcoming-layout, #app .print-collect-page .print-collect-layout, #app .print-diary-page .print-diary-layout { grid-template-columns: minmax(0, 1fr); }
+  #app .print-upcoming-page .print-upcoming-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .no-auth-wrapper.print-login-shell .noauth-container { grid-template-columns: 1fr; }
+  .no-auth-wrapper.print-login-shell .image { min-block-size: 260px; padding: 2rem; }
+  .no-auth-wrapper.print-login-shell .print-login-poster-title { margin-block-start: 1.5rem; font-size: 3.5rem; }
+  .no-auth-wrapper.print-login-shell main.content { padding: 2rem 1.5rem; }
+}
+@media screen and (max-width: 500px) {
+  #app .print-upcoming-page .print-upcoming-aside { grid-template-columns: minmax(0, 1fr); }
+  #app .print-upcoming-page .upcoming-day { grid-template-columns: 3.5rem minmax(0, 1fr); }
+  #app .print-upcoming-page .print-task-row { grid-template-columns: 24px minmax(0, 1fr); }
+  #app .print-upcoming-page .print-row-end { grid-column: 2; }
+  #app .print-diary-page .diary-date b { font-size: 3rem; }
 }

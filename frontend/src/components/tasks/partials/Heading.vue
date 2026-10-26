@@ -30,6 +30,14 @@
 					aria-hidden="true"
 				><path d="M14 4h6v6 M20 4 12 12 M10 5H5v14h14v-5" /></svg>
 			</BaseButton>
+			<BaseButton
+				v-if="hasClose"
+				class="print-task-close d-print-none"
+				:aria-label="$t('task.detail.closeTaskDetail')"
+				@click="$emit('close')"
+			>
+				<Icon icon="times" />
+			</BaseButton>
 		</div>
 		<div class="print-task-title-line">
 			<h1

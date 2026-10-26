@@ -2,12 +2,19 @@
 	<div
 		v-cy="'showTasks'"
 		class="is-max-width-desktop has-text-start"
+		:class="{'print-upcoming-page': !embedded}"
 	>
+		<p
+			v-if="!embedded"
+			class="print-page-kicker"
+		>
+			UPCOMING
+		</p>
 		<h1
 			v-if="!embedded"
 			class="page-title"
 		>
-			{{ pageTitle }}
+			{{ $t('navigation.upcoming') }}
 		</h1>
 		<Message
 			v-if="filteredLabels.length > 0"
@@ -74,7 +81,7 @@
 				{{ $t('task.show.overdue') }}
 			</FancyCheckbox>
 		</p>
-		<template v-if="!loading && (!tasks || tasks.length === 0) && showNothingToDo">
+		<template v-if="embedded && !loading && (!tasks || tasks.length === 0) && showNothingToDo">
 			<h3 class="has-text-centered mbs-6">
 				{{ $t('task.show.noTasks') }}
 			</h3>
@@ -123,6 +130,100 @@
 				</template>
 			</template>
 		</div>
+		<div
+			v-else-if="!embedded"
+			class="print-upcoming-layout"
+		>
+			<section
+				class="print-upcoming-days print-sheet"
+				:aria-busy="loading"
+			>
+				<header class="print-section-bar">
+					<h2>NEXT {{ upcomingDays.length }} DAYS 接下來 {{ upcomingDays.length }} 天</h2><span>{{ datedTaskCount }} 件・{{ overdueTasks.length }} 件逾期</span>
+				</header>
+				<section
+					v-if="overdueTasks.length"
+					class="upcoming-day is-overdue"
+				>
+					<div class="upcoming-date">
+						<b>!</b><span>LATE</span><small>逾期</small>
+					</div>
+					<div class="upcoming-day-tasks">
+						<SingleTaskInProject
+							v-for="task in overdueTasks"
+							:key="task.id"
+							print-row
+							hide-print-time
+							:show-project="true"
+							:the-task="task"
+							:can-mark-as-done="(projectList.projects[task.project_id]?.max_permission ?? 0) > PERMISSIONS.READ"
+							@taskUpdated="updateTasks"
+						/>
+					</div>
+				</section>
+				<section
+					v-for="day in upcomingDays"
+					:key="day.key"
+					class="upcoming-day"
+					:class="{'is-today': day.key === upcomingToday}"
+				>
+					<div class="upcoming-date">
+						<b>{{ day.date.getDate() }}</b><span>{{ day.date.toLocaleDateString('en-US', {weekday:'short'}).toUpperCase() }}</span><small v-if="day.key === upcomingToday">今天</small>
+					</div>
+					<div class="upcoming-day-tasks">
+						<SingleTaskInProject
+							v-for="task in day.tasks"
+							:key="task.id"
+							print-row
+							hide-print-time
+							:show-project="true"
+							:the-task="task"
+							:can-mark-as-done="(projectList.projects[task.project_id]?.max_permission ?? 0) > PERMISSIONS.READ"
+							@taskUpdated="updateTasks"
+						/>
+						<p
+							v-if="!day.tasks.length"
+							class="print-empty"
+						>
+							{{ loading ? '載入中…' : '這天沒有安排' }}
+						</p>
+					</div>
+				</section>
+			</section>
+			<aside class="print-upcoming-aside">
+				<section class="print-sheet">
+					<header class="print-plain-heading">
+						<h2>LOAD 這週的份量</h2><span>每天幾件</span>
+					</header><div class="upcoming-load">
+						<div
+							v-for="day in upcomingDays.slice(0,7)"
+							:key="day.key"
+						>
+							<b>{{ day.tasks.length }}</b><i :style="{height: `${Math.max(3, day.tasks.length / maxDayLoad * 90)}px`}" /><span>{{ day.date.toLocaleDateString('zh-TW',{weekday:'narrow'}) }}</span>
+						</div>
+					</div>
+				</section>
+				<section class="print-sheet">
+					<header class="print-plain-heading">
+						<h2>SOMEDAY 沒有日期</h2><span>{{ undatedTasks.length }} 件</span>
+					</header><SingleTaskInProject
+						v-for="task in undatedTasks"
+						:key="task.id"
+						print-row
+						hide-print-time
+						:show-project="true"
+						:the-task="task"
+						:can-mark-as-done="(projectList.projects[task.project_id]?.max_permission ?? 0) > PERMISSIONS.READ"
+						@taskUpdated="updateTasks"
+					/><p
+						v-if="!undatedTasks.length"
+						class="print-empty"
+					>
+						{{ showNulls ? '沒有未排程的任務' : '勾選「沒有日期」以顯示未排程任務' }}
+					</p>
+				</section>
+			</aside>
+		</div>
 		<Card
 			v-else-if="hasTasks"
 			:padding="false"
@@ -157,6 +258,7 @@
 import {computed, ref, watch, watchEffect} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
+import dayjs from 'dayjs'
 
 import {formatDate} from '@/helpers/time/formatDate'
 import {setTitle} from '@/helpers/setTitle'
@@ -215,6 +317,55 @@ const taskQuery = useTasks(
 	{enabled: () => authStore.authenticated && taskScope.value !== null},
 )
 const tasks = taskQuery.tasks
+function localDay(date: Date): string {
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+const upcomingToday = computed(() => localDay(new Date()))
+function upcomingRangeDate(value: Date | string | undefined, fallback: Date): Date {
+	if (value instanceof Date) return new Date(value.getTime())
+	if (!value) return fallback
+	if (!value.startsWith('now')) {
+		const parsed = new Date(value)
+		return Number.isNaN(parsed.getTime()) ? fallback : parsed
+	}
+	const suffix = value.slice(3)
+	const operations = [...suffix.matchAll(/([+-]\d+)([smhdwMy])|\/([smhdwMy])/g)]
+	if (operations.map(operation => operation[0]).join('') !== suffix) return fallback
+	const units = {s: 'second', m: 'minute', h: 'hour', d: 'day', w: 'week', M: 'month', y: 'year'} as const
+	let parsed = dayjs()
+	for (const operation of operations) {
+		const unit = (operation[2] || operation[3]) as keyof typeof units
+		parsed = operation[1] ? parsed.add(Number(operation[1]), units[unit])
+			: unit === 'w' ? parsed.startOf('day').subtract((parsed.day() + 6) % 7, 'day') : parsed.startOf(units[unit])
+	}
+	return parsed.toDate()
+}
+const undatedTasks = computed(() => (tasks.value ?? []).filter(task => !task.due_date || new Date(task.due_date).getFullYear() <= 1))
+const overdueTasks = computed(() => (tasks.value ?? []).filter(task => task.due_date && new Date(task.due_date).getFullYear() > 1 && localDay(new Date(task.due_date)) < upcomingToday.value))
+const upcomingDays = computed(() => {
+	const start = upcomingRangeDate(props.dateFrom, new Date())
+	start.setHours(0, 0, 0, 0)
+	const fallbackEnd = new Date(start)
+	fallbackEnd.setDate(fallbackEnd.getDate() + 7)
+	const parsedEnd = upcomingRangeDate(props.dateTo, fallbackEnd)
+	const length = Math.max(1, Math.min(365, dayjs(parsedEnd).startOf('day').diff(dayjs(start), 'day')))
+	const days = new Map<string, {key: string, date: Date, tasks: typeof tasks.value}>()
+	for (let i = 0; i < length; i++) {
+		const date = new Date(start)
+		date.setDate(date.getDate() + i)
+		days.set(localDay(date), {key: localDay(date), date, tasks: []})
+	}
+	for (const task of tasks.value ?? []) {
+		const date = task.due_date ? new Date(task.due_date) : null
+		if (!date || date.getFullYear() <= 1 || localDay(date) < upcomingToday.value) continue
+		const key = localDay(date)
+		if (!days.has(key)) days.set(key, {key, date, tasks: []})
+		days.get(key)!.tasks.push(task)
+	}
+	return [...days.values()].sort((a, b) => a.key.localeCompare(b.key))
+})
+const datedTaskCount = computed(() => upcomingDays.value.reduce((total, day) => total + day.tasks.length, overdueTasks.value.length))
+const maxDayLoad = computed(() => Math.max(1, ...upcomingDays.value.slice(0, 7).map(day => day.tasks.length)))
 const embeddedGroups = computed(() => {
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)

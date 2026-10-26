@@ -1,6 +1,10 @@
 <template>
-	<div class="no-auth-wrapper">
+	<div
+		class="no-auth-wrapper"
+		:class="{'print-login-shell': isLogin}"
+	>
 		<Logo
+			v-if="!isLogin"
 			class="logo"
 			width="200"
 			height="58"
@@ -13,7 +17,17 @@
 				<Message v-if="motd !== ''">
 					{{ motd }}
 				</Message>
-				<h2 class="image-title">
+				<template v-if="isLogin">
+					<span class="print-login-brand">VIKUNJA</span><h2 class="print-login-poster-title">
+						One thing<br>at a <em>time.</em>
+					</h2><p class="print-login-tagline">
+						專注在重要的事。
+					</p>
+				</template>
+				<h2
+					v-else
+					class="image-title"
+				>
 					{{ $t("misc.welcomeBack") }}
 				</h2>
 			</section>
@@ -23,13 +37,25 @@
 				class="content"
 			>
 				<div>
+					<p
+						v-if="isLogin"
+						class="print-page-kicker"
+					>
+						LOGIN
+					</p>
 					<h2
 						v-if="title"
 						class="title"
 					>
 						{{ title }}
 					</h2>
-					<ApiConfig v-if="shouldShowApiConfig" />
+					<details
+						v-if="shouldShowApiConfig && isLogin"
+						class="print-login-api"
+					>
+						<summary>伺服器設定</summary><ApiConfig />
+					</details>
+					<ApiConfig v-else-if="shouldShowApiConfig" />
 					<Message
 						v-if="motd !== ''"
 						class="is-hidden-tablet mbe-4"
@@ -75,6 +101,7 @@ const configStore = useConfigStore()
 const motd = computed(() => configStore.motd)
 
 const route = useRoute()
+const isLogin = computed(() => route.name === 'user.login')
 const { t } = useI18n({ useScope: 'global' })
 const title = computed(() =>
 	route.meta?.title ? t(route.meta.title as string) : '',

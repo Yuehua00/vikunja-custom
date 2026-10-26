@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="print-login-form">
 		<Message
 			v-if="confirmedEmailSuccess"
 			variant="success"
@@ -27,7 +27,7 @@
 				id="username"
 				ref="usernameRef"
 				v-focus
-				:label="$t('user.auth.usernameEmail')"
+				:label="`USERNAME ${$t('user.auth.usernameEmail')}`"
 				name="username"
 				:placeholder="$t('user.auth.usernamePlaceholder')"
 				required
@@ -42,14 +42,7 @@
 					<label
 						class="label"
 						for="password"
-					>{{ $t('user.auth.password') }}</label>
-					<RouterLink
-						v-if="localAuthEnabled"
-						:to="{ name: 'user.password-reset.request' }"
-						class="reset-password-link"
-					>
-						{{ $t('user.auth.forgotPassword') }}
-					</RouterLink>
+					>PASSWORD {{ $t('user.auth.password') }}</label>
 				</div>
 				<Password
 					v-model="password"
@@ -71,10 +64,18 @@
 				inputmode="numeric"
 				@keyup.enter="submit"
 			/>
-			<FormCheckbox
-				v-model="rememberMe"
-				:label="$t('user.auth.remember')"
-			/>
+			<div class="print-login-remember">
+				<FormCheckbox
+					v-model="rememberMe"
+					:label="$t('user.auth.remember')"
+				/><RouterLink
+					v-if="localAuthEnabled"
+					:to="{ name: 'user.password-reset.request' }"
+					class="reset-password-link"
+				>
+					{{ $t('user.auth.forgotPassword') }}
+				</RouterLink>
+			</div>
 
 			<XButton
 				:loading="isLoading"

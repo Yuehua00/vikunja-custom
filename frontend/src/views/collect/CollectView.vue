@@ -1,84 +1,95 @@
 <template>
 	<div
 		v-cy="'collectView'"
-		class="collect-view"
+		class="collect-view print-collect-page"
 	>
-		<h1 class="page-title">
+		<p class="print-page-kicker">
+			COLLECT
+		</p><h1 class="page-title">
 			{{ $t('collect.title') }}
 		</h1>
-		<section class="collect-main">
-			<div class="collect-options">
-				<label class="collect-field">
-					<span class="collect-field-label">{{ $t('collect.project') }}</span>
-					<FormSelect
+		<div class="print-collect-layout">
+			<section
+				class="collect-main print-sheet"
+				aria-label="貼上內容"
+			>
+				<header class="print-section-bar">
+					<h2>PASTE 貼上</h2><span>一行一張卡片</span>
+				</header>
+				<div class="collect-options">
+					<label class="collect-field"><span class="collect-field-label">PROJECT 專案</span><FormSelect
 						:model-value="projectId"
 						:options="projectOptions"
 						:disabled="isSubmitting"
-						@update:model-value="value => projectId = Number(value)"
-					/>
-				</label>
-				<label class="collect-field">
-					<span class="collect-field-label">{{ $t('collect.type') }}</span>
-					<FormSelect
+						@update:modelValue="value => projectId = Number(value)"
+					/></label>
+					<label class="collect-field"><span class="collect-field-label">TYPE 類型</span><FormSelect
 						:model-value="labelId"
 						:options="labelOptions"
 						:disabled="isSubmitting"
-						@update:model-value="value => labelId = Number(value)"
-					/>
-				</label>
-			</div>
-
-			<textarea
-				v-model="text"
-				class="textarea collect-input"
-				rows="8"
-				:placeholder="$t('collect.placeholder')"
-				:disabled="isSubmitting"
-			/>
-
-			<div
-				v-if="entries.length > 0"
-				class="collect-preview"
-			>
-				<p class="collect-preview-title">
-					{{ $t('collect.preview', {count: entries.length}) }}
+						@update:modelValue="value => labelId = Number(value)"
+					/></label>
+				</div>
+				<textarea
+					v-model="text"
+					class="textarea collect-input"
+					rows="10"
+					aria-label="要收集的內容"
+					:placeholder="$t('collect.placeholder')"
+					:disabled="isSubmitting"
+				/>
+				<p class="collect-hint">
+					直接貼上或打字，換行就是下一張卡片；網址會放進描述，建立時自動取得標題。
 				</p>
+			</section>
+			<section
+				class="collect-preview print-sheet"
+				aria-label="預覽"
+			>
+				<header class="print-plain-heading">
+					<h2>PREVIEW 預覽</h2><span>{{ entries.length }} 張卡片</span>
+				</header>
 				<ul class="collect-cards">
 					<li
-						v-for="(entry, index) in entries"
+						v-for="(entry,index) in entries"
 						:key="index"
 						class="collect-card"
 					>
-						<span class="collect-card-title">
-							{{ entry.title || entry.host }}
-						</span>
-						<span
-							v-if="!entry.title"
-							class="collect-card-hint"
-						>
-							{{ $t('collect.titleAuto') }}
-						</span>
-						<span
+						<span class="collect-card-number">{{ String(index + 1).padStart(2,'0') }}</span><strong class="collect-card-title">{{ entry.title || $t('collect.titleAuto') }}</strong><div class="collect-card-meta">
+							<span
+								v-if="labelId"
+								class="collect-label"
+							>{{ labelOptions.find(option => option.value === labelId)?.label }}</span><span>{{ projectOptions.find(option => option.value === projectId)?.label }}</span>
+						</div><span
 							v-for="url in entry.urls"
 							:key="url"
 							class="collect-card-url"
-						>
-							{{ url }}
-						</span>
+						>{{ url }}</span>
 					</li>
 				</ul>
-			</div>
-
-			<div class="collect-actions">
-				<XButton
-					:disabled="entries.length === 0 || projectId === 0"
-					:loading="isSubmitting"
-					@click="submit"
+				<p
+					v-if="!entries.length"
+					class="print-empty"
 				>
-					{{ $t('collect.create', {count: entries.length}) }}
-				</XButton>
-			</div>
-		</section>
+					貼上內容後，卡片預覽會顯示在這裡。
+				</p>
+				<div class="collect-actions">
+					<XButton
+						variant="secondary"
+						:disabled="isSubmitting || !text"
+						@click="text = ''"
+					>
+						清除
+					</XButton><XButton
+						:disabled="entries.length === 0 || projectId === 0"
+						:loading="isSubmitting"
+						@click="submit"
+					>
+						{{ $t('collect.create',{count:entries.length}) }}
+					</XButton>
+				</div>
+			</section>
+		</div>
 	</div>
 </template>
 
