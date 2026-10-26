@@ -33,6 +33,11 @@ const (
 
 // Anything not listed stays off MCP; credentials, account, webhooks, shares, file transfer and admin routes are deliberately absent.
 var exposedOperations = map[string]toolTier{
+	"research-items-list":             typedTool,
+	"research-items-create":           typedTool,
+	"diary-entries-list":              typedTool,
+	"diary-entries-save":              typedTool,
+	"habits-read":                     typedTool,
 	"buckets-create":                  catalogTool,
 	"buckets-delete":                  catalogTool,
 	"buckets-list":                    catalogTool,

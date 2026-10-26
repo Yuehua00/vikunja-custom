@@ -73,7 +73,10 @@ func TestMCPInfo(t *testing.T) {
 			var typed map[string][]string
 			require.NoError(t, json.Unmarshal(info.Presets["typed"], &typed))
 			crud := []string{"create", "delete", "read_all", "read_one", "update"}
-			assert.Len(t, typed, 6)
+			assert.Len(t, typed, 9)
+			for _, group := range []string{"research", "diary", "habits"} {
+				assert.NotEmpty(t, typed[group], group)
+			}
 			for _, group := range []string{"tasks", "projects", "labels", "tasks_comments"} {
 				assert.ElementsMatch(t, crud, typed[group], group)
 			}
