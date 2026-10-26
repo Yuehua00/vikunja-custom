@@ -44,7 +44,7 @@
 							fill="none"
 							stroke="currentColor"
 							stroke-width="3"
-							opacity=".2"
+							class="print-nav-ring-track"
 						/>
 						<circle
 							cx="12"
@@ -75,16 +75,9 @@
 						@mousedown.stop
 						@click.stop.prevent
 						@touchstart.stop
-					>
-						<Icon icon="grip-lines" />
-					</span>
+					/>
 				</div>
 				<span class="project-menu-title">{{ getProjectTitle(project) }}</span>
-				<span
-					v-if="statsReady"
-					class="print-nav-percent"
-					:title="`${projectStats.done} / ${projectStats.total} 完成`"
-				>{{ projectStats.percent }}%</span>
 			</BaseButton>
 			<BaseButton
 				v-if="canToggleFavorite"

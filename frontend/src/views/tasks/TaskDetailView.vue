@@ -25,7 +25,9 @@
 				:task="task"
 				:can-write="canWrite"
 				:has-close="isModal"
+				:project-title="project?.title"
 				@close="$emit('close')"
+				@favorite="toggleFavorite"
 			/>
 			<nav
 				v-if="project?.id"
@@ -70,7 +72,23 @@
 					:class="{'is-two-thirds': canWrite}"
 					class="column detail-content"
 				>
-					<div class="columns details">
+					<section class="print-task-attributes">
+						<h2 class="print-task-section-band">
+							DETAILS 詳細資料
+						</h2>
+						<dl>
+							<div><dt>指派對象</dt><dd>{{ task.assignees?.map(user => user.name || user.username).join('、') || '未指派' }}</dd></div>
+							<div><dt>到期</dt><dd>{{ task.due_date ? formatDisplayDate(task.due_date) : '未排程' }}</dd></div>
+							<div><dt>優先級</dt><dd>{{ ['未設定', '低', '中', '高', '緊急', 'DO NOW'][task.priority ?? 0] }}</dd></div>
+							<div><dt>重複</dt><dd>{{ task.repeat_after ? '已設定重複' : '不重複' }}</dd></div>
+							<div><dt>提醒</dt><dd>{{ task.reminders?.length ? `${task.reminders.length} 則提醒` : '未設定' }}</dd></div>
+							<div><dt>標籤</dt><dd>{{ task.labels?.map(label => label.title).join('、') || '無' }}</dd></div>
+						</dl>
+					</section>
+					<div
+						v-show="detailsEditing"
+						class="columns details"
+					>
 						<div
 							v-if="activeFields.assignees"
 							class="column assignees"
@@ -339,19 +357,12 @@
 						</CustomTransition>
 					</div>
 
-					<!-- Subtasks -->
-					<SubtaskList
-						v-if="canWrite || (task.related_tasks?.subtask?.length ?? 0) > 0"
-						class="details"
-						:task-id="taskId"
-						:project-id="task.project_id"
-						:can-write="canWrite"
-						:backdrop-view="backdropView"
-					/>
+
 
 					<!-- Labels -->
 					<div
 						v-if="activeFields.labels"
+						v-show="detailsEditing"
 						class="labels-list details"
 					>
 						<div class="detail-title">
@@ -371,13 +382,37 @@
 					</div>
 
 					<!-- Description -->
-					<div class="details content description">
+					<div
+						ref="descriptionSection"
+						class="details content description"
+					>
+						<div class="print-task-section-band print-task-notes-heading">
+							<h2>NOTES 描述</h2>
+							<button
+								v-if="canWrite"
+								v-shortcut="'KeyE'"
+								type="button"
+								:aria-pressed="descriptionEditing"
+								@click="toggleDescriptionEditing"
+							>
+								{{ descriptionEditing ? '完成編輯' : '編輯' }}
+							</button>
+						</div>
 						<Description
 							:model-value="task"
-							:can-write="canWrite"
+							:can-write="canWrite && descriptionEditing"
 						/>
 					</div>
-					
+
+					<!-- Subtasks -->
+					<SubtaskList
+						v-if="canWrite || (task.related_tasks?.subtask?.length ?? 0) > 0"
+						class="details"
+						:task-id="taskId"
+						:project-id="task.project_id"
+						:can-write="canWrite"
+						:backdrop-view="backdropView"
+					/>
 					<!-- Reactions -->
 					<Reactions
 						:model-value="task.reactions"
@@ -464,7 +499,7 @@
 						class="content-bottom-marker"
 					/>
 				</div>
-				
+
 				<!-- Task Actions -->
 				<div
 					v-if="canWrite || isModal"
@@ -489,31 +524,10 @@
 						>
 							{{ $t('focus.startFocus') }}
 						</XButton>
-						<TaskSubscription
-							entity="task"
-							:entity-id="task.id"
-							:model-value="task.subscription ?? null"
-							@toggle="toggleSubscription"
-						/>
-						<XButton
-							v-shortcut="SHORTCUTS.taskDetail.favorite"
-							variant="secondary"
-							:icon="task.is_favorite ? 'star' : ['far', 'star']"
-							@click="toggleFavorite"
-						>
-							{{
-								task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')
-							}}
-						</XButton>
-						
-						<XButton
-							v-if="(task.percent_done ?? 0) > 0 && !task.done"
-							variant="secondary"
-							:icon="task.paused ? 'play' : 'pause'"
-							@click="togglePaused"
-						>
-							{{ task.paused ? $t('task.detail.actions.resume') : $t('task.detail.actions.pause') }}
-						</XButton>
+
+
+
+
 
 						<section class="print-task-progress-panel">
 							<h2>PROGRESS 進度</h2>
@@ -536,11 +550,25 @@
 								</button>
 							</div>
 						</section>
-						<details class="print-task-actions">
-							<summary>ACTIONS 操作</summary>
-							<div class="print-task-action-grid">
-								<span class="action-heading">{{ $t('task.detail.organization') }}</span>
-						
+						<section class="print-task-common-actions">
+							<h2>ACTIONS 操作</h2><div class="print-task-action-grid">
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.assignees"
+									v-cy="'taskDetail.assign'"
+									variant="secondary"
+									icon="users"
+									@click="setFieldActive('assignees')"
+								>
+									{{ $t('task.detail.actions.assign') }}
+								</XButton>
+								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.dueDate"
+									variant="secondary"
+									icon="calendar"
+									@click="setFieldActive('dueDate')"
+								>
+									{{ $t('task.detail.actions.dueDate') }}
+								</XButton>
 								<XButton
 									v-shortcut="SHORTCUTS.taskDetail.labels"
 									variant="secondary"
@@ -550,6 +578,14 @@
 									{{ $t('task.detail.actions.label') }}
 								</XButton>
 								<XButton
+									v-shortcut="SHORTCUTS.taskDetail.reminder"
+									variant="secondary"
+									:icon="['far', 'clock']"
+									@click="setFieldActive('reminders')"
+								>
+									{{ $t('task.detail.actions.reminders') }}
+								</XButton>
+								<XButton
 									v-shortcut="SHORTCUTS.taskDetail.priority"
 									variant="secondary"
 									icon="exclamation-circle"
@@ -557,6 +593,29 @@
 								>
 									{{ $t('task.detail.actions.priority') }}
 								</XButton>
+								<XButton
+									v-if="(task.percent_done ?? 0) > 0 && !task.done"
+									variant="secondary"
+									:icon="task.paused ? 'play' : 'pause'"
+									@click="togglePaused"
+								>
+									{{ task.paused ? $t('task.detail.actions.resume') : $t('task.detail.actions.pause') }}
+								</XButton>
+							</div>
+						</section>
+						<details class="print-task-actions">
+							<summary>更多操作</summary>
+							<div class="print-task-action-grid">
+								<TaskSubscription
+									entity="task"
+									:entity-id="task.id"
+									:model-value="task.subscription ?? null"
+									@toggle="toggleSubscription"
+								/>
+								<span class="action-heading">{{ $t('task.detail.organization') }}</span>
+
+
+
 								<XButton
 									variant="secondary"
 									icon="percent"
@@ -580,18 +639,10 @@
 								>
 									{{ $t('task.detail.actions.color') }}
 								</XButton>
-						
+
 								<span class="action-heading">{{ $t('task.detail.management') }}</span>
 
-								<XButton
-									v-shortcut="SHORTCUTS.taskDetail.assignees"
-									v-cy="'taskDetail.assign'"
-									variant="secondary"
-									icon="users"
-									@click="setFieldActive('assignees')"
-								>
-									{{ $t('task.detail.actions.assign') }}
-								</XButton>
+
 								<XButton
 									v-shortcut="SHORTCUTS.taskDetail.attachments"
 									variant="secondary"
@@ -636,14 +687,7 @@
 									{{ $t('task.detail.actions.timeTracking') }}
 								</XButton>
 
-								<XButton
-									v-shortcut="SHORTCUTS.taskDetail.dueDate"
-									variant="secondary"
-									icon="calendar"
-									@click="setFieldActive('dueDate')"
-								>
-									{{ $t('task.detail.actions.dueDate') }}
-								</XButton>
+
 								<XButton
 									variant="secondary"
 									icon="play"
@@ -658,14 +702,7 @@
 								>
 									{{ $t('task.detail.actions.endDate') }}
 								</XButton>
-								<XButton
-									v-shortcut="SHORTCUTS.taskDetail.reminder"
-									variant="secondary"
-									:icon="['far', 'clock']"
-									@click="setFieldActive('reminders')"
-								>
-									{{ $t('task.detail.actions.reminders') }}
-								</XButton>
+
 								<XButton
 									variant="secondary"
 									icon="history"
@@ -737,6 +774,7 @@
 
 <script lang="ts" setup>
 import {parseDateOrNull} from '@/helpers/parseDateOrNull'
+import {formatDisplayDate} from '@/helpers/time/formatDate'
 import {ref, reactive, computed, watch, nextTick, onBeforeUnmount, onMounted, useTemplateRef, type ComponentPublicInstance} from 'vue'
 import {useRouter, useRoute, type RouteLocation, onBeforeRouteLeave} from 'vue-router'
 import {useI18n} from 'vue-i18n'
@@ -1178,6 +1216,7 @@ function setFieldRef(name: FieldType, e: Element | ComponentPublicInstance | nul
 }
 
 function setFieldActive(fieldName: keyof typeof activeFields) {
+	detailsEditing.value = true
 	activeFields[fieldName] = true
 	nextTick(() => {
 		let datepicker: InstanceType<typeof Datepicker> | null = null
@@ -1263,6 +1302,21 @@ useTaskDetailShortcuts({
 
 const showDeleteModal = ref(false)
 const showFocusCard = ref(false)
+const detailsEditing = ref(false)
+const descriptionEditing = ref(false)
+const descriptionSection = ref<HTMLElement | null>(null)
+async function toggleDescriptionEditing() {
+	descriptionEditing.value = !descriptionEditing.value
+	await nextTick()
+	if (descriptionEditing.value && !descriptionSection.value?.querySelector('.tiptap__wrapper-is-editing')) {
+		const editButton = descriptionSection.value?.querySelector<HTMLButtonElement>('.tiptap__editor-actions .done-edit')
+		editButton?.click()
+	}
+}
+watch(() => props.taskId, () => {
+	detailsEditing.value = false
+	descriptionEditing.value = false
+})
 
 async function deleteTask() {
 	await deleteTaskMutation.mutateAsync(task.value.id!)

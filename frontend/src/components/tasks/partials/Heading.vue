@@ -1,46 +1,63 @@
 <template>
 	<div class="heading print-task-heading">
 		<p class="print-task-eyebrow">
-			TASK・任務詳情
+			{{ projectTitle || 'TASK' }}・<BaseButton @click="copyUrl">
+				{{ textIdentifier }}
+			</BaseButton>・{{ task.due_date ? formatDisplayDate(task.due_date) : '未排程' }}
 		</p>
-		<div class="tw:flex tw:items-center md:tw:items-stretch tw:flex-col tw:gap-1 task-properties">
-			<div class="tw:flex tw:items-center tw:gap-2">
-				<ColorBubble
-					v-if="task.hex_color !== ''"
-					:color="getHexColor(task.hex_color)"
-				/>
-				<BaseButton @click="copyUrl">
-					<span class="title task-id">
-						{{ textIdentifier }}
-					</span>
-				</BaseButton>
-			</div>
-			<Done
-				:is-done="task.done"
-			/>
+		<div class="print-task-header-tools">
+			<BaseButton
+				v-if="canWrite"
+				v-shortcut="SHORTCUTS.taskDetail.favorite"
+				:aria-label="task.is_favorite ? $t('task.detail.actions.unfavorite') : $t('task.detail.actions.favorite')"
+				:aria-pressed="task.is_favorite ?? false"
+				@click="$emit('favorite')"
+			>
+				<Icon :icon="task.is_favorite ? 'star' : ['far', 'star']" />
+			</BaseButton>
 			<BaseButton
 				v-if="hasClose"
-				:aria-label="$t('task.detail.closeTaskDetail')"
-				class="close d-print-none"
-				@click="$emit('close')"
+				:to="{name:'task.detail',params:{id:task.id}}"
+				target="_blank"
+				rel="noopener"
+				aria-label="在新頁面開啟"
 			>
-				<Icon icon="times" />
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					aria-hidden="true"
+				><path d="M14 4h6v6 M20 4 12 12 M10 5H5v14h14v-5" /></svg>
 			</BaseButton>
 		</div>
-		<h1
-			class="title input"
-			:class="{'disabled': !canWrite}"
-			:contenteditable="canWrite ? true : undefined"
-			:tabindex="canWrite ? 0 : undefined"
-			:aria-label="canWrite ? $t('task.attributes.title') : undefined"
-			:spellcheck="false"
-			@input="handleTitleInput"
-			@blur="save($event.target as HTMLElement)"
-			@keydown.enter.prevent.stop="!$event.isComposing && ($event.target as HTMLInputElement).blur()"
-			@keydown.esc.prevent.stop="!$event.isComposing && cancel($event.target as HTMLInputElement)"
-		>
-			{{ (task.title ?? '').trim() }}
-		</h1>
+		<div class="print-task-title-line">
+			<h1
+				class="title input"
+				:class="{'disabled': !canWrite}"
+				:contenteditable="canWrite ? true : undefined"
+				:tabindex="canWrite ? 0 : undefined"
+				:aria-label="canWrite ? $t('task.attributes.title') : undefined"
+				:spellcheck="false"
+				@input="handleTitleInput"
+				@blur="save($event.target as HTMLElement)"
+				@keydown.enter.prevent.stop="!$event.isComposing && ($event.target as HTMLInputElement).blur()"
+				@keydown.esc.prevent.stop="!$event.isComposing && cancel($event.target as HTMLInputElement)"
+			>
+				{{ (task.title ?? '').trim() }}
+			</h1>
+			<div class="print-task-heading-chips">
+				<span
+					v-for="label in task.labels"
+					:key="label.id"
+					class="print-task-label-chip"
+				>{{ label.title }}</span>
+				<span
+					class="print-task-state-chip"
+					:class="{'is-done':task.done,'is-paused':task.paused}"
+				>{{ task.done ? '已完成' : task.paused ? '暫停中' : (task.percent_done ?? 0) > 0 ? '處理中' : '未開始' }}</span>
+			</div>
+		</div>
 		<CustomTransition name="fade">
 			<span
 				v-if="loading && saving"
@@ -71,25 +88,27 @@ import {useI18n} from 'vue-i18n'
 import {error} from '@/message'
 import BaseButton from '@/components/base/BaseButton.vue'
 import CustomTransition from '@/components/misc/CustomTransition.vue'
-import ColorBubble from '@/components/misc/ColorBubble.vue'
-import Done from '@/components/misc/Done.vue'
 
 import {useCopyToClipboard} from '@/composables/useCopyToClipboard'
 import {useDelayedLoading} from '@/composables/useDelayedLoading'
 import {useUpdateTaskMutation} from '@/client/queries/taskMutations'
 
 import type {Task as ITask} from '@/client/generated'
-import {getHexColor, getTaskIdentifier} from '@/helpers/task'
+import {getTaskIdentifier} from '@/helpers/task'
+import {formatDisplayDate} from '@/helpers/time/formatDate'
+import {SHORTCUTS} from '@/constants/shortcuts'
 
 const props = defineProps<{
 	task: ITask,
 	canWrite: boolean,
 	hasClose: boolean,
+	projectTitle?: string,
 }>()
 
 const emit = defineEmits<{
 	'update:task': [task: ITask],
 	'close': [],
+	'favorite': [],
 }>()
 
 const router = useRouter()

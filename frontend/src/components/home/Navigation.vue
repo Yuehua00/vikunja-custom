@@ -1,7 +1,7 @@
 <template>
 	<aside
 		:class="{'is-active': baseStore.menuActive, 'is-resizing': isResizing}"
-		class="menu-container"
+		class="menu-container print-design-sidebar"
 		:style="{'--sidebar-width': sidebarWidthStyle}"
 	>
 		<nav
@@ -19,96 +19,30 @@
 				/>
 			</RouterLink>
 			<menu class="menu-list other-menu-items">
-				<li>
+				<li
+					v-for="item in mainNavigation"
+					:key="item.name"
+				>
 					<RouterLink
-						v-shortcut="SHORTCUTS.navigation.overview"
-						:to="{ name: 'home'}"
+						v-shortcut="item.shortcut || ''"
+						:to="{name: item.name}"
+						:class="{'print-nav-active': activePath === item.path || (item.path !== '/' && activePath.startsWith(item.path))}"
 					>
-						<span class="menu-item-icon icon">
-							<Icon icon="calendar" />
-						</span>
-						{{ $t('navigation.overview') }}
-					</RouterLink>
-				</li>
-				<li>
-					<RouterLink
-						v-shortcut="SHORTCUTS.navigation.upcoming"
-						:to="{ name: 'tasks.range'}"
-					>
-						<span class="menu-item-icon icon">
-							<Icon :icon="['far', 'calendar-alt']" />
-						</span>
-						{{ $t('navigation.upcoming') }}
-					</RouterLink>
-				</li>
-				<li>
-					<RouterLink
-						v-shortcut="SHORTCUTS.navigation.projects"
-						:to="{ name: 'projects.index'}"
-					>
-						<span class="menu-item-icon icon">
-							<Icon icon="layer-group" />
-						</span>
-						{{ $t('project.projects') }}
-					</RouterLink>
-				</li>
-				<li>
-					<RouterLink
-						v-shortcut="SHORTCUTS.navigation.labels"
-						:to="{ name: 'labels.index'}"
-					>
-						<span class="menu-item-icon icon">
-							<Icon icon="tags" />
-						</span>
-						{{ $t('label.title') }}
-					</RouterLink>
-				</li>
-				<li>
-					<RouterLink
-						v-shortcut="SHORTCUTS.navigation.teams"
-						:to="{ name: 'teams.index'}"
-					>
-						<span class="menu-item-icon icon">
-							<Icon icon="users" />
-						</span>
-						{{ $t('team.title') }}
-					</RouterLink>
-				</li>
-				<li>
-					<RouterLink :to="{ name: 'focus'}">
-						<span class="menu-item-icon icon">
-							<Icon icon="stopwatch" />
-						</span>
-						{{ $t('focus.title') }}
-					</RouterLink>
-				</li>
-				<li>
-					<RouterLink :to="{ name: 'collect'}">
-						<span class="menu-item-icon icon">
-							<Icon icon="paste" />
-						</span>
-						{{ $t('collect.title') }}
-					</RouterLink>
-				</li>
-				<li>
-					<RouterLink :to="{ name: 'diary'}">
-						<span class="menu-item-icon icon">
-							<Icon icon="pen" />
-						</span>
-						{{ $t('diary.title') }}
-					</RouterLink>
-				</li>
-				<li v-if="timeTrackingEnabled">
-					<RouterLink :to="{ name: 'time-tracking'}">
-						<span class="menu-item-icon icon">
-							<Icon :icon="['far', 'clock']" />
-						</span>
-						{{ $t('timeTracking.title') }}
+						<svg
+							class="print-nav-outline"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						><path :d="item.icon" /></svg>
+						{{ $t(item.label) }}
 					</RouterLink>
 				</li>
 			</menu>
 		</nav>
-
 		<Loading
 			v-if="projectList.isLoading"
 			variant="small"
@@ -116,7 +50,7 @@
 		<template v-else>
 			<nav
 				v-if="favoriteProjects.length"
-				class="menu"
+				class="menu print-favorite-projects"
 				:aria-label="$t('project.pseudo.favorites.title')"
 			>
 				<p class="menu-label print-nav-section-label">
@@ -128,24 +62,8 @@
 					:can-collapse="false"
 				/>
 			</nav>
-			
 			<nav
-				v-if="savedFilterProjects.length"
-				class="menu"
-				:aria-label="$t('navigation.savedFilters')"
-			>
-				<p class="menu-label print-nav-section-label">
-					FILTERS 篩選
-				</p>
-				<ProjectsNavigation
-					:model-value="savedFilterProjects"
-					:can-edit-order="false"
-					:can-collapse="false"
-				/>
-			</nav>
-
-			<nav
-				class="menu"
+				class="menu print-primary-projects"
 				:aria-label="$t('project.projects')"
 			>
 				<p class="menu-label print-nav-section-label">
@@ -157,13 +75,57 @@
 					:can-collapse="true"
 				/>
 			</nav>
-		</template>
+			<details class="print-nav-more">
+				<summary>更多功能</summary>
+				<nav
+					class="menu"
+					aria-label="其他功能"
+				>
+					<menu class="menu-list">
+						<li>
+							<RouterLink
+								v-shortcut="SHORTCUTS.navigation.labels"
+								:to="{name:'labels.index'}"
+							>
+								<Icon icon="tags" />{{ $t('label.title') }}
+							</RouterLink>
+						</li>
+						<li>
+							<RouterLink
+								v-shortcut="SHORTCUTS.navigation.teams"
+								:to="{name:'teams.index'}"
+							>
+								<Icon icon="users" />{{ $t('team.title') }}
+							</RouterLink>
+						</li>
+						<li v-if="timeTrackingEnabled">
+							<RouterLink :to="{name:'time-tracking'}">
+								<Icon :icon="['far','clock']" />{{ $t('timeTracking.title') }}
+							</RouterLink>
+						</li>
+					</menu>
+				</nav>
 
+				<nav
+					v-if="savedFilterProjects.length"
+					class="menu"
+					:aria-label="$t('navigation.savedFilters')"
+				>
+					<p class="menu-label print-nav-section-label">
+						FILTERS 篩選
+					</p>
+					<ProjectsNavigation
+						:model-value="savedFilterProjects"
+						:can-edit-order="false"
+						:can-collapse="false"
+					/>
+				</nav>
+			</details>
+		</template>
 		<PoweredByLink
 			class="mbs-auto"
 			utm-medium="navigation"
 		/>
-
 		<div
 			v-if="!isMobile"
 			class="resize-handle"
@@ -175,6 +137,7 @@
 
 <script setup lang="ts">
 import {computed} from 'vue'
+import {useRoute} from 'vue-router'
 
 import {SHORTCUTS} from '@/constants/shortcuts'
 import PoweredByLink from '@/components/home/PoweredByLink.vue'
@@ -189,6 +152,16 @@ import ProjectsNavigation from '@/components/home/ProjectsNavigation.vue'
 import {useSidebarResize} from '@/composables/useSidebarResize'
 
 const baseStore = useBaseStore()
+const route = useRoute()
+const activePath = computed(() => route.fullPath && (window.history.state?.backdropView || route.path))
+const mainNavigation = [
+	{name: 'home', path: '/', label: 'navigation.overview', shortcut: SHORTCUTS.navigation.overview, icon: 'M3 5h18v16H3z M3 10h18 M8 3v4 M16 3v4'},
+	{name: 'tasks.range', path: '/tasks/by/', label: 'navigation.upcoming', shortcut: SHORTCUTS.navigation.upcoming, icon: 'M3 5h18v16H3z M3 10h18 M8 3v4 M16 3v4 M8 14h2 M14 14h2 M8 17h2'},
+	{name: 'projects.index', path: '/projects', label: 'project.projects', shortcut: SHORTCUTS.navigation.projects, icon: 'M12 3 3 8l9 5 9-5-9-5 M3 13l9 5 9-5'},
+	{name: 'focus', path: '/focus', label: 'focus.title', shortcut: '', icon: 'M20 13a8 8 0 1 1-16 0 8 8 0 0 1 16 0 M12 9v4l2.5 2.5 M9 2h6'},
+	{name: 'collect', path: '/collect', label: 'collect.title', shortcut: '', icon: 'M5 4h14v18H5z M9 2h6v4H9z'},
+	{name: 'diary', path: '/diary', label: 'diary.title', shortcut: '', icon: 'M4 20h4L19 9l-4-4L4 16z M13 7l4 4'},
+]
 const projectList = useProjects()
 const configStore = useConfigStore()
 
