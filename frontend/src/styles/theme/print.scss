@@ -1499,3 +1499,110 @@
 	min-block-size: 20rem;
 	overflow-anchor: none;
 }
+
+// Paper project table: keep the existing selectable columns and sorting controls.
+#app .project-table {
+	.print-table-sheet { border: 0; border-radius: 2px; box-shadow: none; background: var(--print-paper); }
+	.has-horizontal-overflow { overflow-x: auto; max-inline-size: 100%; }
+	.table { background: transparent; min-inline-size: 42rem; }
+	.table th { background: var(--print-blue-soft); color: var(--print-blue); font-size: .75rem; padding: .8rem 1rem; white-space: nowrap; border-block-end: 2px solid var(--grey-300); }
+	.table th[aria-sort='ascending'], .table th[aria-sort='descending'] { background: var(--print-green-soft); color: var(--link); }
+	.table td { padding: .9rem 1rem; vertical-align: middle; border-block-end: 1px solid var(--grey-200); font-size: .85rem; }
+	.table td.table-task-title { min-inline-size: 12rem; font-weight: 700; }
+	.table-task-title a { color: var(--text-strong); overflow-wrap: anywhere; }
+	.table tbody tr:hover { background: var(--print-orange-tint); }
+	.table tbody tr[data-done] .table-task-title a { color: var(--text-muted); text-decoration: line-through; }
+	.table-state { display: inline-block; padding: .2rem .45rem; border-radius: 2px; font-size: .7rem; font-weight: 700; white-space: nowrap; background: var(--grey-100); color: var(--text-muted); }
+	tr[data-progress] .table-state { background: color-mix(in srgb, var(--status-doing) 25%, var(--print-paper)); color: var(--text-strong); }
+	tr[data-paused] .table-state { background: var(--print-blue-soft); color: var(--print-blue); }
+	tr[data-done] .table-state { background: var(--print-green-soft); color: var(--link); }
+	.table-priority { font-size: .75rem; white-space: nowrap; }
+	.print-table-progress { appearance: none; inline-size: 6rem; block-size: 5px; border: 0; background: var(--print-blue-soft); }
+	.print-table-progress::-webkit-progress-bar { background: var(--print-blue-soft); }
+	.print-table-progress::-webkit-progress-value { background: var(--print-blue-mid); }
+	.print-table-progress::-moz-progress-bar { background: var(--print-blue-mid); }
+}
+#app .print-view-count { font-size: .75rem; color: #e4f0e9; }
+
+// Horizontal paper columns; the task and bucket drag handles keep their original hit areas.
+#app .project-kanban {
+	.kanban-view { max-inline-size: 100%; min-inline-size: 0; }
+	.print-kanban-bar { margin-block-end: 1rem; }
+	.kanban { margin: 0; padding: 0 0 1rem; block-size: auto; overscroll-behavior-x: contain; align-items: flex-start; }
+	.kanban > .kanban-bucket-container { align-items: flex-start; }
+	.kanban .bucket { max-block-size: none; }
+	.kanban .bucket .tasks { block-size: auto; overflow: visible; }
+	.kanban .bucket-footer { position: static; }
+	.kanban .bucket-load-more { padding: .5rem; text-align: center; }
+	.kanban .bucket { flex: 0 0 300px; border-radius: 3px; border: 1px solid var(--grey-200); background: var(--print-blue-soft); }
+	.kanban .bucket-header { border-block-start: 4px solid var(--print-blue-mid); border-block-end: 1px solid var(--grey-200); background: var(--print-blue-soft); padding: .7rem .8rem; min-block-size: 3.5rem; }
+	.kanban .bucket-header .title.input { font-weight: 800 !important; color: var(--text-strong); background: transparent; border: 0; padding: .25rem; box-shadow: none; }
+	.kanban .bucket-header .limit { font-family: $display-font; color: var(--print-blue); font-size: 1rem; padding-inline: .4rem; }
+	.kanban .print-done-bucket .bucket-header { border-block-start-color: var(--print-green); background: var(--print-green-soft); }
+	.kanban .print-default-bucket .bucket-header { border-block-start-color: var(--print-orange); }
+	.kanban .bucket .task-item { background: transparent; padding: .35rem .6rem; }
+	.kanban .bucket-footer { background: var(--print-blue-soft); border-block-start: 1px dashed var(--grey-300); box-shadow: none; }
+	.kanban .bucket.new-bucket { border: 1.5px dashed var(--grey-300); background: transparent; min-block-size: 6rem; }
+	.kanban .bucket.new-bucket .button { background: transparent; color: var(--link); }
+	.kanban-card { border: 1px solid var(--grey-200); border-radius: 3px 8px 4px 7px; box-shadow: 0 2px 0 color-mix(in srgb, var(--print-blue) 8%, transparent); }
+	.kanban-card:not(.has-custom-background-color) { background: var(--print-paper); color: var(--text-strong); }
+	.print-kanban-card-body { padding: .85rem; }
+	.kanban-card h3 { margin-block: .6rem; font-size: .95rem; font-weight: 700 !important; line-height: 1.5; }
+	.kanban-card .task-id { font-family: $display-font; font-size: .8rem; }
+	.kanban-card .due-date { font-size: .7rem; }
+	.kanban-card .task-progress { block-size: 4px; margin-block: .65rem; }
+	.kanban-card .footer { padding-block-start: .3rem; gap: .35rem; }
+	.kanban-card .kanban-card__status { font-size: .7rem; padding: .15rem .45rem; border-radius: 2px; }
+	.kanban-card .print-card-done { background: var(--print-green-soft); color: var(--link); }
+	.print-card-important { display: inline-block; padding: .1rem .4rem; font-size: .7rem; font-weight: 700; color: var(--print-orange-text); background: var(--print-orange-tint); border: 1px solid var(--print-orange); border-radius: 2px; margin-inline-start: .3rem; }
+}
+
+// Sidebar sections and genuine project completion rings.
+#app .menu-container {
+	.print-nav-section-label { margin: 1.1rem 1.5rem .4rem; color: var(--print-blue); font-size: .75rem; letter-spacing: .12em; }
+	.menu + .menu { margin-block-start: .25rem; }
+	.top-menu .menu-list li { margin-inline: .9rem; }
+	.top-menu .menu-list li > a { min-block-size: 2.75rem; border-radius: 2px; font-weight: 700; }
+	.menu-list .list-menu { margin-inline: .9rem; }
+	.menu-list .list-menu .list-menu { margin-inline: .5rem 0; }
+	.navigation-item { position: relative; }
+	.navigation-item .list-menu-link { display: flex; align-items: center; gap: .4rem; padding: .65rem .75rem; min-block-size: 2.75rem; border-radius: 2px; }
+	.navigation-item .collapse-project-button-placeholder { display: none; }
+	.navigation-item .color-bubble-wrapper { flex: 0 0 22px; inline-size: 22px; block-size: 22px; position: relative; display: inline-flex; align-items: center; }
+	.print-nav-ring { inline-size: 22px; block-size: 22px; color: var(--print-green); flex-shrink: 0; }
+	.project-menu-title { min-inline-size: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
+	.print-nav-percent { flex-shrink: 0; font-family: $display-font; font-size: .9rem; font-weight: 700; color: var(--link); }
+	.list-menu-link.router-link-exact-active .print-nav-ring, .list-menu-link.router-link-exact-active .print-nav-percent { color: var(--print-mint); }
+	.navigation-item .favorite, .navigation-item .menu-list-dropdown { opacity: 0; }
+	.navigation-item:hover .favorite, .navigation-item:hover .menu-list-dropdown, .navigation-item:focus-within .favorite, .navigation-item:focus-within .menu-list-dropdown { opacity: 1; }
+	.navigation-item .favorite { inset-inline-end: 2rem; }
+	.navigation-item .drag-handle { position: absolute; inset: 0; background: var(--site-background); padding: 0; justify-content: center; }
+	.list-menu-link.router-link-exact-active .drag-handle { background: var(--primary); }
+}
+@media (hover: none) {
+	#app .menu-container .navigation-item .favorite, #app .menu-container .navigation-item .menu-list-dropdown { opacity: 1; }
+}
+@media (width <= 700px) {
+	#app .project-kanban .kanban .bucket { flex-basis: min(300px, calc(100vw - 2.5rem)); inline-size: min(300px, calc(100vw - 2.5rem)); }
+	#app .project-table .table th, #app .project-table .table td { padding: .75rem .65rem; }
+}
+#app .project-table .table-state-progress { display: block; margin-block-start: .5rem; }
+@media (hover: hover) {
+	#app .menu-container .navigation-item:hover .print-nav-percent, #app .menu-container .navigation-item:focus-within .print-nav-percent { visibility: hidden; }
+}
+@media (hover: none) {
+	#app .menu-container .navigation-item .list-menu-link { padding-inline-end: 4.5rem; }
+}
+// Keep navigation compact enough to expose project progress alongside the main links.
+#app .menu-container {
+	padding-block: .5rem;
+	.menu { padding-block-start: 0; }
+	.menu + .menu { margin-block-start: 0; }
+	.print-nav-section-label { margin: .65rem 1.5rem .25rem; }
+	.top-menu .menu-list li > a { min-block-size: 2.25rem; padding-block: .35rem; }
+	.navigation-item .list-menu-link { min-block-size: 2.25rem; padding-block: .4rem; }
+}
+#app .project-kanban .kanban-card .task-progress {
+	--progress-value-background-color: var(--print-blue-mid);
+	--progress-bar-background-color: var(--print-blue-soft);
+}

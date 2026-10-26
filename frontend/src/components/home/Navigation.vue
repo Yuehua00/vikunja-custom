@@ -119,6 +119,9 @@
 				class="menu"
 				:aria-label="$t('project.pseudo.favorites.title')"
 			>
+				<p class="menu-label print-nav-section-label">
+					收藏
+				</p>
 				<ProjectsNavigation
 					:model-value="favoriteProjects"
 					:can-edit-order="false"
@@ -131,6 +134,9 @@
 				class="menu"
 				:aria-label="$t('navigation.savedFilters')"
 			>
+				<p class="menu-label print-nav-section-label">
+					FILTERS 篩選
+				</p>
 				<ProjectsNavigation
 					:model-value="savedFilterProjects"
 					:can-edit-order="false"
@@ -142,6 +148,9 @@
 				class="menu"
 				:aria-label="$t('project.projects')"
 			>
+				<p class="menu-label print-nav-section-label">
+					PROJECTS 專案
+				</p>
 				<ProjectsNavigation
 					:model-value="projects"
 					:can-edit-order="true"

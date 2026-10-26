@@ -5,6 +5,12 @@
 		:project-id="projectId"
 		:view-id
 	>
+		<template #summary>
+			<template v-if="statsQuery.isSuccess.value">
+				<span class="project-progress-number">{{ projectStats.percent }}%</span>
+				<span class="project-progress-count">{{ projectStats.done }} / {{ projectStats.total }} 完成</span>
+			</template>
+		</template>
 		<template #header>
 			<div class="filter-container">
 				<Popup
@@ -96,8 +102,19 @@
 				<Card
 					:padding="false"
 					:has-content="false"
+					class="print-table-sheet"
 				>
-					<div class="has-horizontal-overflow">
+					<header class="print-bar">
+						<h2 class="print-bar-title">
+							TABLE 表格
+						</h2>
+						<span class="print-view-count">本頁 {{ tasks.length }} 件</span>
+					</header>
+					<div
+						class="has-horizontal-overflow"
+						tabindex="0"
+						aria-label="任務表格，可左右捲動"
+					>
 						<table class="table has-actions is-hoverable is-fullwidth mbe-0">
 							<thead>
 								<tr>
@@ -254,7 +271,14 @@
 										</RouterLink>
 									</td>
 									<td v-if="activeColumns.done">
-										{{ statusText(t) }}
+										<span class="table-state">{{ statusText(t) }}</span>
+										<progress
+											v-if="!t.done && (t.percent_done ?? 0) > 0 && !activeColumns.percentDone"
+											class="print-table-progress table-state-progress"
+											:value="Math.max(0, Math.min(100, (t.percent_done ?? 0) * 100))"
+											max="100"
+											:aria-label="`${Math.round((t.percent_done ?? 0) * 100)}%`"
+										/>
 									</td>
 									<td v-if="activeColumns.project">
 										<RouterLink
@@ -264,7 +288,10 @@
 											{{ projectList.projects[t.project_id].title }}
 										</RouterLink>
 									</td>
-									<td v-if="activeColumns.title">
+									<td
+										v-if="activeColumns.title"
+										class="table-task-title"
+									>
 										<TaskGlanceTooltip :task="t">
 											<RouterLink :to="taskDetailRoutes[t.id]">
 												{{ t.title }}
@@ -272,7 +299,7 @@
 										</TaskGlanceTooltip>
 									</td>
 									<td v-if="activeColumns.priority">
-										{{ priorityName(t.priority) }}
+										<span class="table-priority">{{ priorityName(t.priority) }}</span>
 									</td>
 									<td v-if="activeColumns.labels">
 										<Labels :labels="t.labels" />
@@ -302,7 +329,12 @@
 										:date="t.end_date"
 									/>
 									<td v-if="activeColumns.percentDone">
-										{{ t.percent_done * 100 }}%
+										<progress
+											class="print-table-progress"
+											:value="Math.max(0, Math.min(100, (t.percent_done ?? 0) * 100))"
+											max="100"
+											:aria-label="`${Math.round((t.percent_done ?? 0) * 100)}%`"
+										/>
 									</td>
 									<DateTableCell
 										v-if="activeColumns.doneAt"
@@ -339,6 +371,8 @@
 </template>
 
 <script setup lang="ts">
+import {useQuery} from '@tanstack/vue-query'
+import {allTasksQuery} from '@/client/queries/tasks'
 import {computed, ref, type ComponentPublicInstance, type Ref, watch} from 'vue'
 
 import {useStorage} from '@vueuse/core'
@@ -377,6 +411,16 @@ const props = defineProps<{
 	viewId: number,
 }>()
 
+const statsQuery = useQuery(computed(() => ({
+	...allTasksQuery({project: props.projectId, params: {filter: 'done = true || done = false'}}),
+	enabled: props.projectId > 0,
+	staleTime: 60_000,
+})))
+const projectStats = computed(() => {
+	const items = statsQuery.data.value ?? []
+	const done = items.filter(task => task.done).length
+	return {total: items.length, done, percent: items.length ? Math.round(done / items.length * 100) : 0}
+})
 const projectList = useProjects()
 
 const {t: translate} = useI18n({useScope: 'global'})

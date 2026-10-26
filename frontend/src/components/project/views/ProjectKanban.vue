@@ -5,6 +5,12 @@
 		:project-id="projectId"
 		:view-id
 	>
+		<template #summary>
+			<template v-if="statsQuery.isSuccess.value">
+				<span class="project-progress-number">{{ projectStats.percent }}%</span>
+				<span class="project-progress-count">{{ projectStats.done }} / {{ projectStats.total }} 完成</span>
+			</template>
+		</template>
 		<template #header>
 			<div class="filter-container">
 				<FilterPopup
@@ -19,6 +25,12 @@
 
 		<template #default>
 			<div class="kanban-view">
+				<header class="print-bar print-kanban-bar">
+					<h2 class="print-bar-title">
+						KANBAN 看板
+					</h2>
+					<span class="print-view-count">{{ buckets.length }} 個分欄</span>
+				</header>
 				<div
 					:class="{ 'is-loading': showInitialLoading }"
 					class="kanban kanban-bucket-container loader-container"
@@ -38,7 +50,7 @@
 						<template #item="{element: bucket, index: bucketIndex }">
 							<li
 								class="bucket"
-								:class="{'is-collapsed': collapsedBuckets[bucket.id]}"
+								:class="{'is-collapsed': collapsedBuckets[bucket.id], 'print-done-bucket': view?.done_bucket_id === bucket.id, 'print-default-bucket': view?.default_bucket_id === bucket.id}"
 								:data-bucket-id="bucket.id"
 							>
 								<div
@@ -65,7 +77,7 @@
 										{{ bucket.title }}
 									</h2>
 									<span
-										v-if="bucket.limit > 0 || alwaysShowBucketTaskCount"
+										v-if="bucket.count !== undefined"
 										:class="{'is-max': bucket.limit > 0 && bucket.count >= bucket.limit}"
 										class="limit"
 									>
@@ -165,6 +177,18 @@
 									@end="updateTaskPosition"
 								>
 									<template #footer>
+										<li
+											v-if="bucketHasMore(bucket)"
+											:ref="el => setLoadMoreRef(bucket.id, el as HTMLElement | null)"
+											class="bucket-load-more"
+										>
+											<XButton
+												:disabled="bucketPageMutation.isPending.value"
+												@click="loadBucketPage(bucket.id)"
+											>
+												載入更多任務
+											</XButton>
+										</li>
 										<li
 											v-if="canCreateTasks"
 											class="bucket-footer"
@@ -302,7 +326,7 @@ import {
 	useUpdateBucketMutation,
 	useLoadBucketPageMutation,
 } from '@/client/queries/kanbanMutations'
-import {computed, nextTick, ref, watch, toRef} from 'vue'
+import {computed, nextTick, ref, watch, toRef, onUnmounted} from 'vue'
 import {useQuery, useQueryClient} from '@tanstack/vue-query'
 import {useRouter} from 'vue-router'
 import {useRouteQuery} from '@vueuse/router'
@@ -334,7 +358,7 @@ import {getSavedFilterIdFromProjectId, isSavedFilterProject} from '@/client/quer
 import {savedFilterQuery} from '@/client/queries/savedFilters'
 import {useCurrentProject} from '@/composables/useCurrentProject'
 import {useTaskDragToProject} from '@/composables/useTaskDragToProject'
-import type {TaskFilterParams, TaskResponse} from '@/client/queries/tasks'
+import {allTasksQuery, type TaskFilterParams, type TaskResponse} from '@/client/queries/tasks'
 import type {ProjectView} from '@/client/generated'
 import {createProjectViewUpdate, useUpdateProjectViewMutation} from '@/client/queries/projectViews'
 
@@ -343,6 +367,16 @@ const props = defineProps<{
 	projectId: number,
 	viewId: number,
 }>()
+const statsQuery = useQuery(computed(() => ({
+	...allTasksQuery({project: props.projectId, params: {filter: 'done = true || done = false'}}),
+	enabled: props.projectId > 0,
+	staleTime: 60_000,
+})))
+const projectStats = computed(() => {
+	const items = statsQuery.data.value ?? []
+	const done = items.filter(task => task.done).length
+	return {total: items.length, done, percent: items.length ? Math.round(done / items.length * 100) : 0}
+})
 const BucketDraggable = draggableFor<BucketResponse>()
 const TaskDraggable = draggableFor<TaskResponse>()
 
@@ -368,7 +402,6 @@ const {createNewTask, isLoading: quickAddLoading} = useQuickAddTask()
 const {setDraggedTask} = useTaskDragState()
 const authStore = useAuthStore()
 
-const alwaysShowBucketTaskCount = computed(() => authStore.settings.frontend_settings.always_show_bucket_task_count)
 const {handleTaskDropToProject} = useTaskDragToProject()
 const positionMutation = useUpdateTaskPositionMutation()
 const moveMutation = useMoveTaskMutation()
@@ -510,6 +543,35 @@ const saveBucketLimitMutation = useUpdateBucketMutation(t('project.kanban.bucket
 const bucketPageMutation = useLoadBucketPageMutation()
 const getBucketById = (id: number) => buckets.value.find(bucket => bucket.id === id)
 
+const loadMoreElements = new Map<number, HTMLElement>()
+const pageObserver = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(entries => {
+	for (const entry of entries) {
+		if (entry.isIntersecting) loadBucketPage(Number((entry.target as HTMLElement).dataset.bucketId))
+	}
+}, {rootMargin: '200px 0px'})
+
+function setLoadMoreRef(id: number, el: HTMLElement | null) {
+	const previous = loadMoreElements.get(id)
+	if (previous) pageObserver?.unobserve(previous)
+	if (!el) {
+		loadMoreElements.delete(id)
+		return
+	}
+	el.dataset.bucketId = String(id)
+	loadMoreElements.set(id, el)
+	pageObserver?.observe(el)
+}
+
+// Recheck visible column ends after a page finishes, including columns skipped while another loads.
+watch(() => bucketPageMutation.isPending.value, pending => {
+	if (pending || bucketPageMutation.isError.value) return
+	for (const el of loadMoreElements.values()) {
+		pageObserver?.unobserve(el)
+		pageObserver?.observe(el)
+	}
+}, {flush: 'post'})
+onUnmounted(() => pageObserver?.disconnect())
+
 type BucketPatch = {id: number} & Partial<Pick<BucketResponse, 'title' | 'limit' | 'position'>>
 
 // The update is a PUT: the fields the caller does not touch come from the cached bucket.
@@ -555,9 +617,13 @@ function handleTaskContainerScroll(id: number, el: HTMLElement) {
 		return
 	}
 
+	loadBucketPage(id)
+}
+
+function loadBucketPage(id: number) {
 	// Mid-drag the copy in `buckets` is one task short, which would look like a missing page.
 	const bucket = board.data.value?.buckets.find(item => item.id === id)
-	if (bucketPageMutation.isPending.value || !bucket || !bucketHasMore(bucket)) return
+	if (drag.value || dragBucket.value || collapsedBuckets.value[id] || bucketPageMutation.isPending.value || !bucket || !bucketHasMore(bucket)) return
 	bucketPageMutation.mutate({
 		project: projectId.value,
 		view: props.viewId,

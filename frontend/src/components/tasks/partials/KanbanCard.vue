@@ -26,7 +26,7 @@
 			alt=""
 			class="tw:w-full"
 		>
-		<div class="p-2">
+		<div class="p-2 print-kanban-card-body">
 			<div class="tw:flex tw:justify-between">
 				<span class="task-id">
 					<Done
@@ -89,6 +89,14 @@
 			>
 				{{ $t('task.status.paused') }}
 			</span>
+			<span
+				v-else-if="!task.done"
+				class="status-chip kanban-card__status"
+			>{{ $t('task.status.notStarted') }}</span>
+			<span
+				v-if="(task.importance ?? 0) >= 4"
+				class="print-card-important"
+			>重要</span>
 			
 			<span
 				v-if="projectTitle"

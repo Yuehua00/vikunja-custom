@@ -6,6 +6,7 @@ import draggable from 'zhyswan-vuedraggable'
 import {QueryClient, VueQueryPlugin} from '@tanstack/vue-query'
 
 const sdk = vi.hoisted(() => ({
+	projectTasksList: vi.fn(),
 	projectViewBucketsTasksList: vi.fn(),
 	projectViewTasksList: vi.fn(),
 	bucketsUpdate: vi.fn(),
@@ -147,6 +148,8 @@ function cachedBoard() {
 
 describe('ProjectKanban', () => {
 	beforeEach(() => {
+		sdk.projectTasksList.mockReset()
+		sdk.projectTasksList.mockResolvedValue({data: {items: [], total_pages: 1}})
 		updateBucket.mockClear()
 		updateBucket.mockResolvedValue({data: {id: 2, position: 200}})
 		loadBoard.mockClear()

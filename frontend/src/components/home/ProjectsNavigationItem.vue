@@ -29,8 +29,37 @@
 					class="collapse-project-button-placeholder"
 				/>
 				<div class="color-bubble-wrapper">
+					<svg
+						v-if="project.id > 0"
+						class="print-nav-ring"
+						:style="{color: currentProject?.id === project.id ? undefined : project.hex_color || undefined}"
+						viewBox="0 0 24 24"
+						role="img"
+						:aria-label="statsReady ? `完成 ${projectStats.percent}%` : statsQuery.isError.value ? '完成比例讀取失敗' : '完成比例載入中'"
+					>
+						<circle
+							cx="12"
+							cy="12"
+							r="9"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="3"
+							opacity=".2"
+						/>
+						<circle
+							cx="12"
+							cy="12"
+							r="9"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="3"
+							pathLength="100"
+							:stroke-dasharray="`${statsReady ? projectStats.percent : 0} 100`"
+							transform="rotate(-90 12 12)"
+						/>
+					</svg>
 					<ColorBubble
-						v-if="project.hex_color !== ''"
+						v-else-if="project.hex_color !== ''"
 						:color="project.hex_color"
 						:aria-label="$t('project.color')"
 					/>
@@ -51,6 +80,11 @@
 					</span>
 				</div>
 				<span class="project-menu-title">{{ getProjectTitle(project) }}</span>
+				<span
+					v-if="statsReady"
+					class="print-nav-percent"
+					:title="`${projectStats.done} / ${projectStats.total} 完成`"
+				>{{ projectStats.percent }}%</span>
 			</BaseButton>
 			<BaseButton
 				v-if="canToggleFavorite"
@@ -92,6 +126,8 @@
 
 <script setup lang="ts">
 import {computed, ref, onUnmounted, watch} from 'vue'
+import {useQuery} from '@tanstack/vue-query'
+import {allTasksQuery} from '@/client/queries/tasks'
 import {useProjects} from '@/composables/useProjects'
 import {useCurrentProject} from '@/composables/useCurrentProject'
 import {useTaskDragState} from '@/composables/useTaskDragState'
@@ -119,6 +155,18 @@ const props = defineProps<{
 	canCollapse?: boolean,
 	canEditOrder?: boolean,
 }>()
+
+const statsQuery = useQuery(computed(() => ({
+	...allTasksQuery({project: props.project.id, params: {filter: 'done = true || done = false'}}),
+	enabled: props.project.id > 0,
+	staleTime: 60_000,
+})))
+const projectStats = computed(() => {
+	const items = statsQuery.data.value ?? []
+	const done = items.filter(task => task.done).length
+	return {total: items.length, done, percent: items.length ? Math.round(done / items.length * 100) : 0}
+})
+const statsReady = computed(() => props.project.id > 0 && statsQuery.isSuccess.value)
 
 const showLoading = useDelayedLoading(() => props.isLoading)
 
