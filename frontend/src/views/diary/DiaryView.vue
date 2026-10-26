@@ -16,7 +16,7 @@
 				>
 					<header class="diary-date-row">
 						<div class="diary-date">
-							<b>{{ dayjs(date).format('DD') }}</b><span>{{ dayjs(date).format('MMM YYYY').toUpperCase() }}<small>{{ dateTitle }}{{ date === today ? '・今天' : '' }}</small></span>
+							<b>{{ dayjs(date).format('DD') }}</b><span>{{ dayjs(date).format('YYYY 年 M 月') }}<small>{{ dateTitle }}{{ date === today ? '・今天' : '' }}</small></span>
 						</div><div>
 							<XButton
 								variant="tertiary"
@@ -251,9 +251,6 @@ const date = computed(() => {
 })
 
 const dateTitle = computed(() => new Intl.DateTimeFormat(locale.value, {
-	year: 'numeric',
-	month: 'long',
-	day: 'numeric',
 	weekday: 'long',
 }).format(dayjs(date.value).toDate()))
 

@@ -21,6 +21,7 @@ vi.mock('vue-i18n', async importOriginal => ({
 }))
 
 import SingleTaskInProject from './SingleTaskInProject.vue'
+import Labels from './Labels.vue'
 
 const theTask = {id: 7, project_id: 1, title: 'Water the plants', done: true, is_favorite: false} as ITask
 
@@ -49,6 +50,36 @@ function mountRow(props: {printRow?: boolean, projectRow?: boolean} = {}) {
 }
 
 describe('SingleTaskInProject', () => {
+	it('keeps urgency in the status area with or without an overdue date', async () => {
+		const wrapper = mountRow({printRow: true})
+		for (const due_date of ['2020-01-01T00:00:00Z', undefined]) {
+			await wrapper.setProps({theTask: {...theTask, done: false, priority: 5, due_date}})
+			expect(wrapper.find('.print-row-main .print-row-urgent').exists()).toBe(false)
+			expect(wrapper.get('.print-row-end .print-row-urgent').text()).toContain('緊急')
+			expect(wrapper.find('.print-row-late').exists()).toBe(Boolean(due_date))
+		}
+		wrapper.unmount()
+	})
+	it('places labels beside urgency in the status area and removes the group when empty', async () => {
+		const wrapper = mountRow({printRow: true})
+		const labels = [{id: 3, title: 'Research', hex_color: '336699'}]
+		await wrapper.setProps({theTask: {...theTask, labels}})
+		expect(wrapper.get('.print-row-end .print-row-markers').getComponent(Labels).props('labels')).toEqual(labels)
+		expect(wrapper.find('.print-row-main .print-row-labels').exists()).toBe(false)
+		await wrapper.setProps({theTask: {...theTask, labels: []}})
+		expect(wrapper.findComponent(Labels).exists()).toBe(false)
+		wrapper.unmount()
+	})
+
+	it('labels urgent open tasks explicitly and removes the badge when completed', async () => {
+		const wrapper = mountRow({printRow: true})
+		await wrapper.setProps({theTask: {...theTask, done: false, priority: 5}})
+		expect(wrapper.get('.print-row-urgent').text()).toContain('緊急')
+		await wrapper.setProps({theTask: {...theTask, done: true, priority: 5}})
+		expect(wrapper.find('.print-row-urgent').exists()).toBe(false)
+		wrapper.unmount()
+	})
+
 	beforeEach(() => {
 		setActivePinia(createPinia())
 		sdk.patchTasksRead.mockReset()

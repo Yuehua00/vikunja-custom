@@ -480,20 +480,22 @@
 					</div>
 
 					<section class="task-comments-section">
-						<!-- Reactions -->
-						<Reactions
-							:model-value="task.reactions"
-							entity-kind="tasks"
-							:entity-id="task.id"
-							class="task-comment-reactions d-print-none"
-							:disabled="!canWrite"
-						/>
 						<!-- Comments -->
 						<Comments
 							:can-write="canWrite"
 							:task-id="taskId"
 							:project-id="task.project_id"
-						/>
+						>
+							<template #heading-actions>
+								<Reactions
+									:model-value="task.reactions"
+									entity-kind="tasks"
+									:entity-id="task.id"
+									class="task-comment-reactions d-print-none"
+									:disabled="!canWrite"
+								/>
+							</template>
+						</Comments>
 					</section>
 
 					<!-- Marker element for scroll-to-bottom button visibility -->

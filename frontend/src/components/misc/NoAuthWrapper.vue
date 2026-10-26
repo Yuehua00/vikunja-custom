@@ -19,9 +19,9 @@
 				</Message>
 				<template v-if="isLogin">
 					<span class="print-login-brand">VIKUNJA</span><h2 class="print-login-poster-title">
-						One thing<br>at a <em>time.</em>
+						One thing<br>at a <em>time</em>.
 					</h2><p class="print-login-tagline">
-						專注在重要的事。
+						<em class="print-login-tagline-accent">專注</em>在重要的事。
 					</p>
 				</template>
 				<h2

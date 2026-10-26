@@ -58,13 +58,24 @@
 					</div>
 				</div>
 				<div class="print-row-end">
-					<progress
-						v-if="!task.done && (task.percent_done ?? 0) > 0"
-						class="print-row-progress"
-						:value="(task.percent_done ?? 0) * 100"
-						max="100"
-						:aria-label="`${Math.round((task.percent_done ?? 0) * 100)}%`"
-					/>
+					<div class="print-row-markers">
+						<progress
+							v-if="!task.done && (task.percent_done ?? 0) > 0"
+							class="print-row-progress"
+							:value="(task.percent_done ?? 0) * 100"
+							max="100"
+							:aria-label="`${Math.round((task.percent_done ?? 0) * 100)}%`"
+						/>
+						<Labels
+							v-if="(task.labels?.length ?? 0) > 0"
+							class="print-row-labels"
+							:labels="task.labels ?? []"
+						/>
+					</div>
+					<span
+						v-if="!task.done && priorityLevel === 'urgent'"
+						class="print-row-urgent"
+					><Icon icon="exclamation-circle" /> 緊急</span>
 					<span
 						v-if="!task.done && printOverdueDays > 0"
 						class="print-row-late"

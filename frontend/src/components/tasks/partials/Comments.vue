@@ -4,26 +4,32 @@
 		ref="commentsRef"
 		class="content details comments-container"
 	>
-		<h2
+		<div
 			v-if="canWrite || comments.length > 0"
 			class="comments-heading task-section-title"
 			:class="{'d-print-none': comments.length === 0}"
 		>
-			<span>
+			<span
+				role="heading"
+				aria-level="2"
+			>
 				<span class="icon is-grey">
 					<Icon :icon="['far', 'comments']" />
 				</span>
 				{{ $t('task.comment.title') }}
 			</span>
-			<BaseButton
-				v-if="comments.length > 0"
-				class="comment-sort-button"
-				@click="toggleSortOrder"
-			>
-				<Icon :icon="commentSortOrder === 'asc' ? 'arrow-down-short-wide' : 'arrow-up-short-wide'" />
-				{{ commentSortOrder === 'asc' ? $t('task.comment.sortOldestFirst') : $t('task.comment.sortNewestFirst') }}
-			</BaseButton>
-		</h2>
+			<div class="comments-heading-tools">
+				<slot name="heading-actions" />
+				<BaseButton
+					v-if="comments.length > 0"
+					class="comment-sort-button"
+					@click="toggleSortOrder"
+				>
+					<Icon :icon="commentSortOrder === 'asc' ? 'arrow-down-short-wide' : 'arrow-up-short-wide'" />
+					{{ commentSortOrder === 'asc' ? $t('task.comment.sortOldestFirst') : $t('task.comment.sortNewestFirst') }}
+				</BaseButton>
+			</div>
+		</div>
 		<div class="comments">
 			<span
 				v-if="listPending"

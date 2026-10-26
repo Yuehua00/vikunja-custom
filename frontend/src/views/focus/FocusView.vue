@@ -217,7 +217,7 @@
 			</section>
 			<section class="focus-log print-sheet">
 				<h2 class="focus-side-title">
-					LOG {{ $t('focus.records') }}
+					LOG {{ $t('focus.records') }}<small class="focus-log-range">近 7 天</small>
 				</h2>
 				<p
 					v-if="days.length === 0"
@@ -286,6 +286,7 @@ import ColorBubble from '@/components/misc/ColorBubble.vue'
 import FocusTaskSelect from '@/components/focus/FocusTaskSelect.vue'
 import {allTasksQuery} from '@/client/queries/tasks'
 import {useFocusTimer} from '@/composables/useFocusTimer'
+import {useGlobalNow} from '@/composables/useGlobalNow'
 import {useProjects} from '@/composables/useProjects'
 import {useAuthStore} from '@/stores/auth'
 import {
@@ -295,6 +296,7 @@ import {
 	formatClock,
 	formatDuration,
 	groupByDay,
+	dayKey,
 	isFocusCandidate,
 	projectColorOf,
 	type FocusMode,
@@ -367,7 +369,14 @@ function start() {
 }
 
 const stats = computed(() => computeStats(records.value, new Date()))
-const days = computed(() => groupByDay(records.value))
+const {now} = useGlobalNow()
+const days = computed(() => {
+	const start = new Date(now.value)
+	start.setDate(start.getDate() - 6)
+	const firstDay = dayKey(start)
+	const lastDay = dayKey(now.value)
+	return groupByDay(records.value).filter(day => day.day >= firstDay && day.day <= lastDay)
+})
 
 const pendingDelete = ref<string | null>(null)
 async function confirmDelete(id: string) {

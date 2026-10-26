@@ -89,109 +89,112 @@
 					name="draw-card"
 					mode="out-in"
 				>
-				<article
-					v-if="card"
-					:key="card.id"
-					class="draw-card"
-				>
-					<div class="draw-card-top">
-						<span
-							v-if="typeLabel"
-							class="draw-type"
-							:style="typeStyle"
-						>
-							{{ typeLabel.title }}
-						</span>
-						<span class="draw-age">{{ ageLabel }}</span>
-					</div>
-
-					<h2 class="draw-title">
-						<RouterLink
-							:to="{name: 'task.detail', params: {id: card.id}, state: {backdropView: route.fullPath}}"
-							draggable="false"
-						>
-							{{ card.title }}
-						</RouterLink>
-					</h2>
-
-					<ImportanceStars
-						:model-value="card.importance"
-						@update:modelValue="setImportance"
-					/>
-					<span
-						v-if="card.importance === 0"
-						class="draw-importance-hint"
+					<article
+						v-if="card"
+						:key="card.id"
+						class="draw-card"
 					>
-						{{ $t('project.draw.importanceNotSet') }}
-					</span>
-
-					<div class="draw-section">
-						<div class="draw-section-title">
-							{{ $t('project.draw.summary') }}
+						<header class="draw-card-band">
+							<span>DRAW 抽卡</span><span>本次閱讀</span>
+						</header>
+						<div class="draw-card-top">
+							<span
+								v-if="typeLabel"
+								class="draw-type"
+								:style="typeStyle"
+							>
+								{{ typeLabel.title }}
+							</span>
+							<span class="draw-age">{{ ageLabel }}</span>
 						</div>
-						<p
-							class="draw-summary"
-							:class="{'is-empty': summary === ''}"
-						>
-							{{ summary === '' ? $t('project.draw.noSummary') : summary }}
-						</p>
-					</div>
 
-					<a
-						v-if="link"
-						class="draw-link"
-						:href="link"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Icon icon="link" />
-						{{ link }}
-					</a>
+						<h2 class="draw-title">
+							<RouterLink
+								:to="{name: 'task.detail', params: {id: card.id}, state: {backdropView: route.fullPath}}"
+								draggable="false"
+							>
+								{{ card.title }}
+							</RouterLink>
+						</h2>
 
-					<div class="draw-progress">
-						<ProgressBar
-							:value="Math.round(card.percent_done * 100)"
-							is-primary
+						<ImportanceStars
+							:model-value="card.importance"
+							@update:modelValue="setImportance"
 						/>
-						<span class="draw-progress-label">
-							{{ card.percent_done > 0 ? $t('project.draw.progress', {percent: Math.round(card.percent_done * 100)}) : $t('project.draw.notStarted') }}
+						<span
+							v-if="card.importance === 0"
+							class="draw-importance-hint"
+						>
+							{{ $t('project.draw.importanceNotSet') }}
 						</span>
-						<PercentDoneSelect
-							v-if="card.percent_done > 0"
-							:model-value="card.percent_done"
-							@update:modelValue="setPercent"
-						/>
-					</div>
 
-					<div class="draw-actions">
-						<XButton
-							v-if="card.percent_done === 0"
-							variant="primary"
-							@click="start"
+						<div class="draw-section">
+							<div class="draw-section-title">
+								{{ $t('project.draw.summary') }}
+							</div>
+							<p
+								class="draw-summary"
+								:class="{'is-empty': summary === ''}"
+							>
+								{{ summary === '' ? $t('project.draw.noSummary') : summary }}
+							</p>
+						</div>
+
+						<a
+							v-if="link"
+							class="draw-link"
+							:href="link"
+							target="_blank"
+							rel="noopener noreferrer"
 						>
-							{{ $t('project.draw.start') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							@click="finish"
-						>
-							{{ $t('project.draw.finish') }}
-						</XButton>
-						<XButton
-							variant="secondary"
-							@click="skip"
-						>
-							{{ $t('project.draw.skip') }}
-						</XButton>
-						<span class="draw-actions-spacer" />
-						<XButton
-							variant="tertiary"
-							@click="drawNew(card.id)"
-						>
-							{{ $t('project.draw.redraw') }}
-						</XButton>
-					</div>
-				</article>
+							<Icon icon="link" />
+							{{ link }}
+						</a>
+
+						<div class="draw-progress">
+							<ProgressBar
+								:value="Math.round(card.percent_done * 100)"
+								is-primary
+							/>
+							<span class="draw-progress-label">
+								{{ card.percent_done > 0 ? $t('project.draw.progress', {percent: Math.round(card.percent_done * 100)}) : $t('project.draw.notStarted') }}
+							</span>
+							<PercentDoneSelect
+								v-if="card.percent_done > 0"
+								:model-value="card.percent_done"
+								@update:modelValue="setPercent"
+							/>
+						</div>
+
+						<div class="draw-actions">
+							<XButton
+								v-if="card.percent_done === 0"
+								variant="primary"
+								@click="start"
+							>
+								{{ $t('project.draw.start') }}
+							</XButton>
+							<XButton
+								variant="secondary"
+								@click="finish"
+							>
+								{{ $t('project.draw.finish') }}
+							</XButton>
+							<XButton
+								variant="secondary"
+								@click="skip"
+							>
+								{{ $t('project.draw.skip') }}
+							</XButton>
+							<span class="draw-actions-spacer" />
+							<XButton
+								variant="tertiary"
+								@click="drawNew(card.id)"
+							>
+								{{ $t('project.draw.redraw') }}
+							</XButton>
+						</div>
+					</article>
 				</Transition>
 
 				<div
