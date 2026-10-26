@@ -48,39 +48,6 @@
 		>
 			{{ $t('task.show.savedFilterIgnored') }}
 		</Message>
-		<p
-			v-if="!showAll"
-			class="show-tasks-options"
-		>
-			<DatepickerWithRange
-				:model-value="{dateFrom: dateFrom ?? null, dateTo: dateTo ?? null}"
-				@update:modelValue="setDate"
-			>
-				<template #trigger="{toggle}">
-					<XButton
-						variant="primary"
-						:shadow="false"
-						class="mbe-2"
-						@click.prevent.stop="toggle()"
-					>
-						{{ $t('task.show.select') }}
-					</XButton>
-				</template>
-			</DatepickerWithRange>
-			<FancyCheckbox
-				:model-value="showNulls"
-				class="mie-2"
-				@update:modelValue="setShowNulls"
-			>
-				{{ $t('task.show.noDates') }}
-			</FancyCheckbox>
-			<FancyCheckbox
-				:model-value="showOverdue"
-				@update:modelValue="setShowOverdue"
-			>
-				{{ $t('task.show.overdue') }}
-			</FancyCheckbox>
-		</p>
 		<template v-if="embedded && !loading && (!tasks || tasks.length === 0) && showNothingToDo">
 			<h3 class="has-text-centered mbs-6">
 				{{ $t('task.show.noTasks') }}
@@ -219,7 +186,7 @@
 						v-if="!undatedTasks.length"
 						class="print-empty"
 					>
-						{{ showNulls ? '沒有未排程的任務' : '勾選「沒有日期」以顯示未排程任務' }}
+						{{ showNulls ? '沒有未排程的任務' : '目前範圍未顯示未排程任務' }}
 					</p>
 				</section>
 			</aside>
@@ -256,7 +223,6 @@
 
 <script setup lang="ts">
 import {computed, ref, watch, watchEffect} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import dayjs from 'dayjs'
 
@@ -266,9 +232,7 @@ import {setTitle} from '@/helpers/setTitle'
 import BaseButton from '@/components/base/BaseButton.vue'
 import Icon from '@/components/misc/Icon'
 import Message from '@/components/misc/Message.vue'
-import FancyCheckbox from '@/components/input/FancyCheckbox.vue'
 import SingleTaskInProject from '@/components/tasks/partials/SingleTaskInProject.vue'
-import DatepickerWithRange from '@/components/date/DatepickerWithRange.vue'
 import XLabel from '@/components/tasks/partials/Label.vue'
 import {DATE_RANGES} from '@/components/date/dateRanges'
 import LlamaCool from '@/assets/llama-cool.svg?component'
@@ -307,8 +271,6 @@ const authStore = useAuthStore()
 const projectList = useProjects()
 const {getLabelById} = useLabels()
 
-const route = useRoute()
-const router = useRouter()
 const {t} = useI18n({useScope: 'global'})
 
 const taskScope = ref<TaskScope | null>(null)
@@ -446,45 +408,6 @@ const loading = taskQuery.isFetching
 const showLoading = useDelayedLoading(loading)
 const filterIdUsedOnOverview = computed(() => authStore.settings?.frontend_settings?.filter_id_used_on_overview)
 
-interface dateStrings {
-	dateFrom: Date | string | null,
-	dateTo: Date | string | null,
-}
-
-function setDate(dates: dateStrings) {
-	const from = dates.dateFrom ?? props.dateFrom
-	const to = dates.dateTo ?? props.dateTo
-	router.push({
-		name: route.name as string,
-		query: {
-			from: from instanceof Date ? from.toISOString() : from,
-			to: to instanceof Date ? to.toISOString() : to,
-			showOverdue: props.showOverdue ? 'true' : 'false',
-			showNulls: props.showNulls ? 'true' : 'false',
-		},
-	})
-}
-
-function setShowOverdue(show: boolean) {
-	router.push({
-		name: route.name as string,
-		query: {
-			...route.query,
-			showOverdue: show ? 'true' : 'false',
-		},
-	})
-}
-
-function setShowNulls(show: boolean) {
-	router.push({
-		name: route.name as string,
-		query: {
-			...route.query,
-			showNulls: show ? 'true' : 'false',
-		},
-	})
-}
-
 function clearLabelFilter() {
 	emit('clearLabelFilter')
 }
@@ -560,10 +483,6 @@ watchEffect(() => setTitle(pageTitle.value))
 	margin: 0;
 }
 
-.show-tasks-options {
-	display: flex;
-	flex-direction: column;
-}
 
 .llama-cool {
 	margin: 3rem auto 0;

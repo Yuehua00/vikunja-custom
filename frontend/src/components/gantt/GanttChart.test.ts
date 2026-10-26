@@ -7,6 +7,7 @@ import {createRouter, createMemoryHistory} from 'vue-router'
 import GanttChart from './GanttChart.vue'
 import GanttTimelineHeader from './GanttTimelineHeader.vue'
 import GanttRowBars from './GanttRowBars.vue'
+import GanttVerticalGridLines from './GanttVerticalGridLines.vue'
 import en from '@/i18n/lang/en.json'
 import {i18n as globalI18n} from '@/i18n'
 import type {TaskResponse} from '@/client/queries/tasks'
@@ -50,6 +51,21 @@ function mountChart(isLoading: boolean, withTask = false) {
 }
 
 describe('GanttChart.vue', () => {
+	it.each([0, 1, 12])('keeps eight grid rows and grows for %i tasks', async count => {
+		const wrapper = mountChart(false)
+		const tasks = new Map<number, TaskResponse>()
+		for (let id = 1; id <= count; id++) {
+			tasks.set(id, {id, project_id: 1, title: `Task ${id}`, related_tasks: {}, hex_color: '', done: false,
+				start_date: '2026-08-02T00:00:00Z', end_date: '2026-08-04T00:00:00Z'} as TaskResponse)
+		}
+		await wrapper.setProps({tasks})
+		const height = Math.max(8, count) * 40
+		expect(wrapper.getComponent(GanttVerticalGridLines).props('height')).toBe(height)
+		expect(wrapper.get('.gantt-rows-container').attributes('style')).toContain(`min-height: ${height}px`)
+		expect(wrapper.findAllComponents(GanttRowBars)).toHaveLength(count)
+		wrapper.unmount()
+	})
+
 	function pressBar(wrapper: ReturnType<typeof mountChart>) {
 		const rows = wrapper.getComponent(GanttRowBars)
 		const event = new MouseEvent('pointerdown', {button: 0, clientX: 20, clientY: 20})

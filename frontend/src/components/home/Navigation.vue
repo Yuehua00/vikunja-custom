@@ -26,7 +26,7 @@
 					<RouterLink
 						v-shortcut="item.shortcut || ''"
 						:to="{name: item.name}"
-						:class="{'print-nav-active': activePath === item.path || (item.path !== '/' && activePath.startsWith(item.path))}"
+						:class="{'print-nav-active': (activePath === item.path || (item.path !== '/' && activePath.startsWith(item.path))) && !(item.name === 'projects.index' && isFavoriteView)}"
 					>
 						<svg
 							class="print-nav-outline"
@@ -41,6 +41,23 @@
 						{{ $t(item.label) }}
 					</RouterLink>
 				</li>
+				<li>
+					<RouterLink
+						:to="{name: 'project.index', params: {projectId: -1}}"
+						:class="{'print-nav-active': isFavoriteView}"
+					>
+						<svg
+							class="print-nav-outline"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" /></svg>
+						{{ $t('project.pseudo.favorites.title') }}
+					</RouterLink>
+				</li>
 			</menu>
 		</nav>
 		<Loading
@@ -48,20 +65,6 @@
 			variant="small"
 		/>
 		<template v-else>
-			<nav
-				v-if="favoriteProjects.length"
-				class="menu print-favorite-projects"
-				:aria-label="$t('project.pseudo.favorites.title')"
-			>
-				<p class="menu-label print-nav-section-label">
-					收藏
-				</p>
-				<ProjectsNavigation
-					:model-value="favoriteProjects"
-					:can-edit-order="false"
-					:can-collapse="false"
-				/>
-			</nav>
 			<nav
 				class="menu print-primary-projects"
 				:aria-label="$t('project.projects')"
@@ -77,6 +80,21 @@
 			</nav>
 			<details class="print-nav-more">
 				<summary>更多功能</summary>
+				<nav
+					v-if="favoriteProjects.length"
+					class="menu"
+					:aria-label="$t('project.pseudo.favorites.title')"
+				>
+					<p class="menu-label print-nav-section-label">
+						已收藏專案
+					</p>
+					<ProjectsNavigation
+						:model-value="favoriteProjects"
+						:can-edit-order="false"
+						:can-collapse="false"
+					/>
+				</nav>
+
 				<nav
 					class="menu"
 					aria-label="其他功能"
@@ -154,6 +172,7 @@ import {useSidebarResize} from '@/composables/useSidebarResize'
 const baseStore = useBaseStore()
 const route = useRoute()
 const activePath = computed(() => route.fullPath && (window.history.state?.backdropView || route.path))
+const isFavoriteView = computed(() => /^\/projects\/-1(?:\/|$)/.test(activePath.value))
 const mainNavigation = [
 	{name: 'home', path: '/', label: 'navigation.overview', shortcut: SHORTCUTS.navigation.overview, icon: 'M3 5h18v16H3z M3 10h18 M8 3v4 M16 3v4'},
 	{name: 'tasks.range', path: '/tasks/by/', label: 'navigation.upcoming', shortcut: SHORTCUTS.navigation.upcoming, icon: 'M3 5h18v16H3z M3 10h18 M8 3v4 M16 3v4 M8 14h2 M14 14h2 M8 17h2'},
@@ -170,7 +189,7 @@ const timeTrackingEnabled = computed(() => configStore.isProFeatureEnabled(PRO_F
 const {sidebarWidthStyle, isResizing, startResize, isMobile} = useSidebarResize()
 
 const projects = computed(() => projectList.notArchivedRootProjects)
-const favoriteProjects = computed(() => projectList.favoriteProjects)
+const favoriteProjects = computed(() => projectList.favoriteProjects.filter(project => project.id > 0))
 const savedFilterProjects = computed(() => projectList.savedFilterProjects)
 </script>
 

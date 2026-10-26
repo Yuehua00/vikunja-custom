@@ -155,15 +155,6 @@
 	.home-today .task .progress {
 	max-inline-size: 7rem;
 }
-	.home-today .show-tasks-options {
-	display: flex;
-	flex-wrap: wrap;
-	gap: .5rem;
-	font-size: .8rem;
-}
-	.home-today .show-tasks-options .button {
-	font-size: .75rem;
-}
 
 	.calendar-view.is-print-header {
 		.calendar-toolbar {
@@ -1449,7 +1440,7 @@
 	.print-gantt-day-bands .is-today { box-shadow: inset 2px 0 var(--print-orange); background: var(--print-orange-tint); }
 	.gantt-bar-text { font-size: .75rem; font-weight: 600; }
 	.gantt-progress-fill { pointer-events: none; }
-	.print-gantt-empty { padding: 1.25rem; font-size: .85rem; color: var(--text-muted); max-inline-size: 24rem; }
+	.print-gantt-empty { position: absolute; inset-block-start: 89px; inset-inline-start: 0; margin: 0; pointer-events: none; padding: 1.25rem; font-size: .85rem; color: var(--text-muted); max-inline-size: 24rem; }
 	.gantt-chart-container > form { padding: 1rem 1.25rem; }
 }
 
@@ -1616,7 +1607,6 @@
 	scrollbar-width: none;
 	&::-webkit-scrollbar { display: none; }
 	.resize-handle, .resize-handle:hover, .resize-handle:active { background: transparent; }
-	.print-favorite-projects { margin-block-start: 1rem; }
   padding-block: 1rem;
   .top-menu .menu-list li { margin-inline: 1rem; }
   .top-menu .menu-list li > a { display: flex; align-items: center; gap: .8rem; min-block-size: 44px; padding: .6rem 1rem; font-size: .95rem; font-weight: 600; border-radius: 2px; color: var(--print-blue); }
@@ -1728,7 +1718,6 @@ html.dark .task-detail-view-modal .print-task-detail::after { background-image: 
 .print-empty { margin: 0; padding: 1rem 1.25rem; font-size: .85rem; color: var(--text-muted); }
 #app .print-upcoming-page {
   max-inline-size: 72rem;
-  .show-tasks-options { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; margin-block-end: 1.2rem; }
   .print-upcoming-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 1.5rem; align-items: start; }
   .print-upcoming-aside { display: grid; gap: 1.25rem; min-inline-size: 0; }
   .upcoming-day { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); border-block-start: 1px solid var(--grey-200); }

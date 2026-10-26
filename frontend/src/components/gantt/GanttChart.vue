@@ -37,7 +37,7 @@
 				<GanttVerticalGridLines
 					:timeline-data="timelineData"
 					:total-width="totalWidth"
-					:height="ganttRows.length * 40"
+					:height="totalHeight"
 					:day-width-pixels="dayWidthPixels"
 				/>
 
@@ -49,7 +49,10 @@
 					@enterPressed="handleEnterPressed"
 				>
 					<template #default="{ focusedRow, focusedCell }">
-						<div class="gantt-rows-container">
+						<div
+							class="gantt-rows-container"
+							:style="{minHeight: `${totalHeight}px`, '--gantt-row-height': `${ROW_HEIGHT}px`}"
+						>
 							<!-- Group background bands for parent-child visual grouping -->
 							<div
 								v-for="(band, bandIndex) in parentGroupBands"
@@ -517,6 +520,7 @@ watch(
 
 // Compute bar positions for arrow rendering
 const ROW_HEIGHT = 40
+const MIN_GRID_ROWS = 8
 
 const barPositions = computed(() => {
 	const positions = new Map<number, GanttBarPosition>()
@@ -572,7 +576,7 @@ const relationArrows = computed<GanttArrow[]>(() => {
 	return buildRelationArrows(tasks.value, barPositions.value, hiddenToAncestor.value)
 })
 
-const totalHeight = computed(() => ganttRows.value.length * ROW_HEIGHT)
+const totalHeight = computed(() => Math.max(MIN_GRID_ROWS, ganttRows.value.length) * ROW_HEIGHT)
 
 // Compute parent-child group bands for visual grouping background
 const GROUP_BAND_PADDING = 12
@@ -924,6 +928,7 @@ onUnmounted(() => {
 
 .gantt-rows-container {
 	position: relative;
+	background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--gantt-row-height) - 1px), var(--grey-200) calc(var(--gantt-row-height) - 1px), var(--grey-200) var(--gantt-row-height));
 }
 
 .gantt-group-band {
