@@ -10,20 +10,24 @@
 		</h1>
 		<div class="print-diary-layout">
 			<div class="print-diary-writing">
-				<section class="diary-main print-sheet">
+				<section
+					class="diary-main print-sheet"
+					:aria-busy="isDeleting"
+				>
 					<header class="diary-date-row">
 						<div class="diary-date">
 							<b>{{ dayjs(date).format('DD') }}</b><span>{{ dayjs(date).format('MMM YYYY').toUpperCase() }}<small>{{ dateTitle }}{{ date === today ? '・今天' : '' }}</small></span>
 						</div><div>
 							<XButton
 								variant="tertiary"
+								:disabled="isDeleting"
 								:aria-label="$t('diary.previousDay')"
 								@click="shiftDay(-1)"
 							>
 								‹
 							</XButton><XButton
 								variant="tertiary"
-								:disabled="date >= today"
+								:disabled="date >= today || isDeleting"
 								:aria-label="$t('diary.nextDay')"
 								@click="shiftDay(1)"
 							>
@@ -54,6 +58,7 @@
 							:aria-label="$t(`diary.moods.${mood}`)"
 							:title="$t(`diary.moods.${mood}`)"
 							:aria-pressed="currentMood === mood"
+							:disabled="isDeleting"
 							@click="pickMood(mood)"
 						>
 							<svg
@@ -69,9 +74,12 @@
 							/><path d="M14 14v4 M26 14v4" /><path :d="mood === 'good' ? 'M12 24q8 10 16 0' : mood === 'ok' ? 'M13 26h14' : 'M12 28q8-7 16 0'" /></svg><span>{{ $t(`diary.moods.${mood}`) }}</span>
 						</button>
 					</div>
-					<div class="diary-editor">
+					<div
+						class="diary-editor"
+						:inert="isDeleting"
+					>
 						<Editor
-							:key="date"
+							:key="`${date}-${editorVersion}`"
 							:model-value="text"
 							:placeholder="$t('diary.placeholder')"
 							@update:modelValue="onInput"
@@ -83,6 +91,37 @@
 					>
 						{{ status === 'saving' ? $t('diary.saving') : status === 'saved' ? $t('diary.saved') : '自動儲存' }}
 					</p>
+					<div
+						v-if="entry"
+						class="diary-delete-controls"
+					>
+						<button
+							v-if="!confirmingDelete"
+							type="button"
+							@click="confirmingDelete = true"
+						>
+							刪除這天的日記
+						</button>
+						<template v-else>
+							<p role="alert">
+								確定刪除 {{ date }} 的日記與心情？刪除後無法復原。
+							</p>
+							<button
+								type="button"
+								:disabled="isDeleting"
+								@click="removeEntry"
+							>
+								{{ isDeleting ? '刪除中…' : '確認刪除' }}
+							</button>
+							<button
+								type="button"
+								:disabled="isDeleting"
+								@click="confirmingDelete = false"
+							>
+								取消
+							</button>
+						</template>
+					</div>
 				</section>
 			</div>
 			<aside class="print-diary-aside">
@@ -201,7 +240,7 @@ useTitle(() => t('diary.title'))
 
 const route = useRoute()
 const router = useRouter()
-const {entryByDate, saveText, setMood} = useDiary()
+const {entryByDate, saveText, setMood, deleteEntry} = useDiary()
 
 const today = computed(() => diaryDateKey(new Date()))
 
@@ -255,6 +294,9 @@ const saved = computed(() => entry.value?.description ?? '')
 const text = ref('')
 // Once the user has typed, a reload of the entry must not replace what is in the editor.
 const dirty = ref(false)
+const isDeleting = ref(false)
+const confirmingDelete = ref(false)
+const editorVersion = ref(0)
 const status = ref<'idle' | 'saving' | 'saved'>('idle')
 
 watch(saved, value => {
@@ -263,7 +305,7 @@ watch(saved, value => {
 
 // Saves the text of one day. It is a no-op when nothing was typed, and an empty day is never created.
 async function persist(forDate: string, html: string) {
-	if (!dirty.value) return
+	if (!dirty.value || isDeleting.value) return
 	if (isEditorContentEmpty(html) && !entryByDate.value.has(forDate)) return
 	status.value = 'saving'
 	try {
@@ -278,6 +320,7 @@ async function persist(forDate: string, html: string) {
 const autosave = useDebounceFn(() => persist(date.value, text.value), AUTOSAVE_DELAY)
 
 function onInput(html: string) {
+	if (isDeleting.value) return
 	text.value = html
 	dirty.value = true
 	status.value = 'idle'
@@ -301,6 +344,8 @@ onBeforeUnmount(() => {
 })
 
 function goTo(target: string) {
+	if (isDeleting.value) return
+	confirmingDelete.value = false
 	return router.push({name: 'diary', query: {date: target}})
 }
 
@@ -310,10 +355,28 @@ function shiftDay(days: number) {
 }
 
 async function pickMood(mood: Mood) {
+	if (isDeleting.value) return
 	try {
 		await setMood(date.value, mood)
 	} catch {
 		error({message: t('diary.saveFailed')})
+	}
+}
+
+async function removeEntry() {
+	if (isDeleting.value) return
+	isDeleting.value = true
+	try {
+		await deleteEntry(date.value)
+		dirty.value = false
+		text.value = ''
+		status.value = 'idle'
+		editorVersion.value++
+		confirmingDelete.value = false
+	} catch {
+		error({message: '日記刪除失敗，請稍後再試。'})
+	} finally {
+		isDeleting.value = false
 	}
 }
 

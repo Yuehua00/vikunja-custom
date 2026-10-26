@@ -97,10 +97,10 @@ const showArchived = useStorage('showArchived', false)
 const loading = useDelayedLoading(() => projectList.isLoading)
 const projects = computed(() => {
 	return showArchived.value
-		? projectList.projectsArray
-		: projectList.projectsArray.filter(({is_archived}) => !is_archived)
+		? projectList.visibleProjects
+		: projectList.visibleProjects.filter(({is_archived}) => !is_archived)
 })
-const activeProjectCount = computed(() => projectList.projectsArray.filter(project => project.id > 0 && !project.is_archived).length)
+const activeProjectCount = computed(() => projectList.visibleProjects.filter(project => project.id > 0 && !project.is_archived).length)
 const favoriteProjects = computed(() => projects.value.filter(project => !project.is_archived && (project.id === -1 || project.is_favorite)))
 const allProjects = computed(() => projects.value.filter(project => project.id !== -1))
 </script>

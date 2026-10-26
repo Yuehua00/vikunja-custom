@@ -1,12 +1,20 @@
 <template>
 	<div
 		v-cy="'focusView'"
-		class="focus-view"
+		class="focus-view print-focus-page"
 	>
-		<h1 class="page-title focus-page-title">
-			{{ $t('focus.title') }}
-		</h1>
-		<section class="focus-main">
+		<header class="focus-page-header">
+			<p class="print-page-kicker">
+				FOCUS
+			</p>
+			<h1 class="page-title focus-page-title">
+				{{ $t('focus.title') }}
+			</h1>
+		</header>
+		<section class="focus-main print-sheet">
+			<header class="print-section-bar">
+				<h2>TIMER 計時</h2><span>{{ isRunning ? '專注進行中' : '準備開始' }}</span>
+			</header>
 			<div class="focus-target">
 				<span class="focus-target-label">
 					{{ $t('focus.recordTo') }}
@@ -64,6 +72,33 @@
 					viewBox="0 0 300 300"
 					aria-hidden="true"
 				>
+					<circle
+						cx="150"
+						cy="150"
+						r="108"
+						class="focus-ring-track"
+					/>
+					<circle
+						cx="150"
+						cy="150"
+						r="108"
+						class="focus-ring-progress"
+						:stroke-dasharray="`${litTicks / 60 * 678.584} 678.584`"
+						transform="rotate(-90 150 150)"
+					/>
+					<g
+						:transform="`translate(${150 + 108 * Math.sin(litTicks / 60 * Math.PI * 2)} ${150 - 108 * Math.cos(litTicks / 60 * Math.PI * 2)})`"
+						aria-hidden="true"
+					>
+						<ellipse
+							rx="11"
+							ry="10"
+							class="focus-tomato"
+						/><path
+							d="M0 -5 -5 -10 0 -8 5 -10 3 -5Z"
+							class="focus-tomato-leaf"
+						/>
+					</g>
 					<line
 						v-for="tick in TICKS"
 						:key="tick"
@@ -88,6 +123,16 @@
 				v-if="!isRunning && mode === 'pomo'"
 				class="focus-minutes"
 			>
+				<button
+					v-for="minutes in [15, 25, 45, 60]"
+					:key="minutes"
+					type="button"
+					:class="{'is-selected': pomoMinutes === minutes}"
+					:aria-pressed="pomoMinutes === minutes"
+					@click="setPomoMinutes(minutes)"
+				>
+					{{ minutes }}
+				</button>
 				<label>
 					<input
 						type="number"
@@ -131,99 +176,102 @@
 		</section>
 
 		<aside class="focus-side">
-			<h2 class="focus-side-title">
-				{{ $t('focus.overview') }}
-			</h2>
-			<div class="focus-stats">
-				<div class="focus-stat">
-					<div class="focus-stat-label">
-						{{ $t('focus.todayPomos') }}
-					</div>
-					<div class="focus-stat-value">
-						{{ stats.todayPomos }}
-					</div>
-				</div>
-				<div class="focus-stat">
-					<div class="focus-stat-label">
-						{{ $t('focus.todayDuration') }}
-					</div>
-					<div class="focus-stat-value">
-						{{ formatDuration(stats.todaySeconds) }}
-					</div>
-				</div>
-				<div class="focus-stat">
-					<div class="focus-stat-label">
-						{{ $t('focus.totalPomos') }}
-					</div>
-					<div class="focus-stat-value">
-						{{ stats.totalPomos }}
-					</div>
-				</div>
-				<div class="focus-stat">
-					<div class="focus-stat-label">
-						{{ $t('focus.totalDuration') }}
-					</div>
-					<div class="focus-stat-value">
-						{{ formatDuration(stats.totalSeconds) }}
-					</div>
-				</div>
-			</div>
-
-			<h2 class="focus-side-title">
-				{{ $t('focus.records') }}
-			</h2>
-			<p
-				v-if="days.length === 0"
-				class="focus-empty"
-			>
-				{{ $t('focus.noRecords') }}
-			</p>
-			<div
-				v-for="day in days"
-				:key="day.day"
-				class="focus-day"
-			>
-				<div class="focus-day-title">
-					{{ formatDay(day.day) }}
-				</div>
-				<ul class="focus-records">
-					<li
-						v-for="record in day.records"
-						:key="record.id"
-						class="focus-record"
-					>
-						<div class="focus-record-main">
-							<div class="focus-record-time">
-								{{ formatTime(record.started_at) }} - {{ formatTime(record.ended_at) }}
-							</div>
-							<div class="focus-record-task">
-								<ColorBubble
-									v-if="recordColor(record.project_id)"
-									:color="recordColor(record.project_id)"
-									class="focus-record-bubble"
-								/>
-								{{ record.task_title || $t('focus.noTask') }}
-							</div>
+			<section class="focus-overview print-sheet">
+				<h2 class="focus-side-title">
+					OVERVIEW {{ $t('focus.overview') }}
+				</h2>
+				<div class="focus-stats">
+					<div class="focus-stat">
+						<div class="focus-stat-label">
+							{{ $t('focus.todayPomos') }}
 						</div>
-						<span class="focus-record-duration">{{ formatDuration(record.seconds) }}</span>
-						<BaseButton
-							v-if="pendingDelete !== record.id"
-							class="focus-record-delete"
-							:aria-label="$t('focus.deleteRecord')"
-							@click="pendingDelete = record.id"
+						<div class="focus-stat-value">
+							{{ stats.todayPomos }}
+						</div>
+					</div>
+					<div class="focus-stat">
+						<div class="focus-stat-label">
+							{{ $t('focus.todayDuration') }}
+						</div>
+						<div class="focus-stat-value">
+							{{ formatDuration(stats.todaySeconds) }}
+						</div>
+					</div>
+					<div class="focus-stat">
+						<div class="focus-stat-label">
+							{{ $t('focus.totalPomos') }}
+						</div>
+						<div class="focus-stat-value">
+							{{ stats.totalPomos }}
+						</div>
+					</div>
+					<div class="focus-stat">
+						<div class="focus-stat-label">
+							{{ $t('focus.totalDuration') }}
+						</div>
+						<div class="focus-stat-value">
+							{{ formatDuration(stats.totalSeconds) }}
+						</div>
+					</div>
+				</div>
+			</section>
+			<section class="focus-log print-sheet">
+				<h2 class="focus-side-title">
+					LOG {{ $t('focus.records') }}
+				</h2>
+				<p
+					v-if="days.length === 0"
+					class="focus-empty"
+				>
+					{{ $t('focus.noRecords') }}
+				</p>
+				<div
+					v-for="day in days"
+					:key="day.day"
+					class="focus-day"
+				>
+					<div class="focus-day-title">
+						{{ formatDay(day.day) }}
+					</div>
+					<ul class="focus-records">
+						<li
+							v-for="record in day.records"
+							:key="record.id"
+							class="focus-record"
 						>
-							<Icon icon="trash-alt" />
-						</BaseButton>
-						<BaseButton
-							v-else
-							class="focus-record-confirm"
-							@click="confirmDelete(record.id)"
-						>
-							{{ $t('focus.confirmDelete') }}
-						</BaseButton>
-					</li>
-				</ul>
-			</div>
+							<div class="focus-record-main">
+								<div class="focus-record-time">
+									{{ formatTime(record.started_at) }} - {{ formatTime(record.ended_at) }}
+								</div>
+								<div class="focus-record-task">
+									<ColorBubble
+										v-if="recordColor(record.project_id)"
+										:color="recordColor(record.project_id)"
+										class="focus-record-bubble"
+									/>
+									{{ record.task_title || $t('focus.noTask') }}
+								</div>
+							</div>
+							<span class="focus-record-duration">{{ formatDuration(record.seconds) }}</span>
+							<BaseButton
+								v-if="pendingDelete !== record.id"
+								class="focus-record-delete"
+								:aria-label="$t('focus.deleteRecord')"
+								@click="pendingDelete = record.id"
+							>
+								<Icon icon="trash-alt" />
+							</BaseButton>
+							<BaseButton
+								v-else
+								class="focus-record-confirm"
+								@click="confirmDelete(record.id)"
+							>
+								{{ $t('focus.confirmDelete') }}
+							</BaseButton>
+						</li>
+					</ul>
+				</div>
+			</section>
 		</aside>
 	</div>
 </template>

@@ -413,14 +413,7 @@
 						:can-write="canWrite"
 						:backdrop-view="backdropView"
 					/>
-					<!-- Reactions -->
-					<Reactions
-						:model-value="task.reactions"
-						entity-kind="tasks"
-						:entity-id="task.id"
-						class="details d-print-none"
-						:disabled="!canWrite"
-					/>
+
 
 					<!-- Attachments -->
 					<div
@@ -486,12 +479,22 @@
 						</div>
 					</div>
 
-					<!-- Comments -->
-					<Comments
-						:can-write="canWrite"
-						:task-id="taskId"
-						:project-id="task.project_id"
-					/>
+					<section class="task-comments-section">
+						<!-- Reactions -->
+						<Reactions
+							:model-value="task.reactions"
+							entity-kind="tasks"
+							:entity-id="task.id"
+							class="task-comment-reactions d-print-none"
+							:disabled="!canWrite"
+						/>
+						<!-- Comments -->
+						<Comments
+							:can-write="canWrite"
+							:task-id="taskId"
+							:project-id="task.project_id"
+						/>
+					</section>
 
 					<!-- Marker element for scroll-to-bottom button visibility -->
 					<div

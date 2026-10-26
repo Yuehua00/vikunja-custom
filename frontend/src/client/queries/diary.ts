@@ -8,6 +8,7 @@ import {allTasksQuery} from '@/client/queries/tasks'
 import {
 	useAddTaskLabelMutation,
 	useCreateTaskMutation,
+	useDeleteTaskMutation,
 	useRemoveTaskLabelMutation,
 	useUpdateTaskMutation,
 } from '@/client/queries/taskMutations'
@@ -36,6 +37,7 @@ export function useDiary() {
 	const createLabel = useCreateLabelMutation()
 	const createTask = useCreateTaskMutation()
 	const updateTask = useUpdateTaskMutation()
+	const deleteTask = useDeleteTaskMutation()
 	const addLabel = useAddTaskLabelMutation()
 	const removeLabel = useRemoveTaskLabelMutation()
 
@@ -67,7 +69,7 @@ export function useDiary() {
 	const moodByDate = computed(() => {
 		const moods = new Map<string, Mood>()
 		for (const [date, task] of entryByDate.value) {
-			const mood = moodOf(task.labels)
+			const mood = moodOf(task.labels ?? undefined)
 			if (mood) moods.set(date, mood)
 		}
 		return moods
@@ -108,28 +110,54 @@ export function useDiary() {
 		})
 	}
 
-	async function saveText(date: string, description: string) {
+	async function writeText(date: string, description: string) {
 		const entry = await getOrCreateEntry(date)
 		const latest = entryByDate.value.get(date) ?? entry
 		await updateTask.mutateAsync({...latest, description, done: true} as UpdatableTask)
 	}
 
 	// Picking the mood that is already set clears it.
-	async function setMood(date: string, mood: Mood) {
+	async function writeMood(date: string, mood: Mood) {
 		const entry = await getOrCreateEntry(date)
 		const current = entryByDate.value.get(date) ?? entry
 		const taskId = entry.id as number
-		const wanted = moodOf(current.labels) === mood ? undefined : mood
+		const wanted = moodOf(current.labels ?? undefined) === mood ? undefined : mood
 
 		for (const old of MOODS.filter(item => item !== wanted)) {
 			const label = (current.labels ?? []).find(item => item.title === moodLabelTitle(old))
 			if (label?.id) await removeLabel.mutateAsync({taskId, label: {...label, id: label.id}})
 		}
-		if (wanted && moodOf(current.labels) !== wanted) {
+		if (wanted && moodOf(current.labels ?? undefined) !== wanted) {
 			const label = await ensureMoodLabel(wanted)
 			await addLabel.mutateAsync({taskId, label: {...label, id: label.id as number}})
 		}
 		await query.refetch()
+	}
+
+	// Serialize each day's writes and deletion so an in-flight autosave cannot recreate a deleted entry.
+	const operations = new Map<string, Promise<unknown>>()
+	function enqueue<T>(date: string, operation: () => Promise<T>): Promise<T> {
+		const previous = operations.get(date) ?? Promise.resolve()
+		const next = previous.catch(() => undefined).then(operation)
+		operations.set(date, next)
+		void next.finally(() => {
+			if (operations.get(date) === next) operations.delete(date)
+		}).catch(() => undefined)
+		return next
+	}
+	function saveText(date: string, description: string) {
+		return enqueue(date, () => writeText(date, description))
+	}
+	function setMood(date: string, mood: Mood) {
+		return enqueue(date, () => writeMood(date, mood))
+	}
+	function deleteEntry(date: string) {
+		return enqueue(date, async () => {
+			const entry = entryByDate.value.get(date)
+			if (!entry?.id) return
+			await deleteTask.mutateAsync(entry.id)
+			await query.refetch()
+		})
 	}
 
 	return {
@@ -139,5 +167,6 @@ export function useDiary() {
 		moodByDate,
 		saveText,
 		setMood,
+		deleteEntry,
 	}
 }

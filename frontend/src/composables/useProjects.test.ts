@@ -50,6 +50,16 @@ function projectListWith(list: Partial<ProjectListResult>) {
 }
 
 describe('useProjects', () => {
+	it('hides diary from project lists while keeping diary storage accessible', () => {
+		const diary = normalizeProject({id: 91, title: '日記', is_favorite: true})
+		const regular = normalizeProject({id: 92, title: 'Research'})
+		const list = projectListWith({projects: [diary, regular]})
+		expect(list.visibleProjects.map(project => project.id)).toEqual([92])
+		expect(list.notArchivedRootProjects.map(project => project.id)).toEqual([92])
+		expect(list.favoriteProjects.map(project => project.id)).not.toContain(91)
+		expect(list.projectsArray.find(project => project.id === 91)).toEqual(diary)
+	})
+
 	beforeEach(() => {
 		queryClient.clear()
 		removeToken()

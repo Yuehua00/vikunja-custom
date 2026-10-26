@@ -9,6 +9,7 @@ import {
 } from '@/client/queries/projects'
 import type {ProjectResponse} from '@/client/queries/projects'
 import {queryClient} from '@/client/queryClient'
+import {DIARY_PROJECT_TITLE} from '@/helpers/diary'
 
 function sortByPosition(projects: ProjectResponse[]): ProjectResponse[] {
 	return [...projects].sort((a, b) => a.position - b.position)
@@ -57,12 +58,12 @@ const useSharedProjects = createSharedComposable(() => {
 		projectsArray.value.map(project => [project.id, project]),
 	))
 	const rootProjects = computed(() => sortByPosition(realProjects.value.filter(project =>
-		!project.is_archived && (project.parent_project_id === 0 || isOrphaned(realProjects.value, project)),
+		project.title !== DIARY_PROJECT_TITLE && !project.is_archived && (project.parent_project_id === 0 || isOrphaned(realProjects.value, project)),
 	)))
 	const favoriteProjects = computed(() => [
 		...(favoriteProject.value ? [favoriteProject.value] : []),
 		...savedFilterProjects.value.filter(project => !project.is_archived && project.is_favorite),
-		...sortByPosition(realProjects.value.filter(project => !project.is_archived && project.is_favorite)),
+		...sortByPosition(realProjects.value.filter(project => project.title !== DIARY_PROJECT_TITLE && !project.is_archived && project.is_favorite)),
 	])
 	const hasProjects = computed(() => projectsArray.value.length > 0)
 
@@ -95,6 +96,7 @@ export function useProjects() {
 	const state = reactive({
 		projects,
 		projectsArray,
+		visibleProjects: computed(() => projectsArray.value.filter(project => project.title !== DIARY_PROJECT_TITLE)),
 		notArchivedRootProjects: rootProjects,
 		favoriteProject,
 		savedFilterProjects,

@@ -812,7 +812,7 @@
 	}
 	.list-view__add-task {
 		padding: .9rem 1.25rem;
-		background: var(--print-green-tint);
+		background: var(--primary-light);
 	}
 	.list-view__add-task .field, .list-view__add-task .control {
 		margin-block-end: 0;
@@ -1839,4 +1839,55 @@ html.dark .task-detail-view-modal .print-task-detail::after { background-image: 
   #app .print-upcoming-page .print-task-row { grid-template-columns: 24px minmax(0, 1fr); }
   #app .print-upcoming-page .print-row-end { grid-column: 2; }
   #app .print-diary-page .diary-date b { font-size: 3rem; }
+}
+
+
+#app .print-focus-page {
+  max-inline-size: 72rem;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  .focus-page-header { grid-column: 1 / -1; }
+  .focus-main { padding: 0 0 1.5rem; border: 0; border-radius: 0; }
+  .print-section-bar { margin-block-end: 1.25rem; }
+  .focus-target { padding-inline: 1.25rem; }
+  .focus-target-label { color: var(--print-blue); font-weight: 700; }
+  .focus-target-hint { font-size: .8rem; }
+  .focus-side { display: grid; gap: 1.25rem; padding: 0; border: 0; border-radius: 0; background: transparent; }
+  .focus-side-title { font-family: $display-font; padding: 1rem 1.1rem .7rem; margin: 0; font-size: 1rem; letter-spacing: .04em; color: var(--text); }
+  .focus-stats { gap: 0; padding: 0; }
+  .focus-stat { padding: 1rem 1.1rem; border: 1px solid var(--grey-200); border-radius: 0; background: transparent; }
+  .focus-stat:nth-child(-n+2) { background: var(--primary-light); }
+  .focus-stat-value { color: var(--print-green); font-size: 2rem; }
+  .focus-day-title { padding: .6rem 1.1rem; margin: 0; color: var(--print-blue); background: var(--grey-100); }
+  .focus-day { margin: 0; }
+  .focus-records { padding-inline: 1.1rem; }
+  .focus-record { border-radius: 0; border-block-end: 1px solid var(--grey-200); }
+  .focus-empty { padding: 1rem 1.1rem; }
+  .focus-modes { border-radius: 2px; padding: 0; background: transparent; gap: .5rem; }
+  .focus-mode { border: 1px solid var(--print-green); border-radius: 2px; color: var(--print-green); }
+  .focus-mode.is-selected { background: var(--print-green); color: white; box-shadow: none; }
+  .focus-dial { inline-size: min(100%, 340px); }
+  .focus-tick { stroke: var(--print-green); opacity: .65; }
+  .focus-tick.is-lit { stroke: var(--print-green); opacity: 1; }
+  .focus-time { color: var(--print-green); font-family: $display-font; }
+  .focus-ring-track { fill: none; stroke: var(--grey-200); stroke-width: 12; }
+  .focus-ring-progress { fill: none; stroke: var(--print-green); stroke-width: 12; }
+  .focus-tomato { fill: var(--print-orange); stroke: white; stroke-width: 2; }
+  .focus-tomato-leaf { fill: var(--print-green); }
+  .focus-minutes { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; }
+  .focus-minutes > button { padding: .4rem .7rem; background: transparent; color: var(--print-green); border: 1px solid var(--print-green); cursor: pointer; }
+  .focus-minutes > button.is-selected { background: var(--print-green); color: white; }
+  .focus-actions { padding-inline: 1.25rem; }
+  @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); }
+}
+#app .print-task-detail {
+  .task-comments-section { position: relative; background: var(--white); }
+  .task-comment-reactions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .4rem; margin: 0; padding: .4rem 1rem; background: var(--print-green-soft); }
+  .task-comments-section .comments-container { margin-block-start: 0; }
+  .task-comment-reactions .reaction-button { margin-block: 0; }
+}
+#app .diary-delete-controls {
+  padding: .75rem 1.25rem; border-block-start: 1px solid var(--grey-200);
+  p { margin-block-end: .5rem; }
+  button { padding: .4rem .65rem; margin-inline-end: .5rem; border: 1px solid var(--grey-300); background: transparent; color: var(--danger); cursor: pointer; }
+  button:disabled { opacity: .5; cursor: wait; }
 }
