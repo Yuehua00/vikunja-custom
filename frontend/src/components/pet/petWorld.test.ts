@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {chooseRoamTarget, clampPet, planWalkPath, roamPoints, safeLanding, sampleSomersault, sampleWalk, walkingPathClear} from './petWorld'
+import {chooseRoamTarget, clampPet, planWalkPath, roamPoints, safeLanding, sampleSomersault, sampleWalk, somersaultCrop, walkingPathClear} from './petWorld'
 
 describe('free roaming panda routes', () => {
 	it('walks diagonally with both coordinates changing, and lands exactly at the destination', () => {
@@ -65,5 +65,19 @@ describe('generated somersault animation', () => {
 		}
 		expect(frames.size).toBe(16)
 		expect(sampleSomersault({x: 100, y: 200}, {x: 172, y: 200}, 1600)).toMatchObject({point: {x: 172, y: 200}, frame: 15, done: true})
+	})
+})
+
+
+describe('somersault atlas crop isolation', () => {
+	it('keeps uneven rows inside their own gutters with no overlap', () => {
+		for (let frame = 0; frame < 12; frame++) {
+			const crop = somersaultCrop(frame)
+			const below = somersaultCrop(frame + 4)
+			expect(crop.y + crop.height).toBeLessThanOrEqual(below.y)
+		}
+		expect(somersaultCrop(4).y).toBe(345)
+		expect(somersaultCrop(8).y).toBe(650)
+		expect(somersaultCrop(15)).toEqual({x: 950, y: 930, width: 304, height: 324})
 	})
 })

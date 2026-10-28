@@ -551,3 +551,113 @@ describe('task mutations', () => {
 		unsubscribe()
 	})
 })
+
+
+describe('pet completion feedback after task saves', () => {
+	it('responds after a successful completion and ignores edits to completed tasks', async () => {
+		const client = new QueryClient()
+		client.setQueryData(taskKeys.detail(81), {id: 81, done: false})
+		const listener = vi.fn()
+		window.addEventListener('vikunja:pet-task-completed', listener)
+		try {
+			sdk.patchTasksRead.mockResolvedValue({data: {id: 81, done: true}})
+			await client.getMutationCache().build(client, updateTaskMutationOptions(true)).execute({id: 81, done: true})
+			expect(listener).toHaveBeenCalledTimes(1)
+			await client.getMutationCache().build(client, updateTaskMutationOptions(true)).execute({id: 81, done: true, title: 'edit'})
+			expect(listener).toHaveBeenCalledTimes(1)
+		} finally {window.removeEventListener('vikunja:pet-task-completed', listener)}
+	})
+	it('does not celebrate an optimistic update that fails', async () => {
+		const client = new QueryClient()
+		client.setQueryData(taskKeys.detail(82), {id: 82, done: false})
+		const listener = vi.fn()
+		window.addEventListener('vikunja:pet-task-completed', listener)
+		try {
+			sdk.patchTasksRead.mockRejectedValue(new Error('save failed'))
+			await expect(client.getMutationCache().build(client, updateTaskMutationOptions(true)).execute({id: 82, done: true})).rejects.toThrow('save failed')
+			expect(listener).not.toHaveBeenCalled()
+		} finally {window.removeEventListener('vikunja:pet-task-completed', listener)}
+	})
+})
+
+
+describe('delete task synchronization across home sections', () => {
+	it('does not let an older calendar request restore a deleted task', async () => {
+		const client = new QueryClient()
+		const calendar = taskKeys.allList({params: {filter: 'due_date >= "2026-10-01"'}})
+		const upcoming = taskKeys.allList({params: {filter: 'done = false'}})
+		const list = taskKeys.list({})
+		const task = {id: 83, done: false, title: 'deleted task'}
+		client.setQueryData(calendar, [task])
+		client.setQueryData(upcoming, [task])
+		client.setQueryData(list, {items: [task], total: 1})
+		let release!: (tasks: Task[]) => void
+		const pending = client.fetchQuery({queryKey: calendar, queryFn: () => new Promise<Task[]>(resolve => {release = resolve})}).catch(() => undefined)
+		sdk.tasksDelete.mockResolvedValue({})
+		await client.getMutationCache().build(client, deleteTaskMutationOptions()).execute(83)
+		release([task])
+		await pending
+		expect(client.getQueryData(calendar)).toEqual([])
+		expect(client.getQueryData(upcoming)).toEqual([])
+		expect(client.getQueryData<PaginatedTask>(list)?.items).toEqual([])
+	})
+	it('also cancels the first calendar load even when no cached data contains the task yet', async () => {
+		const client = new QueryClient()
+		const calendar = taskKeys.allList({params: {filter: 'due_date >= "2026-11-01"'}})
+		let release!: (tasks: Task[]) => void
+		const pending = client.fetchQuery({queryKey: calendar, queryFn: () => new Promise<Task[]>(resolve => {release = resolve})}).catch(() => undefined)
+		sdk.tasksDelete.mockResolvedValue({})
+		await client.getMutationCache().build(client, deleteTaskMutationOptions()).execute(84)
+		release([{id: 84}])
+		await pending
+		expect(client.getQueryData(calendar) ?? []).toEqual([])
+	})
+	it('keeps other sections intact when deletion fails', async () => {
+		const client = new QueryClient()
+		const calendar = taskKeys.allList({})
+		client.setQueryData(calendar, [{id: 85}])
+		sdk.tasksDelete.mockRejectedValue(new Error('denied'))
+		await expect(client.getMutationCache().build(client, deleteTaskMutationOptions()).execute(85)).rejects.toThrow('denied')
+		expect(client.getQueryData(calendar)).toEqual([{id: 85}])
+	})
+})
+
+
+describe('shared task views stay consistent', () => {
+	it('refreshes an open date-filtered calendar when an edit moves a task into it', async () => {
+		const client = new QueryClient()
+		const calendar = taskKeys.allList({params: {filter: 'due_date >= "2026-11-01"'}})
+		let saved = false
+		const task = {id: 86, due_date: '2026-11-02T12:00:00Z', done: false}
+		const queryFn = vi.fn(async () => saved ? [task] : [])
+		const stop = new QueryObserver(client, {queryKey: calendar, queryFn}).subscribe(() => {})
+		try {
+			await vi.waitFor(() => expect(client.getQueryData(calendar)).toEqual([]))
+			sdk.patchTasksRead.mockImplementation(() => {saved = true; return {data: task}})
+			await client.getMutationCache().build(client, updateTaskMutationOptions()).execute({id: 86, due_date: task.due_date})
+			expect(client.getQueryData(calendar)).toEqual([task])
+			expect(queryFn).toHaveBeenCalledTimes(2)
+		} finally {stop()}
+	})
+	it('removes the same task from lists, calendars, boards and nested copies', async () => {
+		const client = new QueryClient()
+		const task = {id: 87, project_id: 1, title: 'gone'}
+		const list = taskKeys.list({project: 1})
+		const calendar = taskKeys.allList({params: {filter: 'due_date >= "2026-10-01"'}})
+		const gantt = taskKeys.allList({project: 1, view: 10})
+		const board = kanbanKeys.board(1, 12)
+		const parent = {id: 88, related_tasks: {subtask: [task]}}
+		client.setQueryData(list, {items: [task, parent], total: 2})
+		client.setQueryData(calendar, [task])
+		client.setQueryData(gantt, [task])
+		client.setQueryData(taskKeys.detail(87), task)
+		client.setQueryData(board, {buckets: [normalizeBucket({id: 4, count: 2, tasks: [task, parent]})], pages: {4: 2}})
+		sdk.tasksDelete.mockResolvedValue({})
+		await client.getMutationCache().build(client, deleteTaskMutationOptions()).execute(87)
+		expect(client.getQueryData(calendar)).toEqual([])
+		expect(client.getQueryData(gantt)).toEqual([])
+		expect(client.getQueryData(taskKeys.detail(87))).toBeUndefined()
+		expect(client.getQueryData<PaginatedTask>(list)).toMatchObject({total: 1, items: [{id: 88, related_tasks: {subtask: []}}]})
+		expect(client.getQueryData<BoardData>(board)).toMatchObject({buckets: [{count: 1, tasks: [{id: 88, related_tasks: {subtask: []}}]}], pages: {4: 2}})
+	})
+})

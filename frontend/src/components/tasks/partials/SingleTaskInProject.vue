@@ -54,7 +54,16 @@
 						>
 							{{ project.title }}
 						</RouterLink>
-						<span v-if="task.done">・已完成</span><span v-else-if="inProgress">・處理中</span><span v-else-if="paused">・暫停中</span>
+						<span
+							v-if="task.done"
+							class="print-row-meta-state"
+						>・已完成</span><span
+							v-else-if="inProgress"
+							class="print-row-meta-state"
+						>・處理中</span><span
+							v-else-if="paused"
+							class="print-row-meta-state"
+						>・暫停中</span>
 					</div>
 				</div>
 				<div class="print-row-end">
@@ -163,10 +172,6 @@
 						class="project-state-chip is-important"
 						:title="`重要度 ${task.importance} / 5`"
 					>重要</span>
-					<span
-						v-if="priorityLevel === 'urgent'"
-						class="project-state-chip is-important"
-					>緊急</span>
 					<Labels
 						v-if="(task.labels?.length ?? 0) > 0"
 						:labels="task.labels ?? []"
@@ -180,6 +185,10 @@
 					/>
 				</div>
 				<div class="project-row-due">
+					<span
+						v-if="!task.done && priorityLevel === 'urgent'"
+						class="print-row-urgent project-row-urgent"
+					><Icon icon="exclamation-circle" /> 緊急</span>
 					<span
 						v-if="!task.done && printOverdueDays > 0"
 						class="project-overdue"

@@ -133,3 +133,13 @@ export function sampleSomersault(start: PetPoint, end: PetPoint, elapsed: number
 	return {point: {x: start.x + (end.x - start.x) * travel, y: start.y + (end.y - start.y) * travel},
 		frame: Math.min(15, Math.floor(t * 16)), done: t === 1}
 }
+
+// Measured atlas gutters, not an assumed equal 4x4 grid. Coordinates use the 1254px source.
+export function somersaultCrop(frame: number) {
+	const index = Math.min(15, Math.max(0, Math.floor(frame)))
+	const columns = [0, 320, 640, 950, 1254]
+	const rows = [0, 345, 650, 930, 1254]
+	const col = index % 4
+	const row = Math.floor(index / 4)
+	return {x: columns[col], y: rows[row], width: columns[col + 1] - columns[col], height: rows[row + 1] - rows[row]}
+}

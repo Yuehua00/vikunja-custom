@@ -1,6 +1,11 @@
 <template>
 	<Teleport to="body">
 		<div class="web-pet-layer d-print-none">
+			<span
+				v-if="completionStamp"
+				class="pet-completion-stamp"
+				role="status"
+			>已完成</span>
 			<button
 				v-if="hidden"
 				class="pet-return"
@@ -58,7 +63,21 @@
 							preserveAspectRatio="xMidYMax meet"
 							aria-hidden="true"
 						>
+							<defs>
+								<clipPath
+									id="panda-roll-frame"
+									clipPathUnits="userSpaceOnUse"
+								>
+									<rect
+										:x="rollCrop.x"
+										:y="rollCrop.y"
+										:width="rollCrop.width"
+										:height="rollCrop.height"
+									/>
+								</clipPath>
+							</defs>
 							<image
+								clip-path="url(#panda-roll-frame)"
 								:href="`${BASE_URL}pet/panda/somersault-cycle.png`"
 								:width="rollAtlas.width"
 								:height="rollAtlas.height"
@@ -121,7 +140,7 @@
 							收起熊貓
 						</button>
 					</div>
-					<small>可以抱起她，放到空白處；她會自己找路散步。</small>
+					<small>可以抱起她，放到空白處；她會自己找路散步。雙擊空白處可以叫她過來，專注時會安靜陪伴。</small>
 				</section>
 			</template>
 		</div>
@@ -131,12 +150,18 @@
 <script setup lang="ts">
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
+import {createEffectGate, isPetBlankArea, PET_COMPLETION_EVENT} from './petEffects'
 import {useAuthStore} from '@/stores/auth'
-import {chooseRoamTarget, clampPet, petRegion, planWalkPath, roamPoints, safeLanding, sampleSomersault, sampleWalk, walkingPathClear, type PetMotionPhase, type PetPoint, type PetRect} from './petWorld'
+import {chooseRoamTarget, clampPet, petRegion, planWalkPath, roamPoints, safeLanding, sampleSomersault, sampleWalk, somersaultCrop, walkingPathClear, type PetMotionPhase, type PetPoint, type PetRect} from './petWorld'
 
 const {BASE_URL} = import.meta.env
 const auth = useAuthStore()
 const route = useRoute()
+const focusing = computed(() => !!auth.settings?.frontend_settings?.focus_active)
+const completionStamp = ref(false)
+const allowCompletion = createEffectGate(4500)
+const allowProximity = createEffectGate(10000)
+let stampTimer: ReturnType<typeof setTimeout> | undefined
 const storageKey = `vikunja:web-pet:${auth.info?.id ?? 'local'}`
 // These are individual poses, never cycled as fake animation frames.
 const poses = {
@@ -163,10 +188,10 @@ const walkViewBox = computed(() => {
 	const feet = [446, 446, 443, 412, 412, 411][walkFrame.value]
 	return [(walkFrame.value % 3) * 512, Math.floor(walkFrame.value / 3) * 512 + feet - 320, 512, 330]
 })
+const rollCrop = computed(() => somersaultCrop(rollFrame.value))
 const rollViewBox = computed(() => {
-	const width = rollAtlas.value.width / 4
-	const height = rollAtlas.value.height / 4
-	return [(rollFrame.value % 4) * width, Math.floor(rollFrame.value / 4) * height, width, height]
+	const crop = rollCrop.value
+	return [crop.x + crop.width / 2 - 175, crop.y + crop.height - 350, 350, 350]
 })
 const motionImage = computed(() => held.value ? 9 : selectedImage.value)
 const panel = ref(false)
@@ -206,9 +231,9 @@ function stop() {
 	moving.value = false
 	motionPhase.value = 'idle'
 }
-function blocked() {
+function blocked(ignoreInput = false) {
 	const focused = document.activeElement
-	return document.hidden || !!focused?.closest('input, textarea, [contenteditable="true"]') ||
+	return document.hidden || (!ignoreInput && !!focused?.closest('input, textarea, [contenteditable="true"]')) ||
 		Array.from(document.querySelectorAll('[role="dialog"], dialog[open], .modal-container')).some(element => element.getBoundingClientRect().width > 0)
 }
 function obstacles(): PetRect[] {
@@ -229,7 +254,7 @@ function finishMotion() {
 	remember(position.value)
 	pausedUntil = Date.now() + 1800 + Math.random() * 2200
 }
-function travel(path: PetPoint[]) {
+function travel(path: PetPoint[], summoned = false) {
 	if (reduceAnimations.value || !walkReady.value || path.length < 2) return false
 	stop()
 	const avoid = obstacles()
@@ -237,7 +262,7 @@ function travel(path: PetPoint[]) {
 	motionPhase.value = 'walk'
 	const began = performance.now()
 	function step(now: number) {
-		if (blocked() || held.value) {stop(); return}
+		if (blocked(summoned) || held.value) {stop(); return}
 		const sample = sampleWalk(path, now - began)
 		if (!safeLanding(sample.point, size.value, avoid)) {stop(); return}
 		position.value = sample.point
@@ -250,7 +275,7 @@ function travel(path: PetPoint[]) {
 	return true
 }
 function wander() {
-	if (hidden.value || sleeping.value || held.value || moving.value || panel.value || blocked() || Date.now() < pausedUntil || reduceAnimations.value) return
+	if (focusing.value || hidden.value || sleeping.value || held.value || moving.value || panel.value || blocked() || Date.now() < pausedUntil || reduceAnimations.value) return
 	if (!hasSpace.value) {updateGeometry(); return}
 	if (Math.random() < .18 && rollReady.value && somersault()) return
 	if (Math.random() < .2) {
@@ -274,7 +299,7 @@ function wander() {
 	choosePose('look')
 }
 function somersault() {
-	if (reduceAnimations.value || !rollReady.value || blocked() || held.value || !hasSpace.value) return false
+	if (focusing.value || reduceAnimations.value || !rollReady.value || blocked() || held.value || !hasSpace.value) return false
 	const avoid = obstacles()
 	const start = {...position.value}
 	const destinations = [facing.value, -facing.value].map(direction => clampPet({x: start.x + direction * size.value * .9, y: start.y}, viewport.value.width, viewport.value.height, size.value))
@@ -363,6 +388,37 @@ function restore() {hidden.value = false; sleeping.value = false; choosePose('wa
 function outside(event: PointerEvent) {
 	if (panel.value && event.target instanceof Node && !petButton.value?.contains(event.target) && !panelElement.value?.contains(event.target)) panel.value = false
 }
+function completedTask() {
+	if (document.hidden || !allowCompletion()) return
+	completionStamp.value = true
+	clearTimeout(stampTimer)
+	stampTimer = setTimeout(() => {completionStamp.value = false}, 1800)
+	if (!hidden.value && !held.value && !sleeping.value && !focusing.value && !blocked(true)) react('wave', '又完成一件事了！')
+}
+function cursorNearby(event: PointerEvent) {
+	if (event.pointerType !== 'mouse' || hidden.value || sleeping.value || focusing.value || held.value || moving.value || panel.value || blocked()) return
+	const dx = event.clientX - position.value.x - size.value / 2
+	const dy = event.clientY - position.value.y - size.value / 2
+	if (Math.hypot(dx, dy) > 130 || !allowProximity()) return
+	facing.value = dx < 0 ? -1 : 1
+	react('look', '我在這裡陪你。')
+}
+function summon(event: MouseEvent) {
+	if (event.button !== 0 || hidden.value || sleeping.value || focusing.value || held.value || reduceAnimations.value || blocked(true) || !isPetBlankArea(event.target)) return
+	const avoid = obstacles()
+	const points = roamPoints(viewport.value.width, viewport.value.height, size.value, avoid)
+	points.sort((a, b) => Math.hypot(a.x - event.clientX, a.y - event.clientY) - Math.hypot(b.x - event.clientX, b.y - event.clientY))
+	const target = points[0]
+	if (!target || Math.hypot(target.x - event.clientX, target.y - event.clientY) > 180) return
+	const path = planWalkPath(position.value, target, viewport.value.width, viewport.value.height, size.value, avoid)
+	if (path) {panel.value = false; travel(path, true); status.value = '我過來陪你。'}
+	else {react('look', '這裡過不去，換個空位叫我吧。')}
+}
+watch(focusing, (active, previous) => {
+	stop(); clearTimeout(reactionTimer); bubble.value = ''
+	if (active) {choosePose('rest'); status.value = '專注中，安靜陪你。'}
+	else if (previous && !hidden.value && !sleeping.value) react('stretch', '計時結束，休息一下吧。')
+})
 function keydown(event: KeyboardEvent) {if (event.key === 'Escape') panel.value = false}
 function visibility() {if (document.hidden) stop()}
 function motionChanged() {reduceAnimations.value = motionPreference?.matches ?? false; if (reduceAnimations.value) stop()}
@@ -385,9 +441,12 @@ onMounted(() => {
 	} catch { /* Ignore unavailable or invalid storage. */ }
 	motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
 	motionChanged(); motionPreference.addEventListener('change', motionChanged)
-	updateGeometry(); choosePose(sleeping.value ? 'sleep' : 'idle')
+	updateGeometry(); choosePose(sleeping.value ? 'sleep' : focusing.value ? 'rest' : 'idle')
 	pausedUntil = Date.now() + 1800
 	timer = setInterval(wander, 2200)
+	window.addEventListener(PET_COMPLETION_EVENT, completedTask)
+	document.addEventListener('pointermove', cursorNearby)
+	document.addEventListener('dblclick', summon)
 	window.addEventListener('resize', queueGeometry)
 	window.addEventListener('scroll', queueGeometry, true)
 	document.addEventListener('pointerdown', outside)
@@ -399,6 +458,10 @@ onBeforeUnmount(() => {
 	motionPreference?.removeEventListener('change', motionChanged)
 	if (walkImage) walkImage.onload = null
 	if (rollImage) {rollImage.onload = null; rollImage.onerror = null}
+	clearTimeout(stampTimer)
+	window.removeEventListener(PET_COMPLETION_EVENT, completedTask)
+	document.removeEventListener('pointermove', cursorNearby)
+	document.removeEventListener('dblclick', summon)
 	window.removeEventListener('resize', queueGeometry)
 	window.removeEventListener('scroll', queueGeometry, true)
 	document.removeEventListener('pointerdown', outside)
@@ -408,6 +471,18 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
+.pet-completion-stamp {
+	position: fixed;
+	inset-block-start: 85px;
+	inset-inline-end: 28px;
+	padding: 8px 18px;
+	border: 2px solid #205843;
+	background: #f3faf5;
+	color: #205843;
+	font-weight: 700;
+	box-shadow: 0 3px 12px #00000016;
+}
+
 .web-pet-layer {
 	position: fixed;
 	inset: 0;

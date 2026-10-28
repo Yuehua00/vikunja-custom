@@ -50,6 +50,17 @@ function mountRow(props: {printRow?: boolean, projectRow?: boolean} = {}) {
 }
 
 describe('SingleTaskInProject', () => {
+	it('places project urgency beside the date and hides it for completed tasks', async () => {
+		const wrapper = mountRow({projectRow: true})
+		for (const due_date of ['2020-01-01T00:00:00Z', undefined]) {
+			await wrapper.setProps({theTask: {...theTask, done: false, priority: 5, due_date}})
+			expect(wrapper.get('.project-row-due .print-row-urgent').text()).toContain('緊急')
+			expect(wrapper.find('.project-row-state .print-row-urgent').exists()).toBe(false)
+		}
+		await wrapper.setProps({theTask: {...theTask, done: true, priority: 5}})
+		expect(wrapper.find('.project-row-urgent').exists()).toBe(false)
+		wrapper.unmount()
+	})
 	it('keeps urgency in the status area with or without an overdue date', async () => {
 		const wrapper = mountRow({printRow: true})
 		for (const due_date of ['2020-01-01T00:00:00Z', undefined]) {

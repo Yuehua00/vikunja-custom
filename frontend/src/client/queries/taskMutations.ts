@@ -1,3 +1,4 @@
+import {announceTaskCompletion} from '@/components/pet/petEffects'
 import {useMutation, type QueryClient} from '@tanstack/vue-query'
 import {
 	tasksCreate,
@@ -175,15 +176,37 @@ function insertTaskIntoBoards(client: QueryClient, created: Task) {
 	}
 }
 
+// Changes to these fields can add/remove membership in date ranges, saved filters and favorites.
+function changesTaskMembership(input: Task) {
+	return ['done', 'due_date', 'start_date', 'end_date', 'project_id', 'is_favorite', 'priority', 'paused', 'percent_done'].some(field => field in input)
+}
+
+function withTaskReadBarrier<TData, TInput, TOptimistic = undefined>(
+	options: ReturnType<typeof contextMutationOptions<TData, TInput, TOptimistic>>,
+	keysFor: (input: TInput, client: QueryClient) => readonly (readonly unknown[])[],
+) {
+	return {
+		...options,
+		onSuccess: async (...args: Parameters<NonNullable<typeof options.onSuccess>>) => {
+			const [, input, context, {client}] = args
+			assertClientRequestContext(context.request)
+			// Cancellation can restore a previous snapshot. Finish it before applying the response.
+			await Promise.all(keysFor(input, client).map(queryKey => client.cancelQueries({queryKey})))
+			return options.onSuccess?.(...args)
+		},
+	}
+}
+const allTaskReadKeys = () => [taskKeys.all, kanbanKeys.all]
+
 export function createTaskMutationOptions() {
-	return contextMutationOptions({
+	return withTaskReadBarrier(contextMutationOptions({
 		mutationFn: async (task: Task & Required<Pick<Task, 'project_id'>>) => (await tasksCreate({
 			path: {project: task.project_id},
 			body: taskWriteBody(task),
 		})).data,
 		onSuccess: (task, _input, client) => insertTaskIntoBoards(client, task),
 		onSettled: (_task, client) => invalidateTaskMembership(client, undefined, 'active'),
-	})
+	}), allTaskReadKeys)
 }
 
 // A task in progress belongs in the "Doing" bucket of the kanban boards of its project, a paused one back in
@@ -474,10 +497,14 @@ async function finishSubtasks(client: QueryClient, parent: TaskResponse, previou
 }
 
 export function updateTaskMutationOptions(optimistic = false) {
-	return contextMutationOptions({
+	const completionStates = new WeakMap<Task, boolean | undefined>()
+	return withTaskReadBarrier(contextMutationOptions({
 		mutationFn: async (task: Task & Required<Pick<Task, 'id'>>) => {
 			// An optimistic update has already changed the cache by now, and remembered the state before that.
-			if (!optimistic) rememberPreviousState(queryClient, task.id)
+			if (!optimistic) {
+				completionStates.set(task, findCachedTask(queryClient, task.id)?.done)
+				rememberPreviousState(queryClient, task.id)
+			}
 			return (await patchTasksRead({
 				path: {task: task.id},
 				body: taskPatchBody(task),
@@ -486,11 +513,14 @@ export function updateTaskMutationOptions(optimistic = false) {
 		optimistic: optimistic ? {
 			queryKeys: ({id}, client) => taskQueryKeys(client, id),
 			update: (task, client) => {
+				completionStates.set(task, findCachedTask(client, task.id)?.done)
 				rememberPreviousState(client, task.id)
 				replaceTaskEverywhere(client, task)
 			},
 		} : undefined,
 		onSuccess: (task, input, client) => {
+			announceTaskCompletion(completionStates.get(input), {...task, id: input.id})
+			completionStates.delete(input)
 			replaceTaskEverywhere(client, task)
 			reconcileDoneBuckets(client, normalizeTask({...task, id: input.id}))
 			// Background work, one step after the other because the database takes a single write at a
@@ -505,16 +535,19 @@ export function updateTaskMutationOptions(optimistic = false) {
 				}
 			})().catch(() => undefined)
 		},
-		onSettled: ({id}, client) => invalidateTaskMembership(client, id),
-	})
+		onSettled: async (input, client) => {
+			await invalidateTaskMembership(client, input.id)
+			if (changesTaskMembership(input)) await invalidateTaskMembership(client, undefined, 'active')
+		},
+	}), (input, client) => changesTaskMembership(input) ? allTaskReadKeys() : taskQueryKeys(client, input.id))
 }
 
 export function deleteTaskMutationOptions() {
-	return contextMutationOptions({
+	return withTaskReadBarrier(contextMutationOptions({
 		mutationFn: async (id: number) => { await tasksDelete({path: {task: id}}) },
 		onSuccess: (_data, id, client) => removeTaskEverywhere(client, id),
 		onSettled: (_id, client) => invalidateTaskMembership(client, undefined, 'active'),
-	})
+	}), allTaskReadKeys)
 }
 
 export function bulkCreateTasksMutationOptions() {
