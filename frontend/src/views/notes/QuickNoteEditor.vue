@@ -57,7 +57,7 @@ const editor = useEditor({
 			const text = event.clipboardData?.getData('text/plain') || ''
 			const instance = editor.value
 			if (!instance || !text || instance.isActive('codeBlock') || htmlHasFormatting(event.clipboardData?.getData('text/html') || '')) return false
-			if (!/[*`_\[\]#-]|^\s*(?:\d+\.|>)\s/m.test(text)) return false
+			if (!/[*`_[\]#-]|^\s*(?:\d+\.|>)\s/m.test(text)) return false
 			// Parse through the editor schema, matching the shared editor's paste path.
 			const html = marked.parse(text, {async: false})
 			const parsed = createNodeFromContent(html, instance.schema, {parseOptions: {preserveWhitespace: 'full'}})

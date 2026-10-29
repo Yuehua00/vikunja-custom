@@ -203,7 +203,7 @@
 								</div>
 								<ImportanceStars
 									:ref="e => setFieldRef('importance', e)"
-									v-model="task.importance"
+									:model-value="task.importance ?? 0"
 									:disabled="!canWrite"
 									@update:modelValue="setImportance"
 								/>
@@ -1665,7 +1665,7 @@ h2 .button {
 			// bright brand green with fixed dark text passes contrast in both themes
 			&.is-pending {
 					background-color: var(--print-green);
-					color: #fff;
+					color: #ffffff;
 
 				&:hover,
 				&:focus {

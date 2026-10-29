@@ -222,184 +222,184 @@
 			v-if="moreOpen"
 			class="editor-toolbar__more"
 		>
-		<div class="editor-toolbar__segment">
-			<BaseButton
-				v-tooltip="$t('input.editor.text')"
-				class="editor-toolbar__button"
-				:class="{ 'is-active': editor.isActive('paragraph') }"
-				title="paragraph"
-				@click="editor.chain().focus().setParagraph().run()"
-			>
-				<span class="icon">
-					<Icon :icon="['fas', 'paragraph']" />
-				</span>
-				<span class="is-sr-only">{{ $t('input.editor.text') }}</span>
-			</BaseButton>
+			<div class="editor-toolbar__segment">
+				<BaseButton
+					v-tooltip="$t('input.editor.text')"
+					class="editor-toolbar__button"
+					:class="{ 'is-active': editor.isActive('paragraph') }"
+					title="paragraph"
+					@click="editor.chain().focus().setParagraph().run()"
+				>
+					<span class="icon">
+						<Icon :icon="['fas', 'paragraph']" />
+					</span>
+					<span class="is-sr-only">{{ $t('input.editor.text') }}</span>
+				</BaseButton>
 
-			<BaseButton
-				v-tooltip="$t('input.editor.horizontalRule')"
-				class="editor-toolbar__button"
-				@click="editor.chain().focus().setHorizontalRule().run()"
-			>
-				<span class="icon">
-					<Icon :icon="['fas', 'ruler-horizontal']" />
-				</span>
-				<span class="is-sr-only">{{ $t('input.editor.horizontalRule') }}</span>
-			</BaseButton>
-		</div>
-
-		<div class="editor-toolbar__segment">
-			<BaseButton
-				v-tooltip="$t('input.editor.undo')"
-				class="editor-toolbar__button"
-				@click="editor.chain().focus().undo().run()"
-			>
-				<span class="icon">
-					<Icon :icon="['fas', 'undo']" />
-				</span>
-				<span class="is-sr-only">{{ $t('input.editor.undo') }}</span>
-			</BaseButton>
-			<BaseButton
-				v-tooltip="$t('input.editor.redo')"
-				class="editor-toolbar__button"
-				@click="editor.chain().focus().redo().run()"
-			>
-				<span class="icon">
-					<Icon :icon="['fas', 'redo']" />
-				</span>
-				<span class="is-sr-only">{{ $t('input.editor.redo') }}</span>
-			</BaseButton>
-		</div>
-
-		<div class="editor-toolbar__segment">
-			<!-- table -->
-			<BaseButton
-				v-tooltip="$t('input.editor.table.title')"
-				class="editor-toolbar__button"
-				:class="{ 'is-active': editor.isActive('table') }"
-				@click="toggleTableMode"
-			>
-				<span class="icon">
-					<Icon :icon="['fas', 'table']" />
-				</span>
-				<span class="is-sr-only">{{ $t('input.editor.table.title') }}</span>
-			</BaseButton>
-			<div
-				v-if="tableMode"
-				class="editor-toolbar__table-buttons"
-			>
 				<BaseButton
+					v-tooltip="$t('input.editor.horizontalRule')"
 					class="editor-toolbar__button"
-					@click="
-						editor
-							.chain()
-							.focus()
-							.insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-							.run()
-					"
+					@click="editor.chain().focus().setHorizontalRule().run()"
 				>
-					{{ $t('input.editor.table.insert') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().addColumnBefore()"
-					@click="editor.chain().focus().addColumnBefore().run()"
-				>
-					{{ $t('input.editor.table.addColumnBefore') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().addColumnAfter()"
-					@click="editor.chain().focus().addColumnAfter().run()"
-				>
-					{{ $t('input.editor.table.addColumnAfter') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().deleteColumn()"
-					@click="editor.chain().focus().deleteColumn().run()"
-				>
-					{{ $t('input.editor.table.deleteColumn') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().addRowBefore()"
-					@click="editor.chain().focus().addRowBefore().run()"
-				>
-					{{ $t('input.editor.table.addRowBefore') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().addRowAfter()"
-					@click="editor.chain().focus().addRowAfter().run()"
-				>
-					{{ $t('input.editor.table.addRowAfter') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().deleteRow()"
-					@click="editor.chain().focus().deleteRow().run()"
-				>
-					{{ $t('input.editor.table.deleteRow') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().deleteTable()"
-					@click="editor.chain().focus().deleteTable().run()"
-				>
-					{{ $t('input.editor.table.deleteTable') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().mergeCells()"
-					@click="editor.chain().focus().mergeCells().run()"
-				>
-					{{ $t('input.editor.table.mergeCells') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().splitCell()"
-					@click="editor.chain().focus().splitCell().run()"
-				>
-					{{ $t('input.editor.table.splitCell') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().toggleHeaderColumn()"
-					@click="editor.chain().focus().toggleHeaderColumn().run()"
-				>
-					{{ $t('input.editor.table.toggleHeaderColumn') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().toggleHeaderRow()"
-					@click="editor.chain().focus().toggleHeaderRow().run()"
-				>
-					{{ $t('input.editor.table.toggleHeaderRow') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().toggleHeaderCell()"
-					@click="editor.chain().focus().toggleHeaderCell().run()"
-				>
-					{{ $t('input.editor.table.toggleHeaderCell') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().mergeOrSplit()"
-					@click="editor.chain().focus().mergeOrSplit().run()"
-				>
-					{{ $t('input.editor.table.mergeOrSplit') }}
-				</BaseButton>
-				<BaseButton
-					class="editor-toolbar__button"
-					:disabled="!editor.can().fixTables()"
-					@click="editor.chain().focus().fixTables().run()"
-				>
-					{{ $t('input.editor.table.fixTables') }}
+					<span class="icon">
+						<Icon :icon="['fas', 'ruler-horizontal']" />
+					</span>
+					<span class="is-sr-only">{{ $t('input.editor.horizontalRule') }}</span>
 				</BaseButton>
 			</div>
-		</div>
+
+			<div class="editor-toolbar__segment">
+				<BaseButton
+					v-tooltip="$t('input.editor.undo')"
+					class="editor-toolbar__button"
+					@click="editor.chain().focus().undo().run()"
+				>
+					<span class="icon">
+						<Icon :icon="['fas', 'undo']" />
+					</span>
+					<span class="is-sr-only">{{ $t('input.editor.undo') }}</span>
+				</BaseButton>
+				<BaseButton
+					v-tooltip="$t('input.editor.redo')"
+					class="editor-toolbar__button"
+					@click="editor.chain().focus().redo().run()"
+				>
+					<span class="icon">
+						<Icon :icon="['fas', 'redo']" />
+					</span>
+					<span class="is-sr-only">{{ $t('input.editor.redo') }}</span>
+				</BaseButton>
+			</div>
+
+			<div class="editor-toolbar__segment">
+				<!-- table -->
+				<BaseButton
+					v-tooltip="$t('input.editor.table.title')"
+					class="editor-toolbar__button"
+					:class="{ 'is-active': editor.isActive('table') }"
+					@click="toggleTableMode"
+				>
+					<span class="icon">
+						<Icon :icon="['fas', 'table']" />
+					</span>
+					<span class="is-sr-only">{{ $t('input.editor.table.title') }}</span>
+				</BaseButton>
+				<div
+					v-if="tableMode"
+					class="editor-toolbar__table-buttons"
+				>
+					<BaseButton
+						class="editor-toolbar__button"
+						@click="
+							editor
+								.chain()
+								.focus()
+								.insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+								.run()
+						"
+					>
+						{{ $t('input.editor.table.insert') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().addColumnBefore()"
+						@click="editor.chain().focus().addColumnBefore().run()"
+					>
+						{{ $t('input.editor.table.addColumnBefore') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().addColumnAfter()"
+						@click="editor.chain().focus().addColumnAfter().run()"
+					>
+						{{ $t('input.editor.table.addColumnAfter') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().deleteColumn()"
+						@click="editor.chain().focus().deleteColumn().run()"
+					>
+						{{ $t('input.editor.table.deleteColumn') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().addRowBefore()"
+						@click="editor.chain().focus().addRowBefore().run()"
+					>
+						{{ $t('input.editor.table.addRowBefore') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().addRowAfter()"
+						@click="editor.chain().focus().addRowAfter().run()"
+					>
+						{{ $t('input.editor.table.addRowAfter') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().deleteRow()"
+						@click="editor.chain().focus().deleteRow().run()"
+					>
+						{{ $t('input.editor.table.deleteRow') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().deleteTable()"
+						@click="editor.chain().focus().deleteTable().run()"
+					>
+						{{ $t('input.editor.table.deleteTable') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().mergeCells()"
+						@click="editor.chain().focus().mergeCells().run()"
+					>
+						{{ $t('input.editor.table.mergeCells') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().splitCell()"
+						@click="editor.chain().focus().splitCell().run()"
+					>
+						{{ $t('input.editor.table.splitCell') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().toggleHeaderColumn()"
+						@click="editor.chain().focus().toggleHeaderColumn().run()"
+					>
+						{{ $t('input.editor.table.toggleHeaderColumn') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().toggleHeaderRow()"
+						@click="editor.chain().focus().toggleHeaderRow().run()"
+					>
+						{{ $t('input.editor.table.toggleHeaderRow') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().toggleHeaderCell()"
+						@click="editor.chain().focus().toggleHeaderCell().run()"
+					>
+						{{ $t('input.editor.table.toggleHeaderCell') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().mergeOrSplit()"
+						@click="editor.chain().focus().mergeOrSplit().run()"
+					>
+						{{ $t('input.editor.table.mergeOrSplit') }}
+					</BaseButton>
+					<BaseButton
+						class="editor-toolbar__button"
+						:disabled="!editor.can().fixTables()"
+						@click="editor.chain().focus().fixTables().run()"
+					>
+						{{ $t('input.editor.table.fixTables') }}
+					</BaseButton>
+				</div>
+			</div>
 		</div>
 	</div>
 </template>

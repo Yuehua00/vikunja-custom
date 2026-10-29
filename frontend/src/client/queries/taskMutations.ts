@@ -216,7 +216,7 @@ async function syncKanbanBucket(client: QueryClient, task: TaskResponse) {
 	const inProgress = isInProgress(task)
 	if (!inProgress && !isPaused(task)) return
 	const views = (getCachedProject(task.project_id, client)?.views ?? [])
-		.filter(view => view.view_kind === 'kanban' && view.bucket_configuration_mode === 'manual')
+		.filter((view): view is ProjectView & {id: number} => typeof view.id === 'number' && view.view_kind === 'kanban' && view.bucket_configuration_mode === 'manual')
 	if (views.length === 0) return
 
 	const detail = await client.fetchQuery({...taskQuery(task.id, ['buckets']), staleTime: 0})
@@ -769,10 +769,10 @@ export function moveTaskMutationOptions() {
 			queryKeys: ({project, view}) => [kanbanKeys.view(project, view)],
 			update: ({project, view, bucket, task}, client) => {
 				// The status changes with the bucket, right away like the done state does.
-				const status = statusForBucket(client, project, view, bucket, task)
-				const moved = status === undefined ? task : {...task, ...status.show}
+				const status = statusForBucket(client, project, view, bucket, normalizeTask(task))
+				const moved = normalizeTask(status === undefined ? task : {...task, ...status.show})
 				if (status !== undefined && task.id !== undefined) {
-					mapTaskEverywhere(client, task.id, current => ({...current, ...status.show}))
+					mapTaskEverywhere(client, task.id, current => normalizeTask({...current, ...status.show}))
 				}
 				return client.setQueriesData<BoardData>(
 					{queryKey: kanbanKeys.view(project, view)},

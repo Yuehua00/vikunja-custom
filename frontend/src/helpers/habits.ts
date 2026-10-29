@@ -43,18 +43,18 @@ export function isScheduled(habit: Habit, date: Date): boolean {
 	return habit.days.includes(date.getDay())
 }
 
-export function isDone(logs: HabitLogs | undefined, habitId: string, date: Date): boolean {
+export function isDone(logs: Readonly<Record<string, readonly string[]>> | undefined, habitId: string, date: Date): boolean {
 	return (logs?.[dateKey(date)] ?? []).includes(habitId)
 }
 
 // How often the habit was done in the week that contains the date.
-export function weekCount(habit: Habit, logs: HabitLogs | undefined, date: Date): number {
+export function weekCount(habit: Habit, logs: Readonly<Record<string, readonly string[]>> | undefined, date: Date): number {
 	return weekDates(date).filter(day => isDone(logs, habit.id, day)).length
 }
 
 // Consecutive weeks in which the goal was reached. The running week only counts once its goal is
 // reached, and does not break the streak while it is still open.
-export function streakWeeks(habit: Habit, logs: HabitLogs | undefined, today: Date): number {
+export function streakWeeks(habit: Habit, logs: Readonly<Record<string, readonly string[]>> | undefined, today: Date): number {
 	const target = Math.max(1, habit.weekly_target)
 	let streak = weekCount(habit, logs, today) >= target ? 1 : 0
 	const cursor = weekStartOf(today)
@@ -70,11 +70,11 @@ export function streakWeeks(habit: Habit, logs: HabitLogs | undefined, today: Da
 
 // The logs with the habit ticked on that day, or unticked when it already was. A day with nothing left
 // keeps an empty list: the settings are saved as a merge patch, which would not drop a missing key.
-export function toggleLog(logs: HabitLogs | undefined, habitId: string, date: Date): HabitLogs {
+export function toggleLog(logs: Readonly<Record<string, readonly string[]>> | undefined, habitId: string, date: Date): HabitLogs {
 	const key = dateKey(date)
 	const ids = logs?.[key] ?? []
 	return {
-		...(logs ?? {}),
+		...Object.fromEntries(Object.entries(logs ?? {}).map(([day, ids]) => [day, [...ids]])),
 		[key]: ids.includes(habitId) ? ids.filter(id => id !== habitId) : [...ids, habitId],
 	}
 }

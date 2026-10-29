@@ -289,7 +289,7 @@ function onPointerUp(event: PointerEvent) {
 	padding: .4rem .95rem;
 	border-radius: 999px;
 	background: var(--primary);
-	color: #fff;
+	color: #ffffff;
 	font-size: .85rem;
 	white-space: nowrap;
 	transition: background $transition;
@@ -314,7 +314,7 @@ function onPointerUp(event: PointerEvent) {
 	&:hover,
 	&:focus-visible {
 		background: var(--danger);
-		color: #fff;
+		color: #ffffff;
 	}
 }
 

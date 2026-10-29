@@ -11,7 +11,7 @@ export const finishConfirmRequest = ref<FinishConfirmRequest | null>(null)
 
 interface TaskWithSubtasks {
 	title?: string
-	related_tasks?: Record<string, readonly {id?: number, title?: string, done?: boolean}[] | undefined>
+	related_tasks?: Record<string, readonly {id?: number, title?: string, done?: boolean}[] | null | undefined>
 }
 
 // Asks whether a task may be finished together with its unfinished subtasks, listing them. Answers yes right

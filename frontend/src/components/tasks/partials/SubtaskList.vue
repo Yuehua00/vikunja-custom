@@ -190,6 +190,7 @@ async function setDueDate(subtask: TaskResponse, value: string) {
 
 	:deep(.progress-bar) {
 		flex: 1 1 auto;
+
 		--progress-height: .5rem;
 	}
 }

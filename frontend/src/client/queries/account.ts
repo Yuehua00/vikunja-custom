@@ -95,6 +95,13 @@ export function createUserSettingsDraft(settings: DeepReadonly<UserSettings>): U
 		extra_settings_links: {...settings.extra_settings_links},
 		frontend_settings: {
 			...settings.frontend_settings,
+			focus_records: settings.frontend_settings.focus_records ? Object.fromEntries(
+				Object.entries(settings.frontend_settings.focus_records).map(([month, records]) => [month, records.map(record => ({...record}))]),
+			) : undefined,
+			habits: settings.frontend_settings.habits?.map(habit => ({...habit, days: [...habit.days]})),
+			habit_logs: settings.frontend_settings.habit_logs ? Object.fromEntries(
+				Object.entries(settings.frontend_settings.habit_logs).map(([day, ids]) => [day, [...ids]]),
+			) : undefined,
 			quick_add_default_reminders: settings.frontend_settings.quick_add_default_reminders
 				.map(reminder => ({...reminder})),
 		},

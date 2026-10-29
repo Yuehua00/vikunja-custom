@@ -4,7 +4,7 @@
 		class="task-add"
 	>
 		<div class="add-task__field field">
-			<p class="control task-input-wrapper">
+			<div class="control task-input-wrapper">
 				<label
 					class="is-sr-only"
 					:for="textareaId"
@@ -18,7 +18,17 @@
 					class="add-task-highlights input"
 					aria-hidden="true"
 				>
-					<template v-for="(segment, index) in highlightSegments" :key="index"><mark v-if="segment.kind" :class="'is-' + segment.kind">{{ segment.text }}</mark><template v-else>{{ segment.text }}</template></template>
+					<template
+						v-for="(segment, index) in highlightSegments"
+						:key="index"
+					>
+						<mark
+							v-if="segment.kind"
+							:class="'is-' + segment.kind"
+						>{{ segment.text }}</mark><template v-else>
+							{{ segment.text }}
+						</template>
+					</template>
 				</div>
 				<textarea
 					:id="textareaId"
@@ -35,7 +45,7 @@
 				<QuickAddMagic
 					:highlight-hint-icon="taskAddHovered"
 				/>
-			</p>
+			</div>
 			<p class="control">
 				<XButton
 					class="add-task-button"

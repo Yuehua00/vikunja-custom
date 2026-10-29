@@ -104,7 +104,9 @@ export function useFocusTimer() {
 				: new Date()
 			const record = buildRecord(current, endedAt, completed)
 
-			const next: FocusRecords = {...(settings.value.focus_records ?? {})}
+			const next: FocusRecords = Object.fromEntries(
+				Object.entries(settings.value.focus_records ?? {}).map(([key, month]) => [key, [...month]]),
+			)
 			if (record.seconds >= MIN_RECORD_SECONDS) {
 				const key = monthKey(new Date(current.started_at))
 				next[key] = [...(next[key] ?? []).filter(item => item.id !== record.id), record]

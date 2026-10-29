@@ -678,6 +678,7 @@ async function undoSkip(id: number, startDate: string | undefined) {
 
 	:deep(.progress-bar) {
 		flex: 1 1 auto;
+
 		--progress-height: .5rem;
 	}
 }

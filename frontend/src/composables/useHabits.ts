@@ -13,7 +13,7 @@ export function useHabits() {
 	const updateFrontendSettings = useUpdateFrontendSettingsMutation()
 
 	const settings = computed(() => authStore.settings.frontend_settings)
-	const habits = computed<Habit[]>(() => settings.value.habits ?? DEFAULT_HABITS)
+	const habits = computed<Habit[]>(() => (settings.value.habits ?? DEFAULT_HABITS).map(habit => ({...habit, days: [...habit.days]})))
 	const logs = computed(() => settings.value.habit_logs ?? {})
 
 	// The patch is built when its turn comes, from the settings the previous save left behind.

@@ -1,8 +1,6 @@
 {
 	"quickNotes": {"title": "Quick notes"},
   "habits": {
-    "title": "Today",
-    "heading": "Habits",
     "edit": "Edit habits",
     "finishEditing": "Cancel",
     "nothingToday": "No habit is planned for today. Rest, or pick one of the other habits below.",
@@ -45,7 +43,6 @@
     "confirmDelete": "Delete?",
     "startFocus": "Start a timer",
     "started": "Timer started.",
-    "completed": "Pomodoro finished and recorded.",
     "timeUp": "Time is up",
     "endedDone": "Done",
     "endedAnother": "Another pomodoro",
@@ -72,7 +69,6 @@
   },
   "diary": {
     "title": "Diary",
-    "today": "Today",
     "previousDay": "Previous day",
     "nextDay": "Next day",
     "mood": "Mood",
@@ -85,31 +81,22 @@
     "saving": "Saving...",
     "saved": "Saved",
     "saveFailed": "Could not save the diary, please try again.",
-    "past": "Past entries",
     "openDay": "Open the diary of {date}",
     "jar": {
-      "title": "Mood jar",
-      "unit": "entries",
-      "summary": "{count} days written in {month}",
       "previousMonth": "Previous month",
-      "nextMonth": "Next month",
-      "write": "Write today's entry"
+      "nextMonth": "Next month"
     }
   },
   "collect": {
     "title": "Collect",
-    "project": "Project",
-    "type": "Type",
     "noType": "No type",
     "placeholder": "Paste several lines, one card per line. A web address goes into the description.",
-    "preview": "{count} card will be created | {count} cards will be created",
     "titleAuto": "Title is fetched from the page when created",
     "create": "Create {count} card | Create {count} cards",
     "created": "Created {count} card. | Created {count} cards.",
     "failed": "{count} line could not be created and stays in the box. | {count} lines could not be created and stay in the box."
   },
   "calendar": {
-    "title": "Calendar",
     "today": "Today",
     "previous": "Previous",
     "next": "Next",
@@ -152,7 +139,6 @@
     "welcomeEveningWrap": "Time to wrap up, {username}?",
     "welcomeEveningOneMore": "One more thing, {username}?",
     "welcomeEveningStill": "Still at it, {username}?",
-    "lastViewed": "Last viewed",
     "addToHomeScreen": "Add this app to your home screen for faster access and improved experience.",
     "goToOverview": "Go to overview",
     "project": {
@@ -1276,7 +1262,6 @@
     "show": {
       "titleCurrent": "Current Tasks",
       "noDates": "Show tasks without date",
-      "overdue": "Show overdue tasks",
       "fromuntil": "Tasks from {from} until {until}",
       "select": "Select a date range",
       "noTasks": "Nothing to do — Have a nice day!",

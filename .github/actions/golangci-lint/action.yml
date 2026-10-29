@@ -3,14 +3,14 @@ description: |
   Set up Go and run golangci-lint on a Go module.
   Caches the analysis dir explicitly instead of using the lint action's
   built-in cache: that cache's key omits the Go version, so with
-  go-version: stable a toolchain bump restores facts cached under the
+  a toolchain bump can otherwise restore facts cached under the
   previous Go release, which yields staticcheck false positives
   (e.g. SA5011 on t.Fatal nil-guards) on every PR until the key rotates.
 inputs:
   version:
     description: 'golangci-lint version to run'
     required: false
-    default: 'v2.13.0'
+    default: 'v2.15.0'
   working-directory:
     description: 'Module directory to lint, relative to the repo root'
     required: false
@@ -21,7 +21,7 @@ runs:
     - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       id: go
       with:
-        go-version: stable
+        go-version-file: ${{ inputs.working-directory }}/go.mod
         cache-dependency-path: ${{ inputs.working-directory }}/go.sum
     - name: Cache golangci-lint analysis
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

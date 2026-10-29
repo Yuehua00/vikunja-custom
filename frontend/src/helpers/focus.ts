@@ -69,7 +69,7 @@ export function monthKey(date: Date): string {
 }
 
 // Newest first, and a record saved twice by two open devices only counts once.
-export function flattenRecords(records: FocusRecords | undefined): FocusRecord[] {
+export function flattenRecords(records: Readonly<Record<string, readonly FocusRecord[]>> | undefined): FocusRecord[] {
 	const unique = new Map<string, FocusRecord>()
 	for (const month of Object.values(records ?? {})) {
 		for (const record of month ?? []) {

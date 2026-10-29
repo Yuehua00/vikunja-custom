@@ -27,13 +27,13 @@
 </template>
 
 <script setup lang="ts">
-const STARS = [1, 2, 3, 4, 5] as const
-
 const props = withDefaults(defineProps<{
 	disabled?: boolean
 }>(), {
 	disabled: false,
 })
+
+const STARS = [1, 2, 3, 4, 5] as const
 
 const modelValue = defineModel<number>({required: true})
 
