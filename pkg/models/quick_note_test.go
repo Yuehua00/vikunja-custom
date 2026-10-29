@@ -18,13 +18,15 @@ package models
 
 import (
 	"bytes"
+	"encoding/base64"
+	"testing"
+
 	"code.vikunja.io/api/pkg/db"
 	"code.vikunja.io/api/pkg/user"
-	"encoding/base64"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
+//nolint:gosmopolitan // Exercise UTF-8 note creation, editing and restoration.
 func TestQuickNoteOwnershipAndRevision(t *testing.T) {
 	db.LoadAndAssertFixtures(t)
 	s := db.NewSession()
@@ -101,6 +103,7 @@ func TestQuickNoteOwnershipAndRevision(t *testing.T) {
 	require.NoError(t, s.Commit())
 }
 
+//nolint:gosmopolitan // Verify sanitization preserves UTF-8 text alongside images.
 func TestQuickNoteImageHTML(t *testing.T) {
 	note := &QuickNote{Content: `<p>文字</p><img src="#" data-note-image-id="42" onerror="alert(1)"><script>bad()</script>`}
 	require.NoError(t, note.clean())

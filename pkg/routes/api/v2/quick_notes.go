@@ -142,7 +142,7 @@ func quickNoteImagesUpload(ctx context.Context, in *quickNoteUploadInput) (*sing
 	if err = s.Commit(); err != nil {
 		_ = s.Rollback()
 		if cleanup := files.DeleteBlob(image.FileID); cleanup != nil {
-			return nil, fmt.Errorf("%w (image cleanup: %v)", err, cleanup)
+			return nil, fmt.Errorf("%w (image cleanup: %w)", err, cleanup)
 		}
 		return nil, translateDomainError(err)
 	}

@@ -112,6 +112,8 @@ func extractHTMLTitle(r io.Reader) string {
 		switch z.Next() {
 		case html.ErrorToken:
 			return ""
+		case html.TextToken, html.EndTagToken, html.SelfClosingTagToken, html.CommentToken, html.DoctypeToken:
+			continue
 		case html.StartTagToken:
 			name, _ := z.TagName()
 			if string(name) != "title" {

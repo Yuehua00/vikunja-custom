@@ -17,8 +17,9 @@
 package migration
 
 import (
-	"src.techknowlogick.com/xormigrate"
 	"time"
+
+	"src.techknowlogick.com/xormigrate"
 	"xorm.io/xorm"
 )
 
@@ -47,7 +48,7 @@ func init() {
 	migrations = append(migrations, &xormigrate.Migration{
 		ID: "20261028130942", Description: "Independent private quick notes and image ownership",
 		Migrate: func(tx *xorm.Engine) error {
-			return tx.Sync(quickNotes20261028130942{}, quickNoteImages20261028130942{})
+			return tx.Sync(quickNotes20261028130942{}, quickNoteImages20261028130942{}) //nolint:forbidigo // Both tables are newly created by this migration.
 		},
 		Rollback: func(tx *xorm.Engine) error {
 			return tx.DropTables(quickNoteImages20261028130942{}, quickNotes20261028130942{})

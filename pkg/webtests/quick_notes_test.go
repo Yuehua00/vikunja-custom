@@ -18,15 +18,16 @@ package webtests
 
 import (
 	"bytes"
-	"code.vikunja.io/api/pkg/models"
-	"code.vikunja.io/api/pkg/user"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"mime/multipart"
 	"net/http/httptest"
 	"testing"
+
+	"code.vikunja.io/api/pkg/models"
+	"code.vikunja.io/api/pkg/user"
+	"github.com/stretchr/testify/require"
 )
 
 func TestQuickNotesAPI(t *testing.T) {

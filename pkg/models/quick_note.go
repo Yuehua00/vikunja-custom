@@ -137,9 +137,9 @@ func (n *QuickNote) clean() error {
 	}
 	if n.Title == "" {
 		if strings.Contains(n.Content, "<img") {
-			n.Title = "圖片筆記"
+			n.Title = "圖片筆記" //nolint:gosmopolitan // Preserve the existing localized fallback title.
 		} else {
-			n.Title = "未命名筆記"
+			n.Title = "未命名筆記" //nolint:gosmopolitan // Preserve the existing localized fallback title.
 		}
 	}
 	preview := []rune(strings.Join(strings.Fields(plain), " "))
@@ -267,7 +267,7 @@ func UploadQuickNoteImage(s *xorm.Session, a web.Auth, noteID int64, r io.ReadSe
 	image := &QuickNoteImage{NoteID: noteID, FileID: file.ID}
 	if _, err = s.Insert(image); err != nil {
 		if cleanup := files.DeleteBlob(file.ID); cleanup != nil {
-			return nil, fmt.Errorf("%w (image cleanup: %v)", err, cleanup)
+			return nil, fmt.Errorf("%w (image cleanup: %w)", err, cleanup)
 		}
 		return nil, err
 	}
