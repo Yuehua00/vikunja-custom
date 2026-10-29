@@ -48,10 +48,10 @@ func collectionProject(s *xorm.Session, a web.Auth, id int64, diary bool) (*mode
 		if err != nil {
 			return nil, translateDomainError(err)
 		}
-		if p.OwnerID != u.ID || p.Title != "日記" {
+		if p.OwnerID != u.ID || p.Title != "日記" { //nolint:gosmopolitan // Preserve the localized names and headings used by the custom UI.
 			return nil, huma.Error403Forbidden("select your own diary project")
 		}
-	} else if p.Title == "日記" {
+	} else if p.Title == "日記" { //nolint:gosmopolitan // Preserve the localized names and headings used by the custom UI.
 		return nil, huma.Error403Forbidden("use the dedicated diary tools")
 	}
 	return p, nil
@@ -124,15 +124,15 @@ func researchItemsCreate(ctx context.Context, in *struct{ Body researchDraft }) 
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil {
 			return nil, huma.Error400BadRequest("source_url must be an http(s) URL without credentials")
 		}
-		description += "<h3>來源</h3>" + researchParagraph(draft.SourceURL)
+		description += "<h3>來源</h3>" + researchParagraph(draft.SourceURL) //nolint:gosmopolitan // Preserve the localized names and headings used by the custom UI.
 	}
-	for _, section := range []struct{ title, text string }{{"原始筆記", draft.Notes}, {"AI 摘要", draft.Summary}, {"研究問題", draft.Questions}, {"研究方法", draft.Methods}, {"限制與不確定性", draft.Limitations}} {
+	for _, section := range []struct{ title, text string }{{"原始筆記", draft.Notes}, {"AI 摘要", draft.Summary}, {"研究問題", draft.Questions}, {"研究方法", draft.Methods}, {"限制與不確定性", draft.Limitations}} { //nolint:gosmopolitan // Preserve the localized names and headings used by the custom UI.
 		if section.text != "" {
 			description += "<h3>" + section.title + "</h3>" + researchParagraph(section.text)
 		}
 	}
 	if len(draft.NextSteps) > 0 {
-		description += "<h3>建議後續行動</h3><ul>"
+		description += "<h3>建議後續行動</h3><ul>" //nolint:gosmopolitan // Preserve the localized names and headings used by the custom UI.
 		for _, step := range draft.NextSteps {
 			if len(step) > 10000 {
 				return nil, huma.Error400BadRequest("next step is too long")

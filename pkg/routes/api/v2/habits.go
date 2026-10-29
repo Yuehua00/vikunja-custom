@@ -79,7 +79,7 @@ func habitsRead(ctx context.Context, in *DateRangeParams) (*singleBody[habitHist
 	if err := json.Unmarshal(data, &settings); err != nil {
 		return nil, err
 	}
-	habits := []habitDefinition{{ID: "speaking", Name: "英文口說", Days: []int{1, 2, 3, 4, 5}, WeeklyTarget: 5}, {ID: "leetcode", Name: "LeetCode", Days: []int{1, 3, 5}, WeeklyTarget: 3}, {ID: "ctf", Name: "資安 CTF", Days: []int{2, 6}, WeeklyTarget: 2}, {ID: "hardware-ai", Name: "硬體或 AI 用法", Days: []int{4, 0}, WeeklyTarget: 2}}
+	habits := []habitDefinition{{ID: "speaking", Name: "英文口說", Days: []int{1, 2, 3, 4, 5}, WeeklyTarget: 5}, {ID: "leetcode", Name: "LeetCode", Days: []int{1, 3, 5}, WeeklyTarget: 3}, {ID: "ctf", Name: "資安 CTF", Days: []int{2, 6}, WeeklyTarget: 2}, {ID: "hardware-ai", Name: "硬體或 AI 用法", Days: []int{4, 0}, WeeklyTarget: 2}} //nolint:gosmopolitan // Preserve the localized names and headings used by the custom UI.
 	source := "defaults"
 	if settings.Habits != nil {
 		habits = *settings.Habits
