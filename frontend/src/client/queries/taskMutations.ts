@@ -181,6 +181,8 @@ function changesTaskMembership(input: Task) {
 	return ['done', 'due_date', 'start_date', 'end_date', 'project_id', 'is_favorite', 'priority', 'paused', 'percent_done'].some(field => field in input)
 }
 
+type TaskMutationOptions<TData, TInput, TOptimistic = undefined> = ReturnType<typeof contextMutationOptions<TData, TInput, TOptimistic>>
+
 function withTaskReadBarrier<TData, TInput, TOptimistic = undefined>(
 	options: ReturnType<typeof contextMutationOptions<TData, TInput, TOptimistic>>,
 	keysFor: (input: TInput, client: QueryClient) => readonly (readonly unknown[])[],
@@ -198,7 +200,7 @@ function withTaskReadBarrier<TData, TInput, TOptimistic = undefined>(
 }
 const allTaskReadKeys = () => [taskKeys.all, kanbanKeys.all]
 
-export function createTaskMutationOptions() {
+export function createTaskMutationOptions(): TaskMutationOptions<Task, Task & Required<Pick<Task, 'project_id'>>> {
 	return withTaskReadBarrier(contextMutationOptions({
 		mutationFn: async (task: Task & Required<Pick<Task, 'project_id'>>) => (await tasksCreate({
 			path: {project: task.project_id},
@@ -496,7 +498,7 @@ async function finishSubtasks(client: QueryClient, parent: TaskResponse, previou
 	}])
 }
 
-export function updateTaskMutationOptions(optimistic = false) {
+export function updateTaskMutationOptions(optimistic = false): TaskMutationOptions<Task, Task & Required<Pick<Task, 'id'>>, void> {
 	const completionStates = new WeakMap<Task, boolean | undefined>()
 	return withTaskReadBarrier(contextMutationOptions({
 		mutationFn: async (task: Task & Required<Pick<Task, 'id'>>) => {
@@ -542,7 +544,7 @@ export function updateTaskMutationOptions(optimistic = false) {
 	}), (input, client) => changesTaskMembership(input) ? allTaskReadKeys() : taskQueryKeys(client, input.id))
 }
 
-export function deleteTaskMutationOptions() {
+export function deleteTaskMutationOptions(): TaskMutationOptions<void, number> {
 	return withTaskReadBarrier(contextMutationOptions({
 		mutationFn: async (id: number) => { await tasksDelete({path: {task: id}}) },
 		onSuccess: (_data, id, client) => removeTaskEverywhere(client, id),
