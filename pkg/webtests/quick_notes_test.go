@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:gosmopolitan // Verify the API preserves UTF-8 note content through editing, trash and restoration.
 func TestQuickNotesAPI(t *testing.T) {
 	e, err := setupTestEnv()
 	require.NoError(t, err)

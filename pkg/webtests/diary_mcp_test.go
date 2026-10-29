@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:gosmopolitan // Exercise diary MCP operations with the existing localized project title.
 func TestMCPPersonalDiary(t *testing.T) {
 	e, err := setupTestEnv()
 	require.NoError(t, err)
