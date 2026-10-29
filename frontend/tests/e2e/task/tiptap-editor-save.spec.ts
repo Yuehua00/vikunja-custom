@@ -1,6 +1,19 @@
+import type {Page} from '@playwright/test'
 import {test, expect} from '../../support/fixtures'
 import {TaskFactory} from '../../factories/task'
 import {ProjectFactory} from '../../factories/project'
+
+async function enterDescriptionEditing(page: Page) {
+	const section = page.locator('.task-view .details.content.description')
+	const toggle = section.locator('.print-task-notes-heading button')
+	await expect(toggle).toBeVisible()
+	if (await toggle.getAttribute('aria-pressed') !== 'true') {
+		await toggle.click()
+	} else {
+		await section.locator('.tiptap__editor-actions button.done-edit').click()
+	}
+	await expect(section.locator('.tiptap.ProseMirror')).toHaveAttribute('contenteditable', 'true')
+}
 
 test.describe('TipTap Editor Save', () => {
 	test.beforeEach(async ({authenticatedPage: page}) => {
@@ -40,10 +53,7 @@ test.describe('TipTap Editor Save', () => {
 		await page.goto(`/tasks/${tasks[0].id}`)
 		await page.waitForLoadState('networkidle')
 
-		// Click edit button to enter edit mode
-		const editButton = page.locator('.task-view .details.content.description .tiptap button.done-edit')
-		await expect(editButton).toBeVisible({timeout: 10000})
-		await editButton.click()
+		await enterDescriptionEditing(page)
 
 		// Wait for editor to be visible and editable
 		const editor = page.locator('.task-view .details.content.description .tiptap__editor .tiptap.ProseMirror')
@@ -82,6 +92,8 @@ test.describe('TipTap Editor Save', () => {
 
 		// If no errors, the edit button should be visible (mode transition completed)
 		await expect(page.locator('.task-view .details.content.description .tiptap button.done-edit')).toBeVisible({timeout: 5000})
+		await page.reload()
+		await expect(page.locator('.task-view .details.content.description')).toContainText('Updated description text')
 	})
 
 	test('Should not crash when rapidly toggling edit mode (issue #1770)', async ({authenticatedPage: page}) => {
@@ -109,17 +121,7 @@ test.describe('TipTap Editor Save', () => {
 
 		// Perform multiple edit/save cycles to stress test the mode transitions
 		for (let i = 0; i < 3; i++) {
-			// Enter edit mode - click edit button or double-click the editor
-			const editButton = page.locator('.task-view .details.content.description .tiptap button.done-edit')
-			const isEditButtonVisible = await editButton.isVisible().catch(() => false)
-
-			if (isEditButtonVisible) {
-				await editButton.click()
-			} else {
-				// Already in edit mode or need to double-click to enter
-				const editorArea = page.locator('.task-view .details.content.description .tiptap__editor')
-				await editorArea.dblclick()
-			}
+			await enterDescriptionEditing(page)
 
 			// Wait for editor to be editable
 			const editor = page.locator('.task-view .details.content.description .tiptap__editor .tiptap.ProseMirror')
@@ -159,5 +161,7 @@ test.describe('TipTap Editor Save', () => {
 			// Verify mode transition completed (edit button should be visible)
 			await expect(page.locator('.task-view .details.content.description .tiptap button.done-edit')).toBeVisible({timeout: 5000})
 		}
+		await page.reload()
+		await expect(page.locator('.task-view .details.content.description')).toContainText('Cycle 3 description')
 	})
 })

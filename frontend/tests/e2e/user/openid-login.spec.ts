@@ -16,8 +16,9 @@ test.describe('OpenID Login', () => {
 		await page.locator('#submit-login').click()
 
 		// Should redirect back to the app
-		await expect(page).toHaveURL(/\//)
+		await expect.poll(() => new URL(page.url()).pathname).toBe('/')
 		await expect(page.locator('main.app-content .content h1')).toContainText('test')
-		await expect(page.locator('.show-tasks h2')).toContainText('Current Tasks')
+		await expect(page.locator('.home-today .print-bar-title')).toContainText('TODAY')
+		await expect(page.locator('.home-today textarea')).toBeVisible()
 	})
 })
