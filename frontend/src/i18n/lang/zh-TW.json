@@ -2,6 +2,7 @@
 	"quickNotes": {"title": "隨手記"},
 	"habits": {
 		"title": "今天",
+		"heading": "習慣",
 		"edit": "編輯習慣",
 		"finishEditing": "取消",
 		"nothingToday": "今天沒有排習慣，可以休息或做下面的其他習慣。",
