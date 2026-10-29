@@ -178,6 +178,7 @@ const mainNavigation = [
 	{name: 'tasks.range', path: '/tasks/by/', label: 'navigation.upcoming', shortcut: SHORTCUTS.navigation.upcoming, icon: 'M3 5h18v16H3z M3 10h18 M8 3v4 M16 3v4 M8 14h2 M14 14h2 M8 17h2'},
 	{name: 'projects.index', path: '/projects', label: 'project.projects', shortcut: SHORTCUTS.navigation.projects, icon: 'M12 3 3 8l9 5 9-5-9-5 M3 13l9 5 9-5'},
 	{name: 'focus', path: '/focus', label: 'focus.title', shortcut: '', icon: 'M20 13a8 8 0 1 1-16 0 8 8 0 0 1 16 0 M12 9v4l2.5 2.5 M9 2h6'},
+	{name: 'quick-notes', path: '/notes', label: 'quickNotes.title', shortcut: '', icon: 'M5 3h14v18H5z M8 8h8 M8 12h8 M8 16h5'},
 	{name: 'collect', path: '/collect', label: 'collect.title', shortcut: '', icon: 'M5 4h14v18H5z M9 2h6v4H9z'},
 	{name: 'diary', path: '/diary', label: 'diary.title', shortcut: '', icon: 'M4 20h4L19 9l-4-4L4 16z M13 7l4 4'},
 ]

@@ -27,21 +27,27 @@
 			class="tw:w-full"
 		>
 		<div class="p-2 print-kanban-card-body">
-			<div class="tw:flex tw:justify-between">
-				<span class="task-id">
-					<Done
-						class="kanban-card__done"
-						:is-done="task.done"
-						variant="small"
-					/>
-					{{ getTaskIdentifier(task) }}
-					<span
-						v-if="showTaskPosition"
-						class="tw:text-red-600 tw:ps-2"
-					>
-						{{ task.position }}
-					</span>
-				</span>
+			<div v-if="task.assignees.length > 0" class="kanban-card__people">
+				<AssigneeList :assignees="task.assignees" :avatar-size="24" />
+			</div>
+			<span class="task-id">
+				{{ getTaskIdentifier(task) }}
+				<span v-if="showTaskPosition" class="tw:text-red-600 tw:ps-2">{{ task.position }}</span>
+			</span>
+			<h3>
+				<Icon v-if="task.done" icon="check" class="kanban-card__complete" :aria-label="$t('task.attributes.done')" />
+				<RouterLink
+					:to="{ name: 'task.detail', params: {id: task.id} }"
+					class="kanban-card__title-link"
+					draggable="false"
+					@click.exact.prevent.stop="openTaskDetail()"
+					@click.ctrl.stop
+					@click.meta.stop
+				>
+					{{ task.title }}
+				</RouterLink>
+			</h3>
+			<div class="kanban-card__metadata">
 				<span
 					v-if="new Date(task.due_date ?? 0).getTime() > 0"
 					v-tooltip="formatDateLong(task.due_date)"
@@ -64,18 +70,6 @@
 				{{ $t('task.subtaskOf', {parent: parentTitle}) }}
 			</div>
 
-			<h3>
-				<RouterLink
-					:to="{ name: 'task.detail', params: {id: task.id} }"
-					class="kanban-card__title-link"
-					draggable="false"
-					@click.exact.prevent.stop="openTaskDetail()"
-					@click.ctrl.stop
-					@click.meta.stop
-				>
-					{{ task.title }}
-				</RouterLink>
-			</h3>
 
 			<span
 				v-if="inProgress"
@@ -136,11 +130,6 @@
 					:task="task"
 					class="project-task-icon"
 				/>
-				<AssigneeList
-					v-if="task.assignees.length > 0"
-					:assignees="task.assignees"
-					:avatar-size="24"
-				/>
 				<ChecklistSummary
 					:task="task"
 					class="checklist"
@@ -157,7 +146,6 @@ import {useRouter} from 'vue-router'
 import {useGlobalNow} from '@/composables/useGlobalNow'
 
 import ProgressBar from '@/components/misc/ProgressBar.vue'
-import Done from '@/components/misc/Done.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
 import ChecklistSummary from './ChecklistSummary.vue'
 import CommentCount from './CommentCount.vue'

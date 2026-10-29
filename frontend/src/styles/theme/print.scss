@@ -1529,22 +1529,31 @@
 	.kanban .bucket .tasks { block-size: auto; overflow: visible; }
 	.kanban .bucket-footer { position: static; }
 	.kanban .bucket-load-more { padding: .5rem; text-align: center; }
-	.kanban .bucket { flex: 0 0 300px; border-radius: 3px; border: 1px solid var(--grey-200); background: var(--print-blue-soft); }
-	.kanban .bucket-header { border-block-start: 4px solid var(--print-blue-mid); border-block-end: 1px solid var(--grey-200); background: var(--print-blue-soft); padding: .7rem .8rem; min-block-size: 3.5rem; }
-	.kanban .bucket-header .title.input { font-weight: 800 !important; color: var(--text-strong); background: transparent; border: 0; padding: .25rem; box-shadow: none; }
-	.kanban .bucket-header .limit { font-family: $display-font; color: var(--print-blue); font-size: 1rem; padding-inline: .4rem; }
-	.kanban .print-done-bucket .bucket-header { border-block-start-color: var(--print-green); background: var(--print-green-soft); }
-	.kanban .print-default-bucket .bucket-header { border-block-start-color: var(--print-orange); }
-	.kanban .bucket .task-item { background: transparent; padding: .35rem .6rem; }
-	.kanban .bucket-footer { background: var(--print-blue-soft); border-block-start: 1px dashed var(--grey-300); box-shadow: none; }
+	.kanban .bucket { --kanban-accent: var(--print-blue-mid); flex: 0 0 300px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--grey-200) 45%, transparent); background: color-mix(in srgb, var(--print-paper) 70%, var(--grey-100)); box-shadow: none; padding: .6rem; }
+	.kanban .print-default-bucket { --kanban-accent: var(--print-orange); }
+	.kanban .print-done-bucket { --kanban-accent: var(--print-green); }
+	.kanban .bucket-header { border-block: 0; border-inline-start: 3px solid var(--kanban-accent); border-radius: 0 5px 5px 0; background: var(--print-paper); padding: .2rem .5rem; margin: .15rem .1rem .65rem; min-block-size: 2rem; }
+	.kanban .bucket-header .title.input { font-family: inherit; letter-spacing: normal; font-weight: 700 !important; color: var(--text-strong); background: transparent; border: 0; padding: .25rem; box-shadow: none; }
+	.kanban .bucket-header .dropdown-trigger { color: var(--text-muted); }
+	.kanban .bucket-header .limit { color: var(--text-muted); background: transparent; font-size: .72rem; padding: .15rem .35rem; }
+	.kanban .bucket .task-item { background: transparent; padding: 0 0 .65rem; }
+	.kanban .bucket-footer { background: transparent; border-block-start: 0; box-shadow: none; padding: .4rem; }
+	.kanban .bucket-footer .button { background: transparent; color: var(--text-muted); font-weight: 500; }
 	.kanban .bucket.new-bucket { border: 1.5px dashed var(--grey-300); background: transparent; min-block-size: 6rem; }
 	.kanban .bucket.new-bucket .button { background: transparent; color: var(--link); }
-	.kanban-card { border: 1px solid var(--grey-200); border-radius: 3px 8px 4px 7px; box-shadow: 0 2px 0 color-mix(in srgb, var(--print-blue) 8%, transparent); }
+	.kanban-card { border: 1px solid color-mix(in srgb, var(--grey-200) 45%, transparent); border-radius: 12px; box-shadow: 0 2px 5px color-mix(in srgb, var(--print-blue) 3%, transparent); transition: box-shadow .15s ease, border-color .15s ease; }
+	.kanban-card:hover { outline: none; border-color: var(--kanban-accent); box-shadow: 0 5px 12px color-mix(in srgb, var(--print-blue) 12%, transparent); }
 	.kanban-card:not(.has-custom-background-color) { background: var(--print-paper); color: var(--text-strong); }
-	.print-kanban-card-body { padding: .85rem; }
-	.kanban-card h3 { margin-block: .6rem; font-size: .95rem; font-weight: 700 !important; line-height: 1.5; }
-	.kanban-card .task-id { font-family: $display-font; font-size: .8rem; }
-	.kanban-card .due-date { font-size: .7rem; }
+	.print-kanban-card-body { display: flex; flex-direction: column; align-items: flex-start; padding: 1rem; min-block-size: 9rem; }
+	.kanban-card__people { order: -2; margin-block-end: .7rem; }
+	.kanban-card .task-id { order: -1; font-family: inherit; font-size: .68rem; margin: 0 0 .3rem; }
+	.kanban-card h3 { margin-block: 0 .65rem; font-size: .9rem; font-weight: 500 !important; line-height: 1.5; }
+	.kanban-card__metadata { order: 2; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin-block-start: .65rem; }
+	.kanban-card .due-date { float: none; font-size: .7rem; background: var(--grey-100); border-radius: 1rem; padding: .2rem .55rem; }
+	.kanban-card .task-progress { align-self: stretch; }
+	.kanban-card .footer { order: 1; align-self: stretch; }
+	.kanban-card__complete { color: var(--print-green); margin-inline-end: .4rem; }
+	.kanban-card[data-done] h3 { color: var(--text-muted); }
 	.kanban-card .task-progress { block-size: 4px; margin-block: .65rem; }
 	.kanban-card .footer { padding-block-start: .3rem; gap: .35rem; }
 	.kanban-card .kanban-card__status { font-size: .7rem; padding: .15rem .45rem; border-radius: 2px; }
@@ -1728,7 +1737,9 @@ html.dark .task-detail-view-modal .print-task-detail::after { background-image: 
   .is-today .upcoming-date { color: #fff; background: var(--print-green); }
   .is-overdue .upcoming-date { color: var(--text-strong); background: var(--print-orange-tint); border-inline-start: 3px solid var(--print-orange); }
   .upcoming-day-tasks { min-inline-size: 0; }
-  .print-task-row { grid-template-columns: 28px minmax(0, 1fr) auto; padding: .8rem 1rem; gap: .6rem; border-block-start: 1px solid var(--grey-200); }
+  .print-task-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; padding: .8rem 1rem; gap: .6rem; border-block-start: 1px solid var(--grey-200); }
+  .print-row-main { min-inline-size: 0; overflow-wrap: anywhere; }
+  .print-row-end { justify-self: end; }
   .print-row-time { inline-size: 28px; }
   .print-row-check { opacity: 1; position: static; inline-size: 24px; block-size: 24px; border: 3px solid var(--print-blue-soft); border-radius: 50%; background: transparent; }
   .print-row-checkbox-outline { display: none; }
@@ -2049,4 +2060,51 @@ html.dark .task-detail-view-modal .print-task-detail::after { background-image: 
   #app .project-list .project-print-row { grid-template-columns: 24px minmax(0, 1fr); }
   #app .project-list .project-row-due { grid-column: 2; grid-row: 3; justify-self: end; min-inline-size: 9rem; }
   #app .project-list .project-row-state { grid-column: 2; grid-row: 2; }
+}
+
+// Keep tree rows full width. Resolve indentation on alternating list/item levels
+// so arbitrary nesting inherits a computed value rather than a self-referencing variable.
+#app .menu-container.print-design-sidebar .print-primary-projects {
+  > .menu-list {
+    --project-parent-indent: -1rem;
+    margin-inline: .9rem;
+  }
+  .menu-list > .list-menu {
+    --project-indent: calc(var(--project-parent-indent) + 1rem);
+    margin-inline: 0;
+  }
+  .list-menu > .menu-list {
+    --project-parent-indent: var(--project-indent);
+    margin: 0;
+    padding: 0;
+  }
+  .navigation-item {
+    display: flex;
+    align-items: stretch;
+    inline-size: 100%;
+    min-inline-size: 0;
+    border-radius: 2px;
+  }
+  .navigation-item > .list-menu-link {
+    flex: 1 1 auto;
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding-inline-start: calc(1.75rem + var(--project-indent));
+    padding-inline-end: 4.5rem;
+  }
+  .navigation-item > .collapse-project-button {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--project-indent);
+    inline-size: 1.75rem;
+    padding: 0;
+    z-index: 1;
+    background: transparent;
+  }
+  .navigation-item:has(> .list-menu-link.router-link-exact-active) {
+    background: var(--print-green);
+    color: #fff;
+    > .list-menu-link { background: transparent; color: inherit; }
+    > .collapse-project-button svg { color: var(--print-mint); }
+  }
 }

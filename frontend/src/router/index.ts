@@ -458,6 +458,11 @@ const router = createRouter({
 			component: () => import('@/views/focus/FocusView.vue'),
 		},
 		{
+			path: '/notes',
+			name: 'quick-notes',
+			component: () => import('@/views/notes/QuickNotesView.vue'),
+		},
+		{
 			path: '/collect',
 			name: 'collect',
 			component: () => import('@/views/collect/CollectView.vue'),

@@ -16,3 +16,7 @@ docker-manifest-unstable.tmpl
 /frontend/node_modules/
 /frontend/.direnv
 /frontend/dist
+
+# Local pnpm cache is not application source.
+.pnpm-store
+**/.pnpm-store
