@@ -30,6 +30,7 @@ async function selectTask(form: Locator, title: string) {
 // Open the time-tracking section on a task detail page.
 async function openTaskTimeTracking(page: Page, taskId: number): Promise<Locator> {
 	await page.goto(`/tasks/${taskId}`)
+	await page.locator('.print-task-actions > summary').click()
 	await page.locator('[data-cy="taskTrackTimeAction"]').click()
 	const section = page.locator('.task-time-tracking')
 	await expect(section).toBeVisible()
@@ -48,6 +49,7 @@ test.describe('Time tracking', () => {
 
 		test('shows the page and the sidebar entry', async ({authenticatedPage: page}) => {
 			await page.goto('/')
+			await page.locator('.print-nav-more > summary').click()
 			await expect(page.locator('.menu-container').getByRole('link', {name: 'Time tracking'})).toBeVisible()
 
 			await page.goto('/time-tracking')
