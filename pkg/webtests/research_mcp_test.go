@@ -67,7 +67,7 @@ func TestMCPPersonalResearch(t *testing.T) {
 	assert.Contains(t, description, "https://example.org/paper")
 	assert.Contains(t, description, "&lt;script&gt;")
 	assert.NotContains(t, description, "<script>")
-	assert.Contains(t, description, "AI 摘要")
+	assert.Contains(t, description, "AI 摘要") //nolint:gosmopolitan // Verify the generated summary retains its localized section heading.
 	assert.Contains(t, description, "Try an ablation")
 	var items map[string]any
 	toolResultJSON(t, c.callTool("research_items_list", map[string]any{"project": 1, "q": "LLM Paper"}), &items)
